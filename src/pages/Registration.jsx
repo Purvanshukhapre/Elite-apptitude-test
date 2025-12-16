@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
 import { positions } from '../data/questions';
 
+
 const Registration = () => {
   const navigate = useNavigate();
   const { addApplicant, setCurrentApplicant } = useApp();
@@ -81,21 +82,21 @@ const Registration = () => {
       <div className="max-w-4xl w-full">
         {/* Header */}
         <div className="text-center mb-8 animate-fade-in">
-          <h1 className="text-4xl font-bold text-white mb-2">Welcome to Elite Associate..</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">Welcome to Elite Associate</h1>
           <p className="text-blue-100">Complete your registration to begin the aptitude test</p>
         </div>
 
         {/* Progress Bar */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-2">
-            {[1, 2, 3].map((s) => (
+          <div className="flex items-center mb-2">
+            {[1, 2, 3].map((s, idx) => (
               <div key={s} className="flex items-center flex-1">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
                   step >= s ? 'bg-white text-blue-600' : 'bg-blue-400 text-white'
                 }`}>
                   {s}
                 </div>
-                {s < 3 && (
+                {idx < 2 && (
                   <div className={`flex-1 h-1 mx-2 transition-all ${
                     step > s ? 'bg-white' : 'bg-blue-400'
                   }`} />
@@ -122,18 +123,136 @@ const Registration = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Full Name *
                   </label>
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
-                      errors.fullName ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="John Doe"
-                  />
+
+                  <div className="flex">
+              
+                    <select
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      className="px-2 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    >
+                      <option value="Mr">Mr</option>
+                      <option value="Miss">Miss</option>
+                      <option value="Mrs">Mrs</option>
+                    </select>
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                        errors.fullName ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="John Doe"
+                    />
+                  </div>
                   {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
                 </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Father's Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="fatherName"
+                    value={formData.fatherName}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                      errors.fatherName ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Father's Name"
+                  />
+                  {errors.fatherName && <p className="text-red-500 text-sm mt-1">{errors.fatherName}</p>}
+                </div>
+                
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date of Birth *
+                  </label>
+                  <div className="flex items-center">
+                    <input
+                      type="date"
+                      name="dob"
+                      value={formData.dob}
+                      onChange={(e) => {
+                        handleChange(e);
+                        // Calculate age automatically
+                        const dob = new Date(e.target.value);
+                        const today = new Date();
+                        let age = today.getFullYear() - dob.getFullYear();
+                        const m = today.getMonth() - dob.getMonth();
+                        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                          age--;
+                        }
+                        setFormData({ ...formData, age: age });
+                      }}
+                      className={`px-4 py-3 border rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                        errors.dob ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+
+                    <input
+                      type="text"
+                      name="age"
+                      value={formData.age || ''}
+                      readOnly
+                      placeholder="Age"
+                      className="w-24 px-4 py-3 border rounded-r-lg bg-gray-100 cursor-not-allowed"
+                    />
+                  </div>
+                  {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob}</p>}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Marital Status *
+                  </label>
+
+                  <div className="flex gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="maritalStatus"
+                        value="Single"
+                        checked={formData.maritalStatus === 'Single'}
+                        onChange={handleChange}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>Single</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="maritalStatus"
+                        value="Married"
+                        checked={formData.maritalStatus === 'Married'}
+                        onChange={handleChange}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>Married</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="maritalStatus"
+                        value="Divorced"
+                        checked={formData.maritalStatus === 'Divorced'}
+                        onChange={handleChange}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>Divorced</span>
+                    </label>
+                  </div>
+
+                  {errors.maritalStatus && (
+                    <p className="text-red-500 text-sm mt-1">{errors.maritalStatus}</p>
+                  )}
+                </div>
+
+
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -157,6 +276,19 @@ const Registration = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Phone Number *
                     </label>
+
+                    <div className="flex">
+                      <select
+                        name="countryCode"
+                        value={formData.countryCode}
+                        onChange={handleChange}
+                        className="px-3 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="+1">🇺🇸 +1</option>
+                        <option value="+91">🇮🇳 +91</option>
+                        <option value="+44">🇬🇧 +44</option>
+                        <option value="+61">🇦🇺 +61</option>
+                      </select>
                     <input
                       type="tel"
                       name="phone"
@@ -167,6 +299,7 @@ const Registration = () => {
                       }`}
                       placeholder="1234567890"
                     />
+                    </div>
                     {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
                   </div>
                 </div>
@@ -267,11 +400,11 @@ const Registration = () => {
                     value={formData.resumeLink}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                    placeholder="https://..."
+                    placeholder="linkdin profile..."
                   />
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Cover Letter (Optional)
                   </label>
@@ -283,7 +416,7 @@ const Registration = () => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     placeholder="Tell us why you're interested in this position..."
                   />
-                </div>
+                </div> */}
               </div>
             )}
 
