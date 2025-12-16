@@ -77,7 +77,7 @@ const Registration = () => {
   };
 
   return (
-    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#4A70A9] flex items-center justify-center p-4">
       <div className="max-w-4xl w-full">
         {/* Header */}
         <div className="text-center mb-8 animate-fade-in">
@@ -111,7 +111,7 @@ const Registration = () => {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 animate-slide-up">
+        <div className="bg-blue-50 rounded-2xl shadow-2xl p-8 animate-slide-up">
           <form onSubmit={handleSubmit}>
             {/* Step 1: Personal Information */}
             {step === 1 && (
