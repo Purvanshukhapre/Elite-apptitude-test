@@ -10,9 +10,11 @@ const Registration = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: '',
+    fatherName: '',
     email: '',
     phone: '',
     education: '',
+    languages: '',
     experience: '',
     position: '',
     expectedSalary: '',
@@ -24,6 +26,9 @@ const Registration = () => {
   const validateStep1 = () => {
     const newErrors = {};
     if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+    if (!formData.fatherName.trim())
+    newErrors.fatherName = 'father name known is required';
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -35,6 +40,9 @@ const Registration = () => {
       newErrors.phone = 'Phone number must be 10 digits';
     }
     if (!formData.education.trim()) newErrors.education = 'Education is required';
+
+    if (!formData.languages.trim())
+    newErrors.languages = 'Languages known is required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -112,7 +120,7 @@ const Registration = () => {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 animate-slide-up">
+        <div className="bg-blue-50 rounded-2xl shadow-2xl p-8 animate-slide-up">
           <form onSubmit={handleSubmit}>
             {/* Step 1: Personal Information */}
             {step === 1 && (
@@ -149,6 +157,7 @@ const Registration = () => {
                   </div>
                   {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
                 </div>
+                
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Father's Name *
@@ -166,91 +175,142 @@ const Registration = () => {
                   {errors.fatherName && <p className="text-red-500 text-sm mt-1">{errors.fatherName}</p>}
                 </div>
                 
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date of Birth *
-                  </label>
-                  <div className="flex items-center">
-                    <input
-                      type="date"
-                      name="dob"
-                      value={formData.dob}
-                      onChange={(e) => {
-                        handleChange(e);
-                        // Calculate age automatically
-                        const dob = new Date(e.target.value);
-                        const today = new Date();
-                        let age = today.getFullYear() - dob.getFullYear();
-                        const m = today.getMonth() - dob.getMonth();
-                        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-                          age--;
-                        }
-                        setFormData({ ...formData, age: age });
-                      }}
-                      className={`px-4 py-3 border rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
-                        errors.dob ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-
-                    <input
-                      type="text"
-                      name="age"
-                      value={formData.age || ''}
-                      readOnly
-                      placeholder="Age"
-                      className="w-24 px-4 py-3 border rounded-r-lg bg-gray-100 cursor-not-allowed"
-                    />
-                  </div>
-                  {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob}</p>}
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Marital Status *
-                  </label>
-
-                  <div className="flex gap-6">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="maritalStatus"
-                        value="Single"
-                        checked={formData.maritalStatus === 'Single'}
-                        onChange={handleChange}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>Single</span>
+                <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Date of Birth *
                     </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <div className="flex items-center">
                       <input
-                        type="radio"
-                        name="maritalStatus"
-                        value="Married"
-                        checked={formData.maritalStatus === 'Married'}
-                        onChange={handleChange}
-                        className="text-blue-600 focus:ring-blue-500"
+                        type="date"
+                        name="dob"
+                        value={formData.dob}
+                        onChange={(e) => {
+                          handleChange(e);
+                          // Calculate age automatically
+                          const dob = new Date(e.target.value);
+                          const today = new Date();
+                          let age = today.getFullYear() - dob.getFullYear();
+                          const m = today.getMonth() - dob.getMonth();
+                          if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                            age--;
+                          }
+                          setFormData({ ...formData, age: age });
+                        }}
+                        className={`px-4 py-3 border rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                          errors.dob ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
-                      <span>Married</span>
-                    </label>
 
-                    <label className="flex items-center gap-2 cursor-pointer">
                       <input
-                        type="radio"
-                        name="maritalStatus"
-                        value="Divorced"
-                        checked={formData.maritalStatus === 'Divorced'}
-                        onChange={handleChange}
-                        className="text-blue-600 focus:ring-blue-500"
+                        type="text"
+                        name="age"
+                        value={formData.age || ''}
+                        readOnly
+                        placeholder="Age"
+                        className="w-24 px-4 py-3 border rounded-r-lg bg-gray-100 cursor-not-allowed"
                       />
-                      <span>Divorced</span>
-                    </label>
+                    </div>
+                    {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob}</p>}
                   </div>
 
-                  {errors.maritalStatus && (
-                    <p className="text-red-500 text-sm mt-1">{errors.maritalStatus}</p>
-                  )}
+                  <div className="mt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-4">
+                      Marital Status *
+                    </label>
+
+                    <div className="flex gap-6">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="maritalStatus"
+                          value="Single"
+                          checked={formData.maritalStatus === 'Single'}
+                          onChange={handleChange}
+                          className="text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>Single</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="maritalStatus"
+                          value="Married"
+                          checked={formData.maritalStatus === 'Married'}
+                          onChange={handleChange}
+                          className="text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>Married</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="maritalStatus"
+                          value="Divorced"
+                          checked={formData.maritalStatus === 'Divorced'}
+                          onChange={handleChange}
+                          className="text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>Divorced</span>
+                      </label>
+                    </div>
+
+                    {errors.maritalStatus && (
+                      <p className="text-red-500 text-sm mt-1">{errors.maritalStatus}</p>
+                    )}
+                  </div>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Gender *
+                  </label>
+
+                  <div className="flex gap-6 mt-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="Male"
+                        checked={formData.gender === 'Male'}
+                        onChange={handleChange}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>Male</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="Female"
+                        checked={formData.gender === 'Female'}
+                        onChange={handleChange}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>Female</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="Other"
+                        checked={formData.gender === 'Other'}
+                        onChange={handleChange}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>Other</span>
+                    </label>
+                  </div>
+
+                {errors.gender && (
+                  <p className="text-red-500 text-sm mt-1">{errors.gender}</p>
+                )}
+              </div>
+
 
 
 
@@ -325,8 +385,79 @@ const Registration = () => {
                   </select>
                   {errors.education && <p className="text-red-500 text-sm mt-1">{errors.education}</p>}
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Languages Known *
+                  </label>
+
+                  <textarea
+                    name="languages"
+                    placeholder="e.g. English, Hindi, Tamil"
+                    value={formData.languages}
+                    onChange={handleChange}
+                    className="w-full h-12 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  />
+
+                  {errors.languages && (
+                    <p className="text-red-500 text-sm mt-1">{errors.languages}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Address <span className="text-red-500">*</span>
+                  </label>
+
+                  <textarea
+                    name="address"
+                    rows="3"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Enter your address"
+                    className={`w-full h-12 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                      errors.address ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+
+                  {errors.address && (
+                    <p className="text-red-500 text-sm mt-1">{errors.address}</p>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pincode *
+                  </label>
+
+                  <input
+                    type="number"
+                    name="pincode"
+                    value={formData.pincode}
+                    onChange={(e) => {
+                      // Only allow numbers
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        handleChange(e);
+                      }
+                    }}
+                    placeholder="Enter your pincode"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                      errors.pincode ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+
+                  {errors.pincode && (
+                    <p className="text-red-500 text-sm mt-1">{errors.pincode}</p>
+                  )}
+                </div>
+
+
+
               </div>
             )}
+
+
 
             {/* Step 2: Position Details */}
             {step === 2 && (
@@ -404,19 +535,7 @@ const Registration = () => {
                   />
                 </div>
 
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cover Letter (Optional)
-                  </label>
-                  <textarea
-                    name="coverLetter"
-                    value={formData.coverLetter}
-                    onChange={handleChange}
-                    rows="4"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                    placeholder="Tell us why you're interested in this position..."
-                  />
-                </div> */}
+                
               </div>
             )}
 
