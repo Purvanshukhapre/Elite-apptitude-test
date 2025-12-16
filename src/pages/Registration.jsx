@@ -77,7 +77,7 @@ const Registration = () => {
   };
 
   return (
-    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#4A70A9] flex items-center justify-center p-4">
       <div className="max-w-4xl w-full">
         {/* Header */}
         <div className="text-center mb-8 animate-fade-in">
@@ -259,7 +259,7 @@ const Registration = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Resume/Portfolio Link (Optional)
+                    Linkdin (Optional)
                   </label>
                   <input
                     type="url"
