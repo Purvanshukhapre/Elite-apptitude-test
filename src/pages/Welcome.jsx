@@ -4,17 +4,12 @@ const Welcome = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen gradient-bg">
+    <div className="min-h-screen bg-[#4A70A9]">
       {/* Navigation */}
       <nav className="absolute top-0 left-0 right-0 p-6">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="text-white font-bold text-2xl">Elite Associate</div>
-          <button
-            onClick={() => navigate('/admin')}
-            className="px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition backdrop-blur-sm"
-          >
-            Admin Login
-          </button>
+          
         </div>
       </nav>
 
