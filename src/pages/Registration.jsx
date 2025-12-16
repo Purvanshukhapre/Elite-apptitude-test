@@ -81,7 +81,7 @@ const Registration = () => {
       <div className="max-w-4xl w-full">
         {/* Header */}
         <div className="text-center mb-8 animate-fade-in">
-          <h1 className="text-4xl font-bold text-white mb-2">Welcome to Elite Associate</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">Welcome to Elite Associate..</h1>
           <p className="text-blue-100">Complete your registration to begin the aptitude test</p>
         </div>
 
