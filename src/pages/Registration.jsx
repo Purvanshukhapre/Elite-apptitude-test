@@ -141,66 +141,102 @@ const Registration = () => {
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">Personal Information</h2>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name *
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Name <span className="text-red-500">*</span>
                   </label>
 
-                  <div className="flex">
-              
+                  <div
+                    className={`flex items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                      errors.fullName ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
                     <select
                       name="title"
                       value={formData.title}
                       onChange={handleChange}
-                      className="px-2 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="h-11 px-3 bg-transparent text-gray-700 border-none outline-none rounded-l-lg"
                     >
                       <option value="Mr">Mr</option>
                       <option value="Miss">Miss</option>
                       <option value="Mrs">Mrs</option>
                     </select>
+
+                    {/* Divider */}
+                    <div className="h-6 w-px bg-gray-300"></div>
+
                     <input
                       type="text"
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
-                        errors.fullName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="John Doe"
+                      placeholder="Name"
+                      className="w-full h-11 px-3 bg-transparent outline-none border-none"
                     />
                   </div>
-                  {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+
+                  {errors.fullName && (
+                    <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
+                  )}
                 </div>
+
                 
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Father's Name *
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Father's Name <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    name="fatherName"
-                    value={formData.fatherName}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+
+                  <div
+                    className={`flex items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
                       errors.fatherName ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="Father's Name"
-                  />
-                  {errors.fatherName && <p className="text-red-500 text-sm mt-1">{errors.fatherName}</p>}
+                  >
+                    <input
+                      type="text"
+                      name="fatherName"
+                      value={formData.fatherName}
+                      onChange={handleChange}
+                      placeholder="Father's Name"
+                      className="w-full h-11 px-3 bg-transparent outline-none border-none"
+                    />
+                  </div>
+
+                  {errors.fatherName && (
+                    <p className="text-red-500 text-sm mt-1">{errors.fatherName}</p>
+                  )}
                 </div>
+
                 
                 <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Date of Birth *
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Date of Birth <span className="text-red-500">*</span>
                     </label>
-                    <div className="flex items-center">
+
+                    <div
+                      className={`flex items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                        errors.dob ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      {/* Age box */}
+                      <input
+                        type="text"
+                        name="age"
+                        value={formData.age || ''}
+                        readOnly
+                        placeholder="Age"
+                        className="w-20 h-11 px-3 bg-gray-100 text-gray-600 outline-none border-none cursor-not-allowed rounded-l-lg"
+                      />
+
+                      {/* Divider */}
+                      {/* <div className="h-6 w-px bg-gray-300"></div> */}
+
+                      {/* Date picker */}
                       <input
                         type="date"
                         name="dob"
                         value={formData.dob}
                         onChange={(e) => {
                           handleChange(e);
-                          // Calculate age automatically
                           const dob = new Date(e.target.value);
                           const today = new Date();
                           let age = today.getFullYear() - dob.getFullYear();
@@ -208,31 +244,25 @@ const Registration = () => {
                           if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
                             age--;
                           }
-                          setFormData({ ...formData, age: age });
+                          setFormData({ ...formData, age });
                         }}
-                        className={`px-4 py-3 border rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
-                          errors.dob ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-
-                      <input
-                        type="text"
-                        name="age"
-                        value={formData.age || ''}
-                        readOnly
-                        placeholder="Age"
-                        className="w-24 px-4 py-3 border rounded-r-lg bg-gray-100 cursor-not-allowed"
+                        className="h-5 px-3 bg-transparent outline-none border-none flex-1"
                       />
                     </div>
-                    {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob}</p>}
+
+                    {errors.dob && (
+                      <p className="text-red-500 text-sm mt-1">{errors.dob}</p>
+                    )}
                   </div>
 
-                  <div className="mt-6">
+
+
+                  <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-4">
-                      Marital Status *
+                      Marital Status <span className="text-red-500">*</span>
                     </label>
 
-                    <div className="flex gap-6">
+                    <div className="flex gap-12">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="radio"
@@ -278,7 +308,7 @@ const Registration = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Gender *
+                    Gender <span className="text-red-500">*</span>
                   </label>
 
                   <div className="flex gap-6 mt-2">
@@ -330,14 +360,16 @@ const Registration = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address *
+                      Email Address <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                      className={`w-full px-4 py-3 rounded-lg border border-gray-200
+                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                        transition ${
                         errors.email ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="john@example.com"
@@ -347,39 +379,50 @@ const Registration = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number *
+                      Phone Number <span className="text-red-500">*</span>
                     </label>
 
-                    <div className="flex">
+                    <div
+                      className={`flex items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                        errors.phone ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
                       <select
                         name="countryCode"
                         value={formData.countryCode}
                         onChange={handleChange}
-                        className="px-3 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500"
+                        className="h-11 px-3 bg-transparent text-gray-700 border-none outline-none rounded-l-lg"
                       >
                         <option value="+1">🇺🇸 +1</option>
                         <option value="+91">🇮🇳 +91</option>
                         <option value="+44">🇬🇧 +44</option>
                         <option value="+61">🇦🇺 +61</option>
                       </select>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
-                        errors.phone ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="1234567890"
-                    />
+
+                      {/* Divider */}
+                      {/* <div className="h-7 w-px bg-gray-300"></div> */}
+
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        placeholder="Phone Number"
+                        className="w-full h-12 px-3 bg-transparent outline-none border-none"
+                      />
                     </div>
-                    {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+
+                    {errors.phone && (
+                      <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                    )}
                   </div>
+
+
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Highest Education *
+                    Highest Education <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="education"
@@ -400,81 +443,415 @@ const Registration = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Languages Known *
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Languages Known <span className="text-red-500">*</span>
                   </label>
 
-                  <textarea
-                    name="languages"
-                    placeholder="e.g. English, Hindi, Tamil"
-                    value={formData.languages}
-                    onChange={handleChange}
-                    className="w-full h-12 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                  />
+                  <div
+                    className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                      errors.languages ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <textarea
+                      name="languages"
+                      placeholder="e.g. English, Hindi, Tamil"
+                      value={formData.languages}
+                      onChange={handleChange}
+                      rows={3}
+                      className="w-full h-10 px-3 py-3 bg-transparent outline-none border-none resize-none placeholder-gray-400"
+                    />
+                  </div>
 
                   {errors.languages && (
                     <p className="text-red-500 text-sm mt-1">{errors.languages}</p>
                   )}
                 </div>
 
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Address <span className="text-red-500">*</span>
                   </label>
 
-                  <textarea
-                    name="address"
-                    rows="3"
-                    value={formData.address}
-                    onChange={handleChange}
-                    placeholder="Enter your address"
-                    className={`w-full h-12 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                  <div
+                    className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
                       errors.address ? 'border-red-500' : 'border-gray-300'
                     }`}
-                  />
+                  >
+                    <textarea
+                      name="address"
+                      rows={3}
+                      value={formData.address}
+                      onChange={handleChange}
+                      placeholder="Enter your address"
+                      className="w-full h-10 px-3 py-2 bg-transparent outline-none border-none resize-none placeholder-gray-400"
+                    />
+                  </div>
 
                   {errors.address && (
                     <p className="text-red-500 text-sm mt-1">{errors.address}</p>
                   )}
                 </div>
 
+
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Pincode *
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Pincode <span className="text-red-500">*</span>
                   </label>
 
-                  <input
-                    type="number"
-                    name="pincode"
-                    value={formData.pincode}
-                    onChange={(e) => {
-                      // Only allow numbers
-                      const value = e.target.value;
-                      if (/^\d*$/.test(value)) {
-                        handleChange(e);
-                      }
-                    }}
-                    placeholder="Enter your pincode"
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                  <div
+                    className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
                       errors.pincode ? 'border-red-500' : 'border-gray-300'
                     }`}
-                  />
+                  >
+                    <input
+                      type="text"
+                      name="pincode"
+                      value={formData.pincode}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (/^\d*$/.test(value)) {
+                          handleChange(e);
+                        }
+                      }}
+                      placeholder="Enter your pincode"
+                      className="w-full h-11 px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                      inputMode="numeric"
+                      maxLength={6}
+                    />
+                  </div>
 
                   {errors.pincode && (
                     <p className="text-red-500 text-sm mt-1">{errors.pincode}</p>
                   )}
                 </div>
 
+                <div className="mt-6">
 
+                  <h3 className="text-md font-semibold text-gray-800 mb-3">
+                    First Reference (Optional)
+                  </h3>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    {/* Reference Number */}
+                    <div>
+
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Reference Number
+                      </label>
+
+                      <div
+                        className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                          errors.referenceNumber ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <input
+                          type="text"
+                          name="referenceNumber"
+                          value={formData.referenceNumber}
+                          onChange={handleChange}
+                          placeholder="Enter reference number"
+                          className="w-full h-11 px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                        />
+                      </div>
+
+                      {errors.referenceNumber && (
+                        <p className="text-red-500 text-sm mt-1">{errors.referenceNumber}</p>
+                      )}
+                    </div>
+
+                    {/* Contact Number */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Contact Number 
+                      </label>
+
+                      <div
+                        className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                          errors.contactNumber ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <input
+                          type="tel"
+                          name="contactNumber"
+                          value={formData.contactNumber}
+                          onChange={handleChange}
+                          placeholder="Enter contact number"
+                          className="w-full h-11 px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                        />
+                      </div>
+
+                      {errors.contactNumber && (
+                        <p className="text-red-500 text-sm mt-1">{errors.contactNumber}</p>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+
+                <div className="mt-6">
+
+                  <h3 className="text-md font-semibold text-gray-800 mb-3">
+                    Second Reference
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    {/* Reference Number 2 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Reference Number 
+                      </label>
+
+                      <div
+                        className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                          errors.referenceNumber2 ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <input
+                          type="text"
+                          name="referenceNumber2"
+                          value={formData.referenceNumber2}
+                          onChange={handleChange}
+                          placeholder="Enter reference number"
+                          className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                        />
+                      </div>
+
+                      {errors.referenceNumber2 && (
+                        <p className="text-red-500 text-sm mt-1">{errors.referenceNumber2}</p>
+                      )}
+                    </div>
+
+                    {/* Contact Number 2 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Contact Number 
+                      </label>
+
+                      <div
+                        className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                          errors.contactNumber2 ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <input
+                          type="tel"
+                          name="contactNumber2"
+                          value={formData.contactNumber2}
+                          onChange={handleChange}
+                          placeholder="Enter contact number"
+                          maxLength={10}
+                          className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                        />
+                      </div>
+
+                      {errors.contactNumber2 && (
+                        <p className="text-red-500 text-sm mt-1">{errors.contactNumber2}</p>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
               </div>
             )}
 
 
 
             {/* Step 2: Position Details */}
+
+            
             {step === 2 && (
-              <div className="space-y-6">
+              <div>
+                <div className="mt-6">
+                <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                  Academic Records
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  {/* Institution Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      School / College Name <span className="text-red-500">*</span>
+                    </label>
+                    <div
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                        errors.institution ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="text"
+                        name="institution"
+                        value={formData.institution}
+                        onChange={handleChange}
+                        placeholder="Enter school or college name"
+                        className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                      />
+                    </div>
+                    {errors.institution && (
+                      <p className="text-red-500 text-sm mt-1">{errors.institution}</p>
+                    )}
+                  </div>
+
+                  {/* Board / University Type */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Board / University <span className="text-red-500">*</span>
+                    </label>
+                    <div
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                        errors.boardType ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <select
+                        name="boardType"
+                        value={formData.boardType}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                      >
+                        <option value="">Select board / university type</option>
+                        <option value="School">School</option>
+                        <option value="University">University</option>
+                      </select>
+                    </div>
+                    {errors.boardType && (
+                      <p className="text-red-500 text-sm mt-1">{errors.boardType}</p>
+                    )}
+                  </div>
+
+                  {/* Name of Board / University */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Name of Board / University <span className="text-red-500">*</span>
+                    </label>
+                    <div
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                        errors.boardName ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="text"
+                        name="boardName"
+                        value={formData.boardName}
+                        onChange={handleChange}
+                        placeholder="Enter board or university name"
+                        className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                      />
+                    </div>
+                    {errors.boardName && (
+                      <p className="text-red-500 text-sm mt-1">{errors.boardName}</p>
+                    )}
+                  </div>
+
+                  {/* Examination Passed */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Examination Passed <span className="text-red-500">*</span>
+                    </label>
+                    <div
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                        errors.examPassed ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="text"
+                        name="examPassed"
+                        value={formData.examPassed}
+                        onChange={handleChange}
+                        placeholder="Enter exam passed"
+                        className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                      />
+                    </div>
+                    {errors.examPassed && (
+                      <p className="text-red-500 text-sm mt-1">{errors.examPassed}</p>
+                    )}
+                  </div>
+
+                  {/* Year of Passing */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Year of Passing <span className="text-red-500">*</span>
+                    </label>
+                    <div
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                        errors.yearOfPassing ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <select
+                        name="yearOfPassing"
+                        value={formData.yearOfPassing}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                      >
+                        <option value="">Select year or pursuing</option>
+                        <option value="Pursuing">Pursuing</option>
+                        {Array.from({ length: 50 }, (_, i) => 1975 + i).map((year) => (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {errors.yearOfPassing && (
+                      <p className="text-red-500 text-sm mt-1">{errors.yearOfPassing}</p>
+                    )}
+                  </div>
+
+                  {/* Main Subjects */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Main Subjects <span className="text-red-500">*</span>
+                    </label>
+                    <div
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                        errors.mainSubjects ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="text"
+                        name="mainSubjects"
+                        value={formData.mainSubjects}
+                        onChange={handleChange}
+                        placeholder="Enter main subjects"
+                        className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                      />
+                    </div>
+                    {errors.mainSubjects && (
+                      <p className="text-red-500 text-sm mt-1">{errors.mainSubjects}</p>
+                    )}
+                  </div>
+
+                  {/* Percentage / CGPA */}
+                  <div className="mb-8">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Percentage / CGPA <span className="text-red-500">*</span>
+                    </label>
+                    <div
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
+                        errors.percentage ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="number"
+                        name="percentage"
+                        value={formData.percentage}
+                        onChange={handleChange}
+                        placeholder="Enter percentage or CGPA"
+                        className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                      />
+                    </div>
+                    {errors.percentage && (
+                      <p className="text-red-500 text-sm mt-1">{errors.percentage}</p>
+                    )}
+                  </div>
+
+                </div>
+              </div>
+
+
+
+              <div className="space-y-4">
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">Position Details</h2>
                 
                 <div>
@@ -549,6 +926,7 @@ const Registration = () => {
                 </div>
 
                 
+              </div>
               </div>
             )}
 
@@ -629,12 +1007,13 @@ const Registration = () => {
                   Back
                 </button>
               )}
-              {step < 3 ? (
+              {step <= 3 ? (
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="ml-auto px-8 py-3 gradient-primary rounded-lg text-white font-medium hover:shadow-lg transition transform hover:-translate-y-0.5"
-                >
+                  className="ml-auto px-8 py-3 bg-[#4A70A9] rounded-lg text-white font-medium transform hover:bg-red-600 
+                   transition-all duration-200"
+                  >
                   Next
                 </button>
               ) : (
