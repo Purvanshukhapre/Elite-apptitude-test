@@ -1,7 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion ,useInView} from "framer-motion";
+import { useRef } from "react";
 import logo from "../assets/elitelogo.png";
+import bgImage from "../assets/web_development.jpg";
+
+
+
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -9,6 +14,9 @@ const Welcome = () => {
   const text = "Online Aptitude Test Platform";
   const [displayText, setDisplayText] = useState("");
   const [index, setIndex] = useState(0);
+  const heroRef = useRef(null);
+const isInView = useInView(heroRef, { once: true });
+
 
   // Typing Effect
   useEffect(() => {
@@ -22,7 +30,15 @@ const Welcome = () => {
   }, [index, text]);
 
   return (
-    <div className="relative min-h-screen bg-[#4A70A9] overflow-hidden flex flex-col">
+    <div className="relative min-h-screen overflow-hidden flex flex-col bg-cover bg-center" style={{ backgroundImage: `url(${bgImage})` }}>
+      <div className="absolute inset-0 bg-[#4A70A9]/20" />
+
+      
+
+{/* Optional dark overlay for better contrast */}
+<div className="absolute inset-0 bg-[#4A70A9]/70" />
+
+      
 
       {/* Floating Background Blobs */}
       <motion.div
@@ -42,9 +58,8 @@ const Welcome = () => {
           <div
             className="p-4 md:p-6 rounded-2xl 
                        bg-white/20 backdrop-blur-lg
-                       shadow-1xl ring-1 ring-white/30 
-                       transition-all duration-500
-                 hover:shadow-[0_0_40px_10px_rgba(255,255,255,0.3)]"
+                       shadow-1xl ring-1 ring-white/30 "
+                       
           >
             <img
               src={logo}
@@ -56,8 +71,8 @@ const Welcome = () => {
       </nav>
 
       {/* Hero Section */}
-      <main className="flex-grow flex items-center justify-center px-4 relative z-10 pt-8 sm:pt-0">
-        <div className="max-w-4xl w-full text-center">
+      <main className="flex-grow flex items-center justify-center px-4 relative z-10 pt-2 sm:pt-4 md:pt-0 ">
+        <div ref={heroRef} className="max-w-4xl w-full text-center -mt-1 sm:-mt-9 md:mt-0">
 
           <motion.h1
             initial={{ opacity: 0, y: 40 }}
@@ -65,13 +80,16 @@ const Welcome = () => {
             transition={{ duration: 0.8 }}
             className="text-3xl sm:text-4xl md:text-6xl font-extrabold text-white mb-4 md:mb-6"
           >
-            Welcome to <span className="text-blue-200">Elite Associate</span>
+            Welcome to {" "}<span className="bg-gradient-to-r from-blue-200 to-white 
+                   bg-clip-text text-transparent">
+    Elite Associate
+  </span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.3 }}
             className="text-lg sm:text-xl md:text-3xl text-blue-100 font-medium min-h-[2.5rem]"
           >
             {displayText}
@@ -91,7 +109,7 @@ const Welcome = () => {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.3 }}
+            transition={{ delay: 0.6 }}
             className="mt-8 md:mt-10"
           >
             <motion.button
@@ -107,17 +125,15 @@ const Welcome = () => {
               Start Your Application →
             </motion.button>
 
-            <p className="text-blue-100 text-xs sm:text-sm mt-3 md:mt-4">
-              Scan the QR code or click the button to begin
-            </p>
+            
           </motion.div>
 
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="p-4 md:p-6 text-center text-blue-100 text-xs md:text-sm">
-        © 2024 Elite Associate. All rights reserved.
+      <footer className="p-4 md:p-6 text-center text-blue-200 text-xs md:text-sm">
+         Elite Associate
       </footer>
     </div>
   );

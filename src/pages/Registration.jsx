@@ -93,31 +93,44 @@ const Registration = () => {
           <h1 className="text-4xl font-bold text-white mb-2">Welcome to Elite Associate</h1>
           <p className="text-blue-100">Complete your registration to begin the aptitude test</p>
         </div>
+{/* {Progress Bar} */}
+<div className="mb-10">
+  <div className="relative flex items-center justify-between">
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center mb-2">
-            {[1, 2, 3].map((s, idx) => (
-              <div key={s} className="flex items-center flex-1">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
-                  step >= s ? 'bg-white text-blue-600' : 'bg-blue-400 text-white'
-                }`}>
-                  {s}
-                </div>
-                {idx < 2 && (
-                  <div className={`flex-1 h-1 mx-2 transition-all ${
-                    step > s ? 'bg-white' : 'bg-blue-400'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-white text-sm">
-            <span>Personal Info</span>
-            <span>Position Details</span>
-            <span>Review</span>
-          </div>
+    {/* Base line (connected to circles) */}
+    <div className="absolute top-6 left-[16.66%] right-[16.66%] h-1 bg-blue-400 rounded-full" />
+
+    {[1, 2, 3].map((s) => (
+      <div key={s} className="relative z-10 flex flex-col items-center w-1/3">
+
+        {/* Circle */}
+        <div
+          className={`w-12 h-12 rounded-full flex items-center justify-center border-2
+          ${
+            step > s || (step === s && s !== 3)
+              ? "bg-blue-400 border-blue-400 text-white"
+              : "bg-white border-blue-700 text-blue-700"
+          }`}
+        >
+          {(step > s || (step === s && s !== 3)) && (
+            <span className="text-xl font-bold">✓</span>
+          )}
         </div>
+
+        {/* Label */}
+        <span className="mt-3 text-sm font-semibold tracking-wider text-white">
+          {s === 1 && "PERSONAL INFO"}
+          {s === 2 && "POSITION DETAILS"}
+          {s === 3 && "REVIEW"}
+        </span>
+
+      </div>
+    ))}
+  </div>
+</div>
+
+
+
 
         {/* Form Card */}
         <div className="bg-blue-50 rounded-2xl shadow-2xl p-8 animate-slide-up">
