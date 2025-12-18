@@ -80,60 +80,61 @@ const Registration = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    console.log(formData.fatherName)
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#4A70A9] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#082f68] flex items-center justify-center p-4">
       <div className="max-w-4xl w-full">
         {/* Header */}
         <div className="text-center mb-8 animate-fade-in">
           <h1 className="text-4xl font-bold text-white mb-2">Welcome to Elite Associate</h1>
           <p className="text-blue-100">Complete your registration to begin the aptitude test</p>
         </div>
-{/* {Progress Bar} */}
-<div className="mb-10">
-  <div className="relative flex items-center justify-between">
+          {/* {Progress Bar} */}
+          <div className="mb-10">
+            <div className="relative flex items-center justify-between">
 
-    {/* Base line (connected to circles) */}
-    <div className="absolute top-6 left-[16.66%] right-[16.66%] h-1 bg-blue-400 rounded-full" />
+              {/* Base line (connected to circles) */}
+              <div className="absolute top-6 left-[16.66%] right-[16.66%] h-1 bg-blue-400 rounded-full" />
 
-    {[1, 2, 3].map((s) => (
-      <div key={s} className="relative z-10 flex flex-col items-center w-1/3">
+              {[1, 2, 3].map((s) => (
+                <div key={s} className="relative z-10 flex flex-col items-center w-1/3">
 
-        {/* Circle */}
-        <div
-          className={`w-12 h-12 rounded-full flex items-center justify-center border-2
-          ${
-            step > s || (step === s && s !== 3)
-              ? "bg-blue-400 border-blue-400 text-white"
-              : "bg-white border-blue-700 text-blue-700"
-          }`}
-        >
-          {(step > s || (step === s && s !== 3)) && (
-            <span className="text-xl font-bold">✓</span>
-          )}
-        </div>
+                  {/* Circle */}
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center border-2
+                    ${
+                      step > s || (step === s && s !== 3)
+                        ? "bg-blue-400 border-blue-400 text-white"
+                        : "bg-white border-blue-700 text-blue-700"
+                    }`}
+                  >
+                    {(step > s || (step === s && s !== 3)) && (
+                      <span className="text-xl font-bold">✓</span>
+                    )}
+                  </div>
 
-        {/* Label */}
-        <span className="mt-3 text-sm font-semibold tracking-wider text-white">
-          {s === 1 && "PERSONAL INFO"}
-          {s === 2 && "POSITION DETAILS"}
-          {s === 3 && "REVIEW"}
-        </span>
+                  {/* Label */}
+                  <span className="mt-3 text-sm font-semibold tracking-wider text-white">
+                    {s === 1 && "PERSONAL INFO"}
+                    {s === 2 && "POSITION DETAILS"}
+                    {s === 3 && "REVIEW"}
+                  </span>
 
-      </div>
-    ))}
-  </div>
-</div>
+                </div>
+              ))}
+            </div>
+          </div>
 
 
 
 
         {/* Form Card */}
-        <div className="bg-blue-50 rounded-2xl shadow-2xl p-8 animate-slide-up">
+        <div className="bg-blue-100 rounded-2xl shadow-2xl p-8 animate-slide-up">
           <form onSubmit={handleSubmit}>
             {/* Step 1: Personal Information */}
             {step === 1 && (
@@ -146,8 +147,8 @@ const Registration = () => {
                   </label>
 
                   <div
-                    className={`flex items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                      errors.fullName ? 'border-red-500' : 'border-gray-300'
+                    className={`flex h-10 items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                      errors.fullName ? 'border-red-500' : 'border-gray-500'
                     }`}
                   >
                     <select
@@ -170,7 +171,7 @@ const Registration = () => {
                       value={formData.fullName}
                       onChange={handleChange}
                       placeholder="Name"
-                      className="w-full h-11 px-3 bg-transparent outline-none border-none"
+                      className="w-full px-3 bg-transparent outline-none border-none"
                     />
                   </div>
 
@@ -186,8 +187,8 @@ const Registration = () => {
                   </label>
 
                   <div
-                    className={`flex items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                      errors.fatherName ? 'border-red-500' : 'border-gray-300'
+                    className={`flex h-10 items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                      errors.fatherName ? 'border-red-500' : 'border-gray-500'
                     }`}
                   >
                     <input
@@ -213,8 +214,8 @@ const Registration = () => {
                     </label>
 
                     <div
-                      className={`flex items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                        errors.dob ? 'border-red-500' : 'border-gray-300'
+                      className={`flex h-10 items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                        errors.dob ? 'border-red-500' : 'border-gray-500'
                       }`}
                     >
                       {/* Age box */}
@@ -224,7 +225,7 @@ const Registration = () => {
                         value={formData.age || ''}
                         readOnly
                         placeholder="Age"
-                        className="w-20 h-11 px-3 bg-gray-100 text-gray-600 outline-none border-none cursor-not-allowed rounded-l-lg"
+                        className="w-20 h-9 px-3 bg-gray-100 text-gray-600 outline-none border-none cursor-not-allowed rounded-l-lg"
                       />
 
                       {/* Divider */}
@@ -367,10 +368,10 @@ const Registration = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg border border-gray-200
-                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                      className={`w-full h-10 px-4 py-3 rounded-lg border border-gray-200
+                        focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent
                         transition ${
-                        errors.email ? 'border-red-500' : 'border-gray-300'
+                        errors.email ? 'border-red-500' : 'border-gray-500'
                       }`}
                       placeholder="john@example.com"
                     />
@@ -383,15 +384,15 @@ const Registration = () => {
                     </label>
 
                     <div
-                      className={`flex items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                        errors.phone ? 'border-red-500' : 'border-gray-300'
+                      className={`flex h-10 items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                        errors.phone ? 'border-red-500' : 'border-gray-500'
                       }`}
                     >
                       <select
                         name="countryCode"
                         value={formData.countryCode}
                         onChange={handleChange}
-                        className="h-11 px-3 bg-transparent text-gray-700 border-none outline-none rounded-l-lg"
+                        className="h-9 px-3 bg-transparent text-gray-700 border-none outline-none rounded-l-lg"
                       >
                         <option value="+1">🇺🇸 +1</option>
                         <option value="+91">🇮🇳 +91</option>
@@ -428,17 +429,20 @@ const Registration = () => {
                     name="education"
                     value={formData.education}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
-                      errors.education ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full h-10 px-4 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition ${
+                      errors.education ? 'border-red-500' : 'border-gray-500'
                     }`}
                   >
-                    <option value="">Select your education</option>
+                    <option value="" >
+                      Select your education
+                    </option>
                     <option value="high-school">High School</option>
                     <option value="associate">Associate Degree</option>
                     <option value="bachelor">Bachelor's Degree</option>
                     <option value="master">Master's Degree</option>
                     <option value="phd">PhD</option>
                   </select>
+
                   {errors.education && <p className="text-red-500 text-sm mt-1">{errors.education}</p>}
                 </div>
 
@@ -448,8 +452,8 @@ const Registration = () => {
                   </label>
 
                   <div
-                    className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                      errors.languages ? 'border-red-500' : 'border-gray-300'
+                    className={`border h-10 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                      errors.languages ? 'border-red-500' : 'border-gray-500'
                     }`}
                   >
                     <textarea
@@ -474,8 +478,8 @@ const Registration = () => {
                   </label>
 
                   <div
-                    className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                      errors.address ? 'border-red-500' : 'border-gray-300'
+                    className={`border h-10 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                      errors.address ? 'border-red-500' : 'border-gray-500'
                     }`}
                   >
                     <textarea
@@ -500,8 +504,8 @@ const Registration = () => {
                   </label>
 
                   <div
-                    className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                      errors.pincode ? 'border-red-500' : 'border-gray-300'
+                    className={`border h-10 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                      errors.pincode ? 'border-red-500' : 'border-gray-500'
                     }`}
                   >
                     <input
@@ -542,8 +546,8 @@ const Registration = () => {
                       </label>
 
                       <div
-                        className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                          errors.referenceNumber ? 'border-red-500' : 'border-gray-300'
+                        className={`border  rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                          errors.referenceNumber ? 'border-red-500' : 'border-gray-500'
                         }`}
                       >
                         <input
@@ -552,7 +556,7 @@ const Registration = () => {
                           value={formData.referenceNumber}
                           onChange={handleChange}
                           placeholder="Enter reference number"
-                          className="w-full h-11 px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                          className="w-full h-10 px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
                         />
                       </div>
 
@@ -568,8 +572,8 @@ const Registration = () => {
                       </label>
 
                       <div
-                        className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                          errors.contactNumber ? 'border-red-500' : 'border-gray-300'
+                        className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                          errors.contactNumber ? 'border-red-500' : 'border-gray-500'
                         }`}
                       >
                         <input
@@ -578,7 +582,7 @@ const Registration = () => {
                           value={formData.contactNumber}
                           onChange={handleChange}
                           placeholder="Enter contact number"
-                          className="w-full h-11 px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                          className="w-full h-10 px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
                         />
                       </div>
 
@@ -605,8 +609,8 @@ const Registration = () => {
                       </label>
 
                       <div
-                        className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                          errors.referenceNumber2 ? 'border-red-500' : 'border-gray-300'
+                        className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                          errors.referenceNumber2 ? 'border-red-500' : 'border-gray-500'
                         }`}
                       >
                         <input
@@ -615,7 +619,7 @@ const Registration = () => {
                           value={formData.referenceNumber2}
                           onChange={handleChange}
                           placeholder="Enter reference number"
-                          className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                          className="w-full h-10 px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
                         />
                       </div>
 
@@ -631,8 +635,8 @@ const Registration = () => {
                       </label>
 
                       <div
-                        className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                          errors.contactNumber2 ? 'border-red-500' : 'border-gray-300'
+                        className={`border h-10 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                          errors.contactNumber2 ? 'border-red-500' : 'border-gray-500'
                         }`}
                       >
                         <input
