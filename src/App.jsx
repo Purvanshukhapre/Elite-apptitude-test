@@ -5,7 +5,11 @@ import Registration from './pages/Registration';
 import AptitudeTest from './pages/AptitudeTest';
 import Feedback from './pages/Feedback';
 import AdminLogin from './pages/AdminLogin';
-import AdminDashboard from './pages/AdminDashboard';
+import PremiumDashboard from './pages/PremiumDashboard';
+import AdminDashboardUltimateFixed from './pages/AdminDashboardUltimate_fixed';
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
+import FeedbackDashboard from './pages/FeedbackDashboard';
+import ApplicantsPage from './pages/ApplicantsPage';
 
 function App() {
   return (
@@ -17,7 +21,11 @@ function App() {
           <Route path="/test" element={<AptitudeTest />} />
           <Route path="/feedback" element={<Feedback />} />
           <Route path="/admin" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/dashboard" element={<PremiumDashboard />} />
+          <Route path="/admin/dashboard2" element={<AdminDashboardUltimateFixed />} />
+          <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
+          <Route path="/admin/feedback" element={<FeedbackDashboard />} />
+          <Route path="/admin/applicants" element={<ApplicantsPage />} />
         </Routes>
       </Router>
     </AppProvider>

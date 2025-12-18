@@ -2,15 +2,26 @@ import { useState, useEffect } from 'react';
 import { AppContext } from './AppContextDefinition';
 
 export const AppProvider = ({ children }) => {
-  const [applicants, setApplicants] = useState(() => {
-    const saved = localStorage.getItem('applicants');
-    return saved ? JSON.parse(saved) : [];
-  });
-
+  const [applicants, setApplicants] = useState([]);
   const [currentApplicant, setCurrentApplicant] = useState(null);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
-    return localStorage.getItem('adminAuth') === 'true';
+    const saved = localStorage.getItem('adminAuth');
+    return saved === 'true';
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Save admin auth state to localStorage
+  useEffect(() => {
+    localStorage.setItem('adminAuth', isAdminAuthenticated.toString());
+  }, [isAdminAuthenticated]);
+
+  // Fetch applicants from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('applicants');
+    setApplicants(saved ? JSON.parse(saved) : []);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('applicants', JSON.stringify(applicants));
@@ -47,7 +58,6 @@ export const AppProvider = ({ children }) => {
     // Simple authentication - in production, use proper backend authentication
     if (username === 'admin' && password === 'admin123') {
       setIsAdminAuthenticated(true);
-      localStorage.setItem('adminAuth', 'true');
       return true;
     }
     return false;
@@ -55,11 +65,12 @@ export const AppProvider = ({ children }) => {
 
   const adminLogout = () => {
     setIsAdminAuthenticated(false);
-    localStorage.removeItem('adminAuth');
   };
 
   const value = {
     applicants,
+    loading,
+    error,
     currentApplicant,
     setCurrentApplicant,
     addApplicant,
