@@ -16,8 +16,18 @@ const Feedback = () => {
   });
   const [submitted, setSubmitted] = useState(false);
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFeedback(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    if (!currentApplicant) {
+      navigate('/');
+      return;
+    }
     
     const feedbackData = {
       ...feedback,
@@ -29,14 +39,27 @@ const Feedback = () => {
     setSubmitted(true);
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFeedback(prev => ({ ...prev, [name]: value }));
-  };
-
+  // Check if currentApplicant exists before rendering
   if (!currentApplicant) {
-    navigate('/');
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 text-center max-w-md">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Application Found</h2>
+          <p className="text-gray-600 mb-6">Please complete the test first before providing feedback.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl text-white font-semibold hover:shadow-lg transition-all"
+          >
+            Go to Home
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (submitted) {
@@ -113,21 +136,23 @@ const Feedback = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">We'd Love Your Feedback!</h1>
-          <p className="text-gray-600">Help us improve your experience</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3 tracking-tight">
+            We'd Love Your Feedback!
+          </h1>
+          <p className="text-lg text-gray-600 font-medium">Help us improve your experience</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm p-8">
-          <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-10 border border-gray-100">
+          <form onSubmit={handleSubmit} className="space-y-10">
             {/* Overall Rating */}
-            <div className="text-center pb-6 border-b">
-              <label className="block text-lg font-medium text-gray-900 mb-4">
+            <div className="text-center pb-8 border-b-2 border-gray-100">
+              <label className="block text-xl font-bold text-gray-800 mb-6 tracking-tight">
                 How would you rate your overall experience?
               </label>
-              <div className="flex justify-center space-x-2">
+              <div className="flex justify-center space-x-3">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
@@ -135,12 +160,12 @@ const Feedback = () => {
                     onClick={() => setRating(star)}
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
-                    className="focus:outline-none transform transition hover:scale-110"
+                    className="focus:outline-none transform transition-all hover:scale-125 active:scale-110"
                   >
                     <svg
-                      className={`w-12 h-12 ${
+                      className={`w-14 h-14 transition-all ${
                         star <= (hoverRating || rating)
-                          ? 'text-yellow-400 fill-current'
+                          ? 'text-yellow-400 fill-current drop-shadow-lg'
                           : 'text-gray-300'
                       }`}
                       fill="none"
@@ -157,31 +182,31 @@ const Feedback = () => {
                   </button>
                 ))}
               </div>
-              <p className="text-sm text-gray-600 mt-2">
-                {rating === 0 && 'Click to rate'}
-                {rating === 1 && 'Poor'}
-                {rating === 2 && 'Fair'}
-                {rating === 3 && 'Good'}
-                {rating === 4 && 'Very Good'}
-                {rating === 5 && 'Excellent'}
+              <p className="text-base font-semibold text-gray-700 mt-4">
+                {rating === 0 && '⭐ Click to rate'}
+                {rating === 1 && '⭐ Poor'}
+                {rating === 2 && '⭐⭐ Fair'}
+                {rating === 3 && '⭐⭐⭐ Good'}
+                {rating === 4 && '⭐⭐⭐⭐ Very Good'}
+                {rating === 5 && '⭐⭐⭐⭐⭐ Excellent'}
               </p>
             </div>
 
             {/* Test Difficulty */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-lg font-bold text-gray-800 mb-4 tracking-tight">
                 How would you rate the difficulty of the test?
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {['Very Easy', 'Easy', 'Moderate', 'Hard', 'Very Hard'].map((level) => (
                   <button
                     key={level}
                     type="button"
                     onClick={() => setFeedback(prev => ({ ...prev, testDifficulty: level }))}
-                    className={`px-4 py-2 rounded-lg border-2 transition ${
+                    className={`px-5 py-3 rounded-xl border-2 transition-all font-semibold text-sm ${
                       feedback.testDifficulty === level
-                        ? 'border-blue-600 bg-blue-50 text-blue-700 font-medium'
-                        : 'border-gray-300 text-gray-700 hover:border-blue-300'
+                        ? 'border-blue-600 bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105'
+                        : 'border-gray-200 text-gray-700 hover:border-blue-400 hover:shadow-md bg-white'
                     }`}
                   >
                     {level}
@@ -192,21 +217,21 @@ const Feedback = () => {
 
             {/* Platform Experience */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-lg font-bold text-gray-800 mb-4 tracking-tight">
                 How was your experience with our test platform?
               </label>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {['Excellent - Very smooth', 'Good - Minor issues', 'Average - Some problems', 'Poor - Many issues'].map((exp) => (
-                  <label key={exp} className="flex items-center p-3 border-2 rounded-lg cursor-pointer transition hover:bg-gray-50">
+                  <label key={exp} className="flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all hover:bg-gray-50 hover:border-blue-300 group">
                     <input
                       type="radio"
                       name="platformExperience"
                       value={exp}
                       checked={feedback.platformExperience === exp}
                       onChange={handleChange}
-                      className="w-4 h-4 text-blue-600"
+                      className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500"
                     />
-                    <span className="ml-3 text-gray-700">{exp}</span>
+                    <span className="ml-4 text-gray-700 font-medium group-hover:text-blue-700">{exp}</span>
                   </label>
                 ))}
               </div>
@@ -214,7 +239,7 @@ const Feedback = () => {
 
             {/* Would Recommend */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-lg font-bold text-gray-800 mb-4 tracking-tight">
                 Would you recommend our company to others?
               </label>
               <div className="grid grid-cols-3 gap-4">
@@ -223,14 +248,14 @@ const Feedback = () => {
                     key={option}
                     type="button"
                     onClick={() => setFeedback(prev => ({ ...prev, wouldRecommend: option }))}
-                    className={`px-6 py-3 rounded-lg border-2 font-medium transition ${
+                    className={`px-6 py-4 rounded-xl border-2 font-bold transition-all text-base ${
                       feedback.wouldRecommend === option
                         ? option === 'Yes'
-                          ? 'border-green-600 bg-green-50 text-green-700'
+                          ? 'border-green-600 bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg'
                           : option === 'Maybe'
-                          ? 'border-yellow-600 bg-yellow-50 text-yellow-700'
-                          : 'border-red-600 bg-red-50 text-red-700'
-                        : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                          ? 'border-yellow-600 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg'
+                          : 'border-red-600 bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg'
+                        : 'border-gray-200 text-gray-700 hover:border-gray-400 hover:shadow-md bg-white'
                     }`}
                   >
                     {option}
@@ -241,31 +266,33 @@ const Feedback = () => {
 
             {/* Improvements */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-lg font-bold text-gray-800 mb-3 tracking-tight">
                 What could we improve?
               </label>
               <textarea
                 name="improvements"
                 value={feedback.improvements}
                 onChange={handleChange}
-                rows="3"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                rows="4"
+                className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-700 font-medium placeholder-gray-400 shadow-sm"
                 placeholder="Share your suggestions..."
+                style={{ fontFamily: 'inherit' }}
               />
             </div>
 
             {/* Additional Comments */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-lg font-bold text-gray-800 mb-3 tracking-tight">
                 Any additional comments?
               </label>
               <textarea
                 name="comments"
                 value={feedback.comments}
                 onChange={handleChange}
-                rows="4"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                rows="5"
+                className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-700 font-medium placeholder-gray-400 shadow-sm"
                 placeholder="Tell us more about your experience..."
+                style={{ fontFamily: 'inherit' }}
               />
             </div>
 
@@ -274,12 +301,12 @@ const Feedback = () => {
               <button
                 type="submit"
                 disabled={rating === 0}
-                className="w-full px-8 py-4 gradient-primary rounded-lg text-white font-medium text-lg hover:shadow-lg transition transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-8 py-5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl text-white font-bold text-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 Submit Feedback
               </button>
               {rating === 0 && (
-                <p className="text-sm text-red-500 text-center mt-2">Please provide an overall rating</p>
+                <p className="text-sm text-red-500 text-center mt-3 font-medium">⚠️ Please provide an overall rating</p>
               )}
             </div>
           </form>
