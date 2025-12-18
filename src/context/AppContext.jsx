@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AppContext } from './AppContextDefinition';
-import { addApplicant as apiAddApplicant, updateApplicantTest as apiUpdateApplicantTest, updateApplicantFeedback as apiUpdateApplicantFeedback } from '../api';
+import { addApplicant as apiAddApplicant, updateApplicantTest as apiUpdateApplicantTest, updateApplicantFeedback as apiUpdateApplicantFeedback, getApplicants as apiGetApplicants } from '../api';
 
 export const AppProvider = ({ children }) => {
   const [applicants, setApplicants] = useState([]);
@@ -17,11 +17,24 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('adminAuth', isAdminAuthenticated.toString());
   }, [isAdminAuthenticated]);
 
-  // Fetch applicants from localStorage
+  // Fetch applicants from API or localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('applicants');
-    setApplicants(saved ? JSON.parse(saved) : []);
-    setLoading(false);
+    const fetchApplicants = async () => {
+      try {
+        // Try to fetch from API first
+        const apiApplicants = await apiGetApplicants();
+        setApplicants(Array.isArray(apiApplicants) ? apiApplicants : []);
+      } catch (error) {
+        console.error('Failed to fetch applicants from API:', error);
+        // Fallback to localStorage
+        const saved = localStorage.getItem('applicants');
+        setApplicants(saved ? JSON.parse(saved) : []);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApplicants();
   }, []);
 
   useEffect(() => {
@@ -31,11 +44,12 @@ export const AppProvider = ({ children }) => {
   const addApplicant = async (applicantData) => {
     try {
       const response = await apiAddApplicant(applicantData);
+      // The real API should return the created applicant with an ID
       const newApplicant = {
-        id: Date.now().toString(),
         ...applicantData,
-        submittedAt: new Date().toISOString(),
-        status: 'pending'
+        id: response.id || Date.now().toString(),
+        submittedAt: response.submittedAt || new Date().toISOString(),
+        status: response.status || 'pending'
       };
       setApplicants(prev => [newApplicant, ...prev]);
       return newApplicant;

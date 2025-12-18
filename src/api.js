@@ -3,12 +3,13 @@
 // To switch to production, simply update the API_BASE_URL
 
 // Configuration
-export const API_BASE_URL = 'http://localhost:3001/api'; // Change this to your production URL
+export const API_BASE_URL = 'https://eliterecruitmentbackend-production.up.railway.app'; // Change this to your production URL
 
 // API Endpoints
 export const API_ENDPOINTS = {
   // Applicants
-  APPLICANTS: '/applicants',
+  APPLICANTS: '/auth/student/submit',
+  ALL_APPLICANTS: '/applicants',
   APPLICANT_TEST_DATA: (id) => `/applicants/${id}/test-data`,
   APPLICANT_FEEDBACK: (id) => `/applicants/${id}/feedback`,
   
@@ -100,7 +101,15 @@ const mockFeedback = [
 
 // Utility function to build full URL
 export const buildUrl = (endpoint) => {
-  return `${API_BASE_URL}${endpoint}`;
+  // If endpoint is a full URL, return it as is
+  if (endpoint.startsWith('http')) {
+    return endpoint;
+  }
+  // If endpoint already starts with /, don't add extra /
+  if (endpoint.startsWith('/')) {
+    return `${API_BASE_URL}${endpoint}`;
+  }
+  return `${API_BASE_URL}/${endpoint}`;
 };
 
 // Simulate API delay
@@ -121,6 +130,7 @@ export const apiCall = async (endpoint, options = {}) => {
       'Content-Type': 'application/json',
       ...options.headers
     },
+    credentials: 'include',
     ...options
   };
   
@@ -128,18 +138,53 @@ export const apiCall = async (endpoint, options = {}) => {
     // Mock API responses based on endpoint
     if (endpoint === API_ENDPOINTS.APPLICANTS) {
       if (options.method === 'POST') {
-        // Handle adding new applicant
-        const newApplicant = JSON.parse(options.body);
-        mockApplicants.push({
-          ...newApplicant,
-          id: String(mockApplicants.length + 1),
-          submittedAt: new Date().toISOString()
+        // For the real API, we'll make an actual request
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...defaultOptions.headers
+          },
+          body: options.body,
+          credentials: 'include'
         });
-        return { success: true, data: newApplicant };
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data;
       } else {
-        // Return all applicants
-        return mockApplicants;
+        // Handle GET requests for applicants
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...defaultOptions.headers
+          },
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
       }
+    } else if (endpoint === API_ENDPOINTS.ALL_APPLICANTS) {
+      // Handle GET requests for all applicants
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...defaultOptions.headers
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
     } else if (endpoint.includes('/test-data')) {
       // Handle test data updates
       return { success: true, message: 'Test data updated successfully' };
@@ -156,7 +201,10 @@ export const apiCall = async (endpoint, options = {}) => {
       return mockFeedback;
     } else {
       // Default response for other endpoints
-      const response = await fetch(url, defaultOptions);
+      const response = await fetch(url, {
+        ...defaultOptions,
+        credentials: 'include'
+      });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -173,7 +221,7 @@ export const apiCall = async (endpoint, options = {}) => {
 
 // Specific API functions
 export const getApplicants = async () => {
-  return apiCall(API_ENDPOINTS.APPLICANTS);
+  return apiCall(API_ENDPOINTS.ALL_APPLICANTS);
 };
 
 export const getApplicantById = async (id) => {
