@@ -10,7 +10,6 @@ export const AppProvider = ({ children }) => {
     return saved === 'true';
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // Save admin auth state to localStorage
   useEffect(() => {
@@ -22,13 +21,21 @@ export const AppProvider = ({ children }) => {
     const fetchApplicants = async () => {
       try {
         // Try to fetch from API first
+        console.log('Attempting to fetch applicants from API...');
         const apiApplicants = await apiGetApplicants();
+        console.log('Successfully fetched applicants from API:', apiApplicants);
         setApplicants(Array.isArray(apiApplicants) ? apiApplicants : []);
       } catch (error) {
         console.error('Failed to fetch applicants from API:', error);
+        // Check if it's a CORS error
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          console.warn('CORS or network error detected, using localStorage fallback');
+        }
         // Fallback to localStorage
         const saved = localStorage.getItem('applicants');
-        setApplicants(saved ? JSON.parse(saved) : []);
+        const parsedApplicants = saved ? JSON.parse(saved) : [];
+        console.log('Using localStorage applicants:', parsedApplicants);
+        setApplicants(parsedApplicants);
       } finally {
         setLoading(false);
       }
@@ -43,7 +50,9 @@ export const AppProvider = ({ children }) => {
 
   const addApplicant = async (applicantData) => {
     try {
+      console.log('Submitting applicant data to API:', applicantData);
       const response = await apiAddApplicant(applicantData);
+      console.log('API response:', response);
       // The real API should return the created applicant with an ID
       const newApplicant = {
         ...applicantData,
@@ -55,6 +64,10 @@ export const AppProvider = ({ children }) => {
       return newApplicant;
     } catch (error) {
       console.error('Failed to add applicant:', error);
+      // Check if it's a CORS error
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.warn('CORS or network error when submitting applicant, data saved to localStorage');
+      }
       // Fallback to local storage
       const newApplicant = {
         id: Date.now().toString(),
@@ -121,7 +134,6 @@ export const AppProvider = ({ children }) => {
   const value = {
     applicants,
     loading,
-    error,
     currentApplicant,
     setCurrentApplicant,
     addApplicant,

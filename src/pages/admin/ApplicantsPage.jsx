@@ -1,22 +1,25 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../context/useApp';
-import AdminLayout from '../components/AdminLayout';
+import { useApp } from '../../context/useApp';
+import AdminLayout from '../../components/AdminLayout';
 
-const ApplicantsPage = () => {
-  const navigate = useNavigate();
+const ApplicantsPage = () => {  const navigate = useNavigate();
   const { applicants, isAdminAuthenticated } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('latest');
 
-  if (!isAdminAuthenticated) {
-    navigate('/admin');
-    return null;
-  }
+  useEffect(() => {
+    if (!isAdminAuthenticated) {
+      navigate('/admin');
+    }
+  }, [isAdminAuthenticated, navigate]);
 
   // Filter and sort applicants
   const filteredApplicants = useMemo(() => {
+    if (!isAdminAuthenticated) {
+      return [];
+    }
     let result = [...applicants];
     
     // Apply search filter
@@ -61,7 +64,7 @@ const ApplicantsPage = () => {
     });
     
     return result;
-  }, [applicants, searchQuery, filter, sortBy]);
+  }, [applicants, searchQuery, filter, sortBy, isAdminAuthenticated]);
 
   // Render star ratings
   const renderStars = (rating) => {

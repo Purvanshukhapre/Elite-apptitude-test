@@ -1,12 +1,10 @@
 import { useState } from 'react';
-import logo from "../assets/elitelogo.png";
+
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../context/useApp';
-import { positions } from '../data/questions';
+import { useApp } from '../../context/useApp';
+import { positions } from '../../data/questions';
 
-
-const Registration = () => {
-  const navigate = useNavigate();
+const Registration = () => {  const navigate = useNavigate();
   const { addApplicant, setCurrentApplicant } = useApp();
   const [step, setStep] = useState(1);
   const [primarySkillInput, setPrimarySkillInput] = useState('');
@@ -80,11 +78,11 @@ const Registration = () => {
       setStep(2);
     } else if (step === 2 && validateStep2()) {
       setStep(3);
+    } else if (step === 3) {
+      // When step is 3, clicking Next should submit the form
+      document.getElementById('registration-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
     }
-    // When step is 3, clicking Next should submit the form
-    // But we'll handle this with the submit button instead
   };
-
   const handleBack = () => {
     setStep(step - 1);
     setErrors({});

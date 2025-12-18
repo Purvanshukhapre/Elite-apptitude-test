@@ -1,12 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { motion ,useInView} from "framer-motion";
 import { useRef } from "react";
-import logo from "../assets/elitelogo.png";
-import bgImage from "../assets/web_development.jpg";
-
-
-
+import logo from "../../assets/elitelogo.png";
+import bgImage from "../../assets/web_development.jpg";
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -15,7 +11,6 @@ const Welcome = () => {
   const [displayText, setDisplayText] = useState("");
   const [index, setIndex] = useState(0);
   const heroRef = useRef(null);
-const isInView = useInView(heroRef, { once: true });
 
 
   // Typing Effect
@@ -34,24 +29,10 @@ const isInView = useInView(heroRef, { once: true });
       <div className="absolute inset-0 bg-[#4A70A9]/20" />
 
       
-
-{/* Optional dark overlay for better contrast */}
-<div className="absolute inset-0 bg-[#4A70A9]/70" />
+      {/* Optional dark overlay for better contrast */}
+      <div className="absolute inset-0 bg-[#4A70A9]/70" />
 
       
-
-      {/* Floating Background Blobs */}
-      <motion.div
-        animate={{ scale: [1, 1.2, 1] }}
-        transition={{ duration: 6, repeat: Infinity }}
-        className="absolute top-[-80px] left-[-80px] w-52 h-52 md:w-72 md:h-72 bg-blue-400 opacity-30 rounded-full blur-3xl"
-      />
-      <motion.div
-        animate={{ scale: [1, 1.2, 1] }}
-        transition={{ duration: 6, repeat: Infinity, delay: 1 }}
-        className="absolute bottom-[-80px] right-[-80px] w-52 h-52 md:w-72 md:h-72 bg-indigo-400 opacity-30 rounded-full blur-3xl"
-      />
-
       {/* Logo (Static) */}
       <nav className="pt-6 md:pt-10 px-4 z-10">
         <div className="flex justify-center items-center">
@@ -74,60 +55,40 @@ const isInView = useInView(heroRef, { once: true });
       <main className="flex-grow flex items-center justify-center px-4 relative z-10 pt-2 sm:pt-4 md:pt-0 ">
         <div ref={heroRef} className="max-w-4xl w-full text-center -mt-1 sm:-mt-9 md:mt-0">
 
-          <motion.h1
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-3xl sm:text-4xl md:text-6xl font-extrabold text-white mb-4 md:mb-6"
+          <h1
+            className="text-3xl sm:text-4xl md:text-6xl font-extrabold text-white mb-4 md:mb-6 animate-fade-in"
           >
             Welcome to {" "}<span className="bg-gradient-to-r from-blue-200 to-white 
                    bg-clip-text text-transparent">
     Elite Associate
   </span>
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-lg sm:text-xl md:text-3xl text-blue-100 font-medium min-h-[2.5rem]"
-          >
+          <p className="text-lg sm:text-xl md:text-3xl text-blue-100 font-medium min-h-[2.5rem]">
             {displayText}
             <span className="animate-pulse">|</span>
-          </motion.p>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-            className="text-sm sm:text-base md:text-lg text-blue-200 mt-3 md:mt-4"
-          >
+          </p>
+          
+          <p className="text-sm sm:text-base md:text-lg text-blue-200 mt-3 md:mt-4">
             Your Journey to Success Starts Here 
-          </motion.p>
-
+          </p>
+          
           {/* CTA Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="mt-8 md:mt-10"
-          >
-            <motion.button
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.95 }}
+          <div className="mt-8 md:mt-10">
+            <button
               onClick={() => navigate("/register")}
               className="px-6 sm:px-8 md:px-14 
                          py-2 sm:py-3 md:py-4
                          bg-white text-blue-600 font-bold 
                          text-sm sm:text-base md:text-lg 
-                         rounded-full shadow-lg"
+                         rounded-full shadow-lg hover:scale-105 active:scale-95 transition-transform"
             >
               Start Your Application →
-            </motion.button>
-
-            
-          </motion.div>
-
+            </button>
+          
+                  
+          </div>
+          
         </div>
       </main>
 

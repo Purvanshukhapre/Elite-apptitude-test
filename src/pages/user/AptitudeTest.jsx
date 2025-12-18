@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../context/useApp';
-import { sampleQuestions } from '../data/questions';
+import { useApp } from '../../context/useApp';
+import { sampleQuestions } from '../../data/questions';
 
 const AptitudeTest = () => {
   const navigate = useNavigate();

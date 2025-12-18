@@ -1,44 +1,25 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../context/useApp';
-import AdminLayout from '../components/AdminLayout';
-// To use the API, import the functions from '../api'
+import { useApp } from '../../context/useApp';
+import AdminLayout from '../../components/AdminLayout';// To use the API, import the functions from '../api'
 // Example: import { getAnalyticsDashboard } from '../api';
 
 const PremiumDashboard = () => {
   const navigate = useNavigate();
   const { applicants, isAdminAuthenticated } = useApp();
+  
+  const [timeRange, setTimeRange] = useState('7days');
+  const [hoveredPoint, setHoveredPoint] = useState(null);
   const chartContainerRef = useRef(null);
   
-  const [chartView, setChartView] = useState('daily');
-  const [timeRange, setTimeRange] = useState('7days');
-  const [selectedMetric, setSelectedMetric] = useState('applicants');
-  const [animationProgress, setAnimationProgress] = useState(0);
-  const [hoveredPoint, setHoveredPoint] = useState(null);
-
   useEffect(() => {
     if (!isAdminAuthenticated) {
       navigate('/admin');
     }
   }, [isAdminAuthenticated, navigate]);
 
-  // Start animation when component mounts
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 0.05;
-        setAnimationProgress(Math.min(progress, 1));
-        if (progress >= 1) clearInterval(interval);
-      }, 20);
-      
-      return () => clearInterval(interval);
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }, []);
 
-  // Generate animated path for the chart
+  // Generate animated path for the chart with dynamic scaling
   const generateAnimatedPath = () => {
     if (!applicants || applicants.length === 0) return "";
     
@@ -49,18 +30,23 @@ const PremiumDashboard = () => {
     
     if (dataPoints.length === 0) return "";
     
-    let path = `M 0 ${100 - (dataPoints[0].value * 0.9)} `;
+    // Calculate dynamic scale
+    const values = dataPoints.map(point => point.value);
+    const minValue = Math.max(0, Math.min(...values) - 5); // Add padding
+    const maxValue = Math.min(100, Math.max(...values) + 5); // Cap with padding
+    
+    let path = `M 0 ${100 - ((dataPoints[0].value - minValue) / (maxValue - minValue)) * 90} `;
     
     for (let i = 1; i < dataPoints.length; i++) {
       const x = (i / (dataPoints.length - 1)) * 100;
-      const y = 100 - (dataPoints[i].value * 0.9);
+      const y = 100 - ((dataPoints[i].value - minValue) / (maxValue - minValue)) * 90;
       path += `L ${x} ${y} `;
     }
     
     return path;
   };
 
-  // Generate area path for the chart
+  // Generate area path for the chart with dynamic scaling
   const generateAreaPath = () => {
     if (!applicants || applicants.length === 0) return "";
     
@@ -71,11 +57,16 @@ const PremiumDashboard = () => {
     
     if (dataPoints.length === 0) return "";
     
-    let path = `M 0 ${100 - (dataPoints[0].value * 0.9)} `;
+    // Calculate dynamic scale
+    const values = dataPoints.map(point => point.value);
+    const minValue = Math.max(0, Math.min(...values) - 5); // Add padding
+    const maxValue = Math.min(100, Math.max(...values) + 5); // Cap with padding
+    
+    let path = `M 0 ${100 - ((dataPoints[0].value - minValue) / (maxValue - minValue)) * 90} `;
     
     for (let i = 1; i < dataPoints.length; i++) {
       const x = (i / (dataPoints.length - 1)) * 100;
-      const y = 100 - (dataPoints[i].value * 0.9);
+      const y = 100 - ((dataPoints[i].value - minValue) / (maxValue - minValue)) * 90;
       path += `L ${x} ${y} `;
     }
     
@@ -85,9 +76,44 @@ const PremiumDashboard = () => {
     return path;
   };
 
+  // Filter applicants based on time range
+  const filterApplicantsByTime = (applicants, range) => {
+    if (!applicants || applicants.length === 0) return [];
+    
+    const now = new Date();
+    let cutoffDate;
+    
+    switch(range) {
+      case '24hours':
+        cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case '7days':
+        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30days':
+        cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90days':
+        cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        return applicants;
+    }
+    
+    return applicants.filter(applicant => {
+      const submissionDate = new Date(applicant.submittedAt);
+      return submissionDate >= cutoffDate;
+    });
+  };
+  
+  // Get filtered applicants based on time range
+  const filteredApplicants = useMemo(() => {
+    return filterApplicantsByTime(applicants, timeRange);
+  }, [applicants, timeRange]);
+
   // Calculate analytics data
   const analytics = useMemo(() => {
-    if (!applicants || applicants.length === 0) {
+    if (!filteredApplicants || filteredApplicants.length === 0) {
       return {
         total: 0,
         passed: 0,
@@ -101,7 +127,7 @@ const PremiumDashboard = () => {
     let totalScore = 0;
     const positionStats = {};
 
-    applicants.forEach(applicant => {
+    filteredApplicants.forEach(applicant => {
       const score = applicant.testData?.percentage || applicant.testData?.overallPercentage || 0;
       totalScore += score;
       
@@ -122,19 +148,19 @@ const PremiumDashboard = () => {
     });
 
     return {
-      total: applicants.length,
+      total: filteredApplicants.length,
       passed,
-      failed: applicants.length - passed,
-      averageScore: Math.round(totalScore / applicants.length),
+      failed: filteredApplicants.length - passed,
+      averageScore: Math.round(totalScore / filteredApplicants.length),
       positionStats
     };
-  }, [applicants]);
+  }, [filteredApplicants]);
 
   // Get recent activity
   const recentActivity = useMemo(() => {
-    if (!applicants || applicants.length === 0) return [];
+    if (!filteredApplicants || filteredApplicants.length === 0) return [];
     
-    return [...applicants]
+    return [...filteredApplicants]
       .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
       .slice(0, 5)
       .map(applicant => ({
@@ -154,13 +180,14 @@ const PremiumDashboard = () => {
         })(),
         icon: 'check-circle'
       }));
-  }, [applicants]);
+  }, [filteredApplicants]);
 
-  // Chart data
+  // Chart data with dynamic scaling
   const chartData = useMemo(() => {
-    if (!applicants || applicants.length === 0) {
+    if (!filteredApplicants || filteredApplicants.length === 0) {
       return {
         maxValue: 100,
+        minValue: 0,
         dataPoints: Array(7).fill().map((_, i) => ({
           value: 0,
           label: `Day ${i + 1}`
@@ -168,21 +195,61 @@ const PremiumDashboard = () => {
       };
     }
 
-    const dataPoints = applicants.slice(-7).map((applicant, index) => ({
+    // Determine how many data points to show based on time range
+    let dataPointCount;
+    switch(timeRange) {
+      case '24hours':
+        dataPointCount = 24; // Hourly data
+        break;
+      case '7days':
+        dataPointCount = 7; // Daily data
+        break;
+      case '30days':
+        dataPointCount = 30; // Daily data
+        break;
+      case '90days':
+        dataPointCount = 12; // Weekly data (90/7 ≈ 12 weeks)
+        break;
+      default:
+        dataPointCount = 7;
+    }
+
+    // Take the most recent applicants based on data point count
+    const recentApplicants = filteredApplicants.slice(-dataPointCount);
+
+    const dataPoints = recentApplicants.map((applicant, index) => ({
       value: applicant.testData?.percentage || applicant.testData?.overallPercentage || 0,
-      label: `Day ${index + 1}`
+      // Label based on time range
+      label: (() => {
+        switch(timeRange) {
+          case '24hours':
+            return `H${index + 1}`;
+          case '7days':
+            return `D${index + 1}`;
+          case '30days':
+            return `D${index + 1}`;
+          case '90days':
+            return `W${index + 1}`;
+          default:
+            return `D${index + 1}`;
+        }
+      })()
     }));
 
-    const maxValue = Math.max(...dataPoints.map(p => p.value), 100);
+    // Calculate dynamic scale with padding
+    const values = dataPoints.map(point => point.value);
+    const minValue = Math.max(0, Math.min(...values) - 5); // Add 5 point padding
+    const maxValue = Math.min(100, Math.max(...values) + 5); // Cap at 100 with padding
 
     return {
       maxValue,
+      minValue,
       dataPoints
     };
-  }, [applicants]);
+  }, [filteredApplicants, timeRange]);
 
   // KPI cards data
-  const kpiCards = [
+  const kpiCards = useMemo(() => [
     {
       title: "Total Applicants",
       value: analytics.total.toString(),
@@ -231,16 +298,14 @@ const PremiumDashboard = () => {
         </svg>
       )
     }
-  ];
-
+  ], [analytics]);
   // Score distribution data
-  const scoreDistribution = [
-    { name: "Excellent (90-100)", value: applicants.filter(a => (a.testData?.percentage || a.testData?.overallPercentage || 0) >= 90).length, color: "bg-green-500" },
-    { name: "Good (70-89)", value: applicants.filter(a => (a.testData?.percentage || a.testData?.overallPercentage || 0) >= 70 && (a.testData?.percentage || a.testData?.overallPercentage || 0) < 90).length, color: "bg-blue-500" },
-    { name: "Average (50-69)", value: applicants.filter(a => (a.testData?.percentage || a.testData?.overallPercentage || 0) >= 50 && (a.testData?.percentage || a.testData?.overallPercentage || 0) < 70).length, color: "bg-yellow-500" },
-    { name: "Poor (<50)", value: applicants.filter(a => (a.testData?.percentage || a.testData?.overallPercentage || 0) < 50).length, color: "bg-red-500" }
-  ];
-
+  const scoreDistribution = useMemo(() => [
+    { name: "Excellent (90-100)", value: filteredApplicants.filter(a => (a.testData?.percentage || a.testData?.overallPercentage || 0) >= 90).length, color: "bg-green-500" },
+    { name: "Good (70-89)", value: filteredApplicants.filter(a => (a.testData?.percentage || a.testData?.overallPercentage || 0) >= 70 && (a.testData?.percentage || a.testData?.overallPercentage || 0) < 90).length, color: "bg-blue-500" },
+    { name: "Average (50-69)", value: filteredApplicants.filter(a => (a.testData?.percentage || a.testData?.overallPercentage || 0) >= 50 && (a.testData?.percentage || a.testData?.overallPercentage || 0) < 70).length, color: "bg-yellow-500" },
+    { name: "Poor (<50)", value: filteredApplicants.filter(a => (a.testData?.percentage || a.testData?.overallPercentage || 0) < 50).length, color: "bg-red-500" }
+  ], [filteredApplicants]);
   return (
     <AdminLayout activeTab="dashboard">
       <div className="flex-1 flex flex-col overflow-hidden w-full">
@@ -300,13 +365,14 @@ const PremiumDashboard = () => {
               <h3 className="text-lg font-bold text-gray-900">Performance Overview</h3>
               <div className="flex space-x-2">
                 <select 
-                  value={chartView}
-                  onChange={(e) => setChartView(e.target.value)}
+                  value={timeRange}
+                  onChange={(e) => setTimeRange(e.target.value)}
                   className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
+                  <option value="24hours">Last 24 Hours</option>
+                  <option value="7days">Last 7 Days</option>
+                  <option value="30days">Last 30 Days</option>
+                  <option value="90days">Last 90 Days</option>
                 </select>
               </div>
             </div>
@@ -339,11 +405,11 @@ const PremiumDashboard = () => {
                 ))}
                 
                 {/* Y-axis labels */}
-                <text x="2" y="5" fontSize="2.5" fill="#6B7280">{chartData.maxValue}</text>
-                <text x="2" y="25" fontSize="2.5" fill="#6B7280">{Math.round(chartData.maxValue * 0.75)}</text>
-                <text x="2" y="50" fontSize="2.5" fill="#6B7280">{Math.round(chartData.maxValue * 0.5)}</text>
-                <text x="2" y="75" fontSize="2.5" fill="#6B7280">{Math.round(chartData.maxValue * 0.25)}</text>
-                <text x="2" y="95" fontSize="2.5" fill="#6B7280">0</text>
+                <text x="2" y="5" fontSize="2.5" fill="#6B7280">{Math.round(chartData.maxValue)}</text>
+                <text x="2" y="25" fontSize="2.5" fill="#6B7280">{Math.round(chartData.minValue + (chartData.maxValue - chartData.minValue) * 0.75)}</text>
+                <text x="2" y="50" fontSize="2.5" fill="#6B7280">{Math.round(chartData.minValue + (chartData.maxValue - chartData.minValue) * 0.5)}</text>
+                <text x="2" y="75" fontSize="2.5" fill="#6B7280">{Math.round(chartData.minValue + (chartData.maxValue - chartData.minValue) * 0.25)}</text>
+                <text x="2" y="95" fontSize="2.5" fill="#6B7280">{Math.round(chartData.minValue)}</text>
                 
                 {/* Animated Area */}
                 <path
@@ -366,16 +432,20 @@ const PremiumDashboard = () => {
                 {/* Data points */}
                 {chartData.dataPoints.map((point, i) => {
                   const x = (i / (chartData.dataPoints.length - 1)) * 100;
-                  const y = 100 - (point.value / chartData.maxValue) * 90;
+                  const y = 100 - ((point.value - chartData.minValue) / (chartData.maxValue - chartData.minValue)) * 90;
+                  
+                  // Reduce visual noise - only show points for smaller datasets
+                  const shouldShowPoint = chartData.dataPoints.length <= 10 || i % Math.ceil(chartData.dataPoints.length / 10) === 0;
+                  if (!shouldShowPoint) return null;
                   
                   return (
                     <g key={i}>
                       <circle
                         cx={x}
                         cy={y}
-                        r="1"
+                        r="1.5"
                         fill="#3B82F6"
-                        className="cursor-pointer hover:r-1.5 transition-all"
+                        className="cursor-pointer hover:r-2 transition-all"
                         onMouseEnter={() => setHoveredPoint({ index: i, point })}
                         onMouseLeave={() => setHoveredPoint(null)}
                       />
@@ -399,7 +469,7 @@ const PremiumDashboard = () => {
                             fontSize="2.5" 
                             fontWeight="bold"
                           >
-                            {point.value}
+                            {Math.round(point.value)}
                           </text>
                         </g>
                       )}
@@ -542,21 +612,6 @@ const PremiumDashboard = () => {
                 <div className="ml-4 text-left">
                   <h4 className="text-sm font-medium text-gray-900">View Analytics</h4>
                   <p className="text-xs text-gray-500 mt-1">Deep dive into performance metrics</p>
-                </div>
-              </button>
-              
-              <button 
-                onClick={() => navigate('/admin/reports')}
-                className="w-full flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 group"
-              >
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div className="ml-4 text-left">
-                  <h4 className="text-sm font-medium text-gray-900">Generate Reports</h4>
-                  <p className="text-xs text-gray-500 mt-1">Create detailed performance reports</p>
                 </div>
               </button>
             </div>

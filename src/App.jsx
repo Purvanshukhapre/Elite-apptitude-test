@@ -1,15 +1,15 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
-import Welcome from './pages/Welcome';
-import Registration from './pages/Registration';
-import AptitudeTest from './pages/AptitudeTest';
-import Feedback from './pages/Feedback';
-import AdminLogin from './pages/AdminLogin';
-import PremiumDashboard from './pages/PremiumDashboard';
+import Welcome from './pages/user/Welcome';
+import Registration from './pages/user/Registration';
+import AptitudeTest from './pages/user/AptitudeTest';
+import Feedback from './pages/user/Feedback';
+import AdminLogin from './pages/admin/AdminLogin';
+import PremiumDashboard from './pages/admin/PremiumDashboard';
 import AdminDashboardUltimateFixed from './pages/AdminDashboardUltimate_fixed';
-import AnalyticsDashboard from './pages/AnalyticsDashboard';
-import FeedbackDashboard from './pages/FeedbackDashboard';
-import ApplicantsPage from './pages/ApplicantsPage';
+import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
+import FeedbackDashboard from './pages/admin/FeedbackDashboard';
+import ApplicantsPage from './pages/admin/ApplicantsPage';
 
 function App() {
   return (
