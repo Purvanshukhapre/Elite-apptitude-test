@@ -43,7 +43,7 @@ const PremiumDashboard = () => {
     if (!applicants || applicants.length === 0) return "";
     
     const dataPoints = applicants.slice(-7).map((applicant, index) => ({
-      value: applicant.testData?.overallPercentage || 0,
+      value: applicant.testData?.percentage || applicant.testData?.overallPercentage || 0,
       label: `Day ${index + 1}`
     }));
     
@@ -65,7 +65,7 @@ const PremiumDashboard = () => {
     if (!applicants || applicants.length === 0) return "";
     
     const dataPoints = applicants.slice(-7).map((applicant, index) => ({
-      value: applicant.testData?.overallPercentage || 0,
+      value: applicant.testData?.percentage || applicant.testData?.overallPercentage || 0,
       label: `Day ${index + 1}`
     }));
     
@@ -102,7 +102,7 @@ const PremiumDashboard = () => {
     const positionStats = {};
 
     applicants.forEach(applicant => {
-      const score = applicant.testData?.overallPercentage || 0;
+      const score = applicant.testData?.percentage || applicant.testData?.overallPercentage || 0;
       totalScore += score;
       
       if (score >= 60) passed++;
@@ -135,16 +135,16 @@ const PremiumDashboard = () => {
     if (!applicants || applicants.length === 0) return [];
     
     return [...applicants]
-      .sort((a, b) => new Date(b.submissionTime) - new Date(a.submissionTime))
+      .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
       .slice(0, 5)
       .map(applicant => ({
         id: applicant.id,
-        applicant: `${applicant.firstName} ${applicant.lastName}`,
+        applicant: applicant.fullName || `${applicant.firstName} ${applicant.lastName}`,
         position: applicant.position,
-        score: applicant.testData?.overallPercentage || 0,
+        score: applicant.testData?.percentage || applicant.testData?.overallPercentage || 0,
         timeAgo: (() => {
           const now = new Date();
-          const submissionTime = new Date(applicant.submissionTime);
+          const submissionTime = new Date(applicant.submittedAt);
           const diffInHours = Math.floor((now - submissionTime) / (1000 * 60 * 60));
           
           if (diffInHours < 1) return 'Just now';
@@ -169,7 +169,7 @@ const PremiumDashboard = () => {
     }
 
     const dataPoints = applicants.slice(-7).map((applicant, index) => ({
-      value: applicant.testData?.overallPercentage || 0,
+      value: applicant.testData?.percentage || applicant.testData?.overallPercentage || 0,
       label: `Day ${index + 1}`
     }));
 
@@ -235,15 +235,15 @@ const PremiumDashboard = () => {
 
   // Score distribution data
   const scoreDistribution = [
-    { name: "Excellent (90-100)", value: applicants.filter(a => (a.testData?.overallPercentage || 0) >= 90).length, color: "bg-green-500" },
-    { name: "Good (70-89)", value: applicants.filter(a => (a.testData?.overallPercentage || 0) >= 70 && (a.testData?.overallPercentage || 0) < 90).length, color: "bg-blue-500" },
-    { name: "Average (50-69)", value: applicants.filter(a => (a.testData?.overallPercentage || 0) >= 50 && (a.testData?.overallPercentage || 0) < 70).length, color: "bg-yellow-500" },
-    { name: "Poor (<50)", value: applicants.filter(a => (a.testData?.overallPercentage || 0) < 50).length, color: "bg-red-500" }
+    { name: "Excellent (90-100)", value: applicants.filter(a => (a.testData?.percentage || a.testData?.overallPercentage || 0) >= 90).length, color: "bg-green-500" },
+    { name: "Good (70-89)", value: applicants.filter(a => (a.testData?.percentage || a.testData?.overallPercentage || 0) >= 70 && (a.testData?.percentage || a.testData?.overallPercentage || 0) < 90).length, color: "bg-blue-500" },
+    { name: "Average (50-69)", value: applicants.filter(a => (a.testData?.percentage || a.testData?.overallPercentage || 0) >= 50 && (a.testData?.percentage || a.testData?.overallPercentage || 0) < 70).length, color: "bg-yellow-500" },
+    { name: "Poor (<50)", value: applicants.filter(a => (a.testData?.percentage || a.testData?.overallPercentage || 0) < 50).length, color: "bg-red-500" }
   ];
 
   return (
     <AdminLayout activeTab="dashboard">
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden w-full">
         {/* Welcome Banner */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 mb-6 text-white shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
