@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import logo from "../assets/elitelogo.png";
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
 import { positions } from '../data/questions';
@@ -8,6 +9,8 @@ const Registration = () => {
   const navigate = useNavigate();
   const { addApplicant, setCurrentApplicant } = useApp();
   const [step, setStep] = useState(1);
+  const [primarySkillInput, setPrimarySkillInput] = useState('');
+  const [secondarySkillInput, setSecondarySkillInput] = useState('');
   const [formData, setFormData] = useState({
     title: 'Mr',
     fullName: '',
@@ -26,7 +29,10 @@ const Registration = () => {
     position: '',
     expectedSalary: '',
     resumeLink: '',
-    coverLetter: ''
+    coverLetter: '',
+    experienceLevel: '',
+    primarySkills: [],
+    secondarySkills: [],
   });
   const [errors, setErrors] = useState({});
 
@@ -105,7 +111,8 @@ const Registration = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#082f68] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#82A1D2] flex items-center justify-center p-4">
+      
       <div className="max-w-4xl w-full">
         {/* Header */}
         <div className="text-center mb-8 animate-fade-in">
@@ -117,7 +124,7 @@ const Registration = () => {
             <div className="relative flex items-center justify-between">
 
               {/* Base line (connected to circles) */}
-              <div className="absolute top-6 left-[16.66%] right-[16.66%] h-1 bg-blue-400 rounded-full" />
+              <div className="absolute top-6 left-[16.66%] right-[16.66%] h-1 bg-[#577FCD] rounded-full" />
 
               {[1, 2, 3].map((s) => (
                 <div key={s} className="relative z-10 flex flex-col items-center w-1/3">
@@ -127,7 +134,7 @@ const Registration = () => {
                     className={`w-12 h-12 rounded-full flex items-center justify-center border-2
                     ${
                       step > s || (step === s && s !== 3)
-                        ? "bg-blue-400 border-blue-400 text-white"
+                        ? "bg-[#577FCD] border-blue-400 text-white"
                         : "bg-white border-blue-700 text-blue-700"
                     }`}
                   >
@@ -152,7 +159,8 @@ const Registration = () => {
 
 
         {/* Form Card */}
-        <div className="bg-blue-100 rounded-2xl shadow-2xl p-8 animate-slide-up">
+        <div className="bg-white rounded-2xl p-8 animate-slide-up
+            shadow-[0_10px_20px_rgba(0,0,0,0.15),0_25px_50px_rgba(0,0,0,0.25)]">
           <form onSubmit={handleSubmit}>
             {/* Step 1: Personal Information */}
             {step === 1 && (
@@ -161,7 +169,7 @@ const Registration = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Name <span className="text-red-500">*</span>
+                    Full Name <span className="text-red-500">*</span>
                   </label>
 
                   <div
@@ -246,34 +254,31 @@ const Registration = () => {
                         className="w-20 h-9 px-3 bg-gray-100 text-gray-600 outline-none border-none cursor-not-allowed rounded-l-lg"
                       />
 
-                      {/* Divider */}
-                      {/* <div className="h-6 w-px bg-gray-300"></div> */}
-
                       {/* Date picker */}
                       <input
                         type="date"
                         name="dob"
                         value={formData.dob}
                         onChange={(e) => {
-                          handleChange(e);
-                          // Clear DOB error when date is entered
-                          if (errors.dob && e.target.value) {
-                            setErrors(prev => ({ ...prev, dob: '' }));
+                          const dobValue = e.target.value;
+                          const dob = new Date(dobValue);
+                          const today = new Date();
+
+                          let age = today.getFullYear() - dob.getFullYear();
+                          const m = today.getMonth() - dob.getMonth();
+                          if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                            age--;
                           }
-                          // Calculate age
-                          if (e.target.value) {
-                            const dob = new Date(e.target.value);
-                            const today = new Date();
-                            let age = today.getFullYear() - dob.getFullYear();
-                            const m = today.getMonth() - dob.getMonth();
-                            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-                              age--;
-                            }
-                            setFormData(prev => ({ ...prev, age }));
-                          }
+
+                          setFormData((prev) => ({
+                            ...prev,
+                            dob: dobValue,
+                            age: age,
+                          }));
                         }}
-                        className="h-5 px-3 bg-transparent outline-none border-none flex-1"
+                        className="h-9 px-3 bg-transparent outline-none border-none flex-1"
                       />
+
                     </div>
 
                     {errors.dob && (
@@ -705,8 +710,8 @@ const Registration = () => {
                       School / College Name <span className="text-red-500">*</span>
                     </label>
                     <div
-                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                        errors.institution ? 'border-red-500' : 'border-gray-300'
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                        errors.institution ? 'border-red-500' : 'border-gray-500'
                       }`}
                     >
                       <input
@@ -729,8 +734,8 @@ const Registration = () => {
                       Board / University <span className="text-red-500">*</span>
                     </label>
                     <div
-                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                        errors.boardType ? 'border-red-500' : 'border-gray-300'
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                        errors.boardType ? 'border-red-500' : 'border-gray-500'
                       }`}
                     >
                       <select
@@ -755,8 +760,8 @@ const Registration = () => {
                       Name of Board / University <span className="text-red-500">*</span>
                     </label>
                     <div
-                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                        errors.boardName ? 'border-red-500' : 'border-gray-300'
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                        errors.boardName ? 'border-red-500' : 'border-gray-500'
                       }`}
                     >
                       <input
@@ -779,8 +784,8 @@ const Registration = () => {
                       Examination Passed <span className="text-red-500">*</span>
                     </label>
                     <div
-                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                        errors.examPassed ? 'border-red-500' : 'border-gray-300'
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                        errors.examPassed ? 'border-red-500' : 'border-gray-500'
                       }`}
                     >
                       <input
@@ -803,8 +808,8 @@ const Registration = () => {
                       Year of Passing <span className="text-red-500">*</span>
                     </label>
                     <div
-                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                        errors.yearOfPassing ? 'border-red-500' : 'border-gray-300'
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                        errors.yearOfPassing ? 'border-red-500' : 'border-gray-500'
                       }`}
                     >
                       <select
@@ -833,8 +838,8 @@ const Registration = () => {
                       Main Subjects <span className="text-red-500">*</span>
                     </label>
                     <div
-                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                        errors.mainSubjects ? 'border-red-500' : 'border-gray-300'
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                        errors.mainSubjects ? 'border-red-500' : 'border-gray-500'
                       }`}
                     >
                       <input
@@ -857,8 +862,8 @@ const Registration = () => {
                       Percentage / CGPA <span className="text-red-500">*</span>
                     </label>
                     <div
-                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 transition ${
-                        errors.percentage ? 'border-red-500' : 'border-gray-300'
+                      className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                        errors.percentage ? 'border-red-500' : 'border-gray-500'
                       }`}
                     >
                       <input
@@ -883,48 +888,113 @@ const Registration = () => {
               <div className="space-y-4">
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">Position Details</h2>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Position Applied For *
-                  </label>
-                  <select
-                    name="position"
-                    value={formData.position}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
-                      errors.position ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">Select a position</option>
-                    {positions.map(pos => (
-                      <option key={pos} value={pos}>{pos}</option>
-                    ))}
-                  </select>
-                  {errors.position && <p className="text-red-500 text-sm mt-1">{errors.position}</p>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Position Applied For *
+                    </label>
+                    <select
+                      name="position"
+                      value={formData.position}
+                      onChange={handleChange}
+                      className={`w-full h-10 px-4 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition ${
+                        errors.position ? 'border-red-500' : 'border-gray-500'
+                      }`}
+                    >
+                      <option value="">Select a position</option>
+                      {positions.map(pos => (
+                        <option key={pos} value={pos}>{pos}</option>
+                      ))}
+                    </select>
+                    {errors.position && (
+                      <p className="text-red-500 text-sm mt-1">{errors.position}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Years of Experience *
+                    </label>
+                    <select
+                      name="experience"
+                      value={formData.experience}
+                      onChange={handleChange}
+                      className={`w-full h-10 px-4 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition ${
+                        errors.experience ? 'border-red-500' : 'border-gray-500'
+                      }`}
+                    >
+                      <option value="">Select experience</option>
+                      <option value="fresher">Fresher (0 years)</option>
+                      <option value="0-1">0-1 years</option>
+                      <option value="1-3">1-3 years</option>
+                      <option value="3-5">3-5 years</option>
+                      <option value="5-10">5-10 years</option>
+                      <option value="10+">10+ years</option>
+                    </select>
+                    {errors.experience && (
+                      <p className="text-red-500 text-sm mt-1">{errors.experience}</p>
+                    )}
+                  </div>
                 </div>
 
-                <div>
+                <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Years of Experience *
+                    Previous Job Duration *
                   </label>
-                  <select
-                    name="experience"
-                    value={formData.experience}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
-                      errors.experience ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">Select experience</option>
-                    <option value="fresher">Fresher (0 years)</option>
-                    <option value="0-1">0-1 years</option>
-                    <option value="1-3">1-3 years</option>
-                    <option value="3-5">3-5 years</option>
-                    <option value="5-10">5-10 years</option>
-                    <option value="10+">10+ years</option>
-                  </select>
-                  {errors.experience && <p className="text-red-500 text-sm mt-1">{errors.experience}</p>}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* From Date */}
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        From
+                      </label>
+                      <textarea
+                        name="experienceFromText"
+                        value={formData.experienceFromText}
+                        onChange={handleChange}
+                        rows={2}
+                        placeholder="e.g. Jan 2021"
+                        className={`w-full h-10 px-4 py-2 border rounded-lg resize-none focus:ring-2 focus:ring-blue-300 outline-none transition ${
+                          errors.experienceFromText ? 'border-red-500' : 'border-gray-500'
+                        }`}
+                      />
+                      {errors.experienceFromText && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.experienceFromText}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* To Date */}
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        To
+                      </label>
+                      <textarea
+                        name="experienceToText"
+                        value={formData.experienceToText}
+                        onChange={handleChange}
+                        rows={1}
+                        placeholder="e.g. Mar 2024 / Present"
+                        className={`w-full h-10 px-4 py-2 border rounded-lg resize-none focus:ring-2 focus:ring-blue-300 outline-none transition ${
+                          errors.experienceToText ? 'border-red-500' : 'border-gray-500'
+                        }`}
+                      />
+                      {errors.experienceToText && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.experienceToText}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    Example: <span className="italic">Jan 2021 – Mar 2024</span> or <span className="italic">Present</span>
+                  </p>
                 </div>
+
+
+
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -935,7 +1005,7 @@ const Registration = () => {
                     name="expectedSalary"
                     value={formData.expectedSalary}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="w-full h-10 px-4 py-3 border border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     placeholder="e.g., $50,000 - $70,000"
                   />
                 </div>
@@ -949,10 +1019,200 @@ const Registration = () => {
                     name="resumeLink"
                     value={formData.resumeLink}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="w-full h-10 px-4 py-3 border border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     placeholder="linkdin profile..."
                   />
                 </div>
+
+                <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Previous Job Details
+                    </label>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Designation */}
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">
+                          Designation *
+                        </label>
+                        <textarea
+                          name="designation"
+                          value={formData.designation}
+                          onChange={handleChange}
+                          rows={2}
+                          placeholder="e.g. Junior Software Developer"
+                          className={`w-full h-10 px-4 py-2 border rounded-lg resize-none focus:ring-2 focus:ring-blue-300 outline-none transition ${
+                            errors.designation ? 'border-red-500' : 'border-gray-500'
+                          }`}
+                        />
+                        {errors.designation && (
+                          <p className="text-red-500 text-xs mt-1">
+                            {errors.designation}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Brief Job Profile */}
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">
+                          Brief Job Profile *
+                        </label>
+                        <textarea
+                          name="briefJobProfile"
+                          value={formData.briefJobProfile}
+                          onChange={handleChange}
+                          rows={2}
+                          placeholder="e.g. Worked on REST APIs and database integration"
+                          className={`w-full h-10 px-4 py-2 border rounded-lg resize-none focus:ring-2 focus:ring-blue-300 outline-none transition ${
+                            errors.briefJobProfile ? 'border-red-500' : 'border-gray-500'
+                          }`}
+                        />
+                        {errors.briefJobProfile && (
+                          <p className="text-red-500 text-xs mt-1">
+                            {errors.briefJobProfile}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Primary Skills (Learned in College)
+                    </label>
+
+                    <textarea
+                      rows={2}
+                      placeholder="Type a skill and press Enter (e.g. Data Structures)"
+                      value={primarySkillInput}
+                      onChange={(e) => setPrimarySkillInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const skill = primarySkillInput.trim();
+                          if (skill && !formData.primarySkills.includes(skill)) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              primarySkills: [...prev.primarySkills, skill],
+                            }));
+                            setPrimarySkillInput('');
+                          }
+                        }
+                      }}
+                      className="w-full h-10 px-4 py-2 border border-gray-500 rounded-lg resize-none focus:ring-2 focus:ring-blue-300 outline-none"
+                    />
+
+                    {/* Skill tags */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {formData.primarySkills.map((skill, index) => (
+                        <span
+                          key={index}
+                          className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                        >
+                          {skill}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                primarySkills: prev.primarySkills.filter((_, i) => i !== index),
+                              }))
+                            }
+                            className="text-blue-500 hover:text-red-500"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                  </div>
+
+                  <div className="mt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Secondary Skills (Applied in Work Experience)
+                    </label>
+
+                    <textarea
+                      rows={2}
+                      placeholder="Type a skill and press Enter (e.g. REST APIs)"
+                      value={secondarySkillInput}
+                      onChange={(e) => setSecondarySkillInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const skill = secondarySkillInput.trim();
+                          if (skill && !formData.secondarySkills.includes(skill)) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              secondarySkills: [...prev.secondarySkills, skill],
+                            }));
+                            setSecondarySkillInput('');
+                          }
+                        }
+                      }}
+                      className="w-full h-10 px-4 py-2 border border-gray-500 rounded-lg resize-none focus:ring-2 focus:ring-blue-300 outline-none"
+                    />
+
+                    {/* Skill tags */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {formData.secondarySkills.map((skill, index) => (
+                        <span
+                          key={index}
+                          className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                        >
+                          {skill}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                secondarySkills: prev.secondarySkills.filter((_, i) => i !== index),
+                              }))
+                            }
+                            className="text-green-500 hover:text-red-500"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Experience Level *
+                    </label>
+
+                    <select
+                      name="experienceLevel"
+                      value={formData.experienceLevel}
+                      onChange={handleChange}
+                      className={`w-full h-10 px-4 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition ${
+                        errors.experienceLevel ? 'border-red-500' : 'border-gray-500'
+                      }`}
+                    >
+                      <option value="">Select experience level</option>
+                      <option value="beginner">Entry</option>
+                      <option value="intermediate">mid-senior</option>
+                      <option value="advanced">senior</option>
+                      <option value="expert">lead</option>
+                      <option value="expert">principle</option>
+                    </select>
+
+                    {errors.experienceLevel && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.experienceLevel}
+                      </p>
+                    )}
+                  </div>
+
+
+
+
+
+
+                </div>
+
+
 
                 
               </div>
@@ -1036,12 +1296,14 @@ const Registration = () => {
                   Back
                 </button>
               )}
-              {step < 3 ? (
+              {step <= 3 ? (
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="ml-auto px-8 py-3 bg-[#4A70A9] rounded-lg text-white font-medium transform hover:bg-red-600 
-                   transition-all duration-200"
+                  className="ml-auto px-8 py-3 bg-[#4A70A9] hover:bg-[#3F6296] 
+           rounded-lg text-white font-medium 
+           transform hover:-translate-y-0.5 hover:shadow-xl 
+           transition-all duration-200"
                   >
                   Next
                 </button>
