@@ -138,9 +138,9 @@ const Registration = () => {
 
                   {/* Label */}
                   <span className="mt-3 text-sm font-semibold tracking-wider text-white">
-                    {s === 1 && "PERSONAL INFO"}
-                    {s === 2 && "POSITION DETAILS"}
-                    {s === 3 && "REVIEW"}
+                    {s === 1 && "Personal Info"}
+                    {s === 2 && "Position Details"}
+                    {s === 3 && "Review"}
                   </span>
 
                 </div>

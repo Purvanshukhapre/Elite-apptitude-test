@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../context/useApp';
 
 const Feedback = () => {
   const navigate = useNavigate();
-  const { currentApplicant, updateApplicantFeedback } = useApp();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [feedback, setFeedback] = useState({
@@ -23,49 +21,13 @@ const Feedback = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    if (!currentApplicant) {
-      navigate('/');
-      return;
-    }
-    
-    const feedbackData = {
-      ...feedback,
-      overallRating: rating,
-      submittedAt: new Date().toISOString()
-    };
-
-    updateApplicantFeedback(currentApplicant.id, feedbackData);
     setSubmitted(true);
   };
-
-  // Check if currentApplicant exists before rendering
-  if (!currentApplicant) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 text-center max-w-md">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Application Found</h2>
-          <p className="text-gray-600 mb-6">Please complete the test first before providing feedback.</p>
-          <button
-            onClick={() => navigate('/')}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl text-white font-semibold hover:shadow-lg transition-all"
-          >
-            Go to Home
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+{/* Floating Background Blobs */}
   if (submitted) {
     return (
-      <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-12 text-center animate-fade-in">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-12 text-center">
           <div className="mb-6">
             <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,26 +37,6 @@ const Feedback = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Thank You!</h1>
             <p className="text-lg text-gray-600">Your application has been submitted successfully.</p>
           </div>
-
-          {currentApplicant.testData && (
-            <div className="bg-blue-50 rounded-lg p-6 mb-8">
-              <h3 className="font-bold text-lg text-gray-900 mb-4">Your Test Results</h3>
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <p className="text-sm text-gray-600">Score</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {currentApplicant.testData.score}/{currentApplicant.testData.totalQuestions}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Percentage</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {currentApplicant.testData.percentage}%
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="space-y-4 text-left bg-gray-50 rounded-lg p-6 mb-8">
             <h3 className="font-bold text-gray-900">What happens next?</h3>
@@ -120,13 +62,9 @@ const Feedback = () => {
             </ul>
           </div>
 
-          <div className="text-sm text-gray-600 mb-6">
-            Application ID: <span className="font-mono font-bold text-gray-900">{currentApplicant.id}</span>
-          </div>
-
           <button
             onClick={() => navigate('/')}
-            className="px-8 py-3 gradient-primary rounded-lg text-white font-medium hover:shadow-lg transition"
+            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg text-white font-medium hover:shadow-lg transition"
           >
             Back to Home
           </button>
@@ -146,8 +84,7 @@ const Feedback = () => {
         </div>
 
         <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-10 border border-gray-100">
-          <form onSubmit={handleSubmit} className="space-y-10">
-            {/* Overall Rating */}
+          <div className="space-y-10">
             <div className="text-center pb-8 border-b-2 border-gray-100">
               <label className="block text-xl font-bold text-gray-800 mb-6 tracking-tight">
                 How would you rate your overall experience?
@@ -192,7 +129,6 @@ const Feedback = () => {
               </p>
             </div>
 
-            {/* Test Difficulty */}
             <div>
               <label className="block text-lg font-bold text-gray-800 mb-4 tracking-tight">
                 How would you rate the difficulty of the test?
@@ -215,7 +151,6 @@ const Feedback = () => {
               </div>
             </div>
 
-            {/* Platform Experience */}
             <div>
               <label className="block text-lg font-bold text-gray-800 mb-4 tracking-tight">
                 How was your experience with our test platform?
@@ -237,7 +172,6 @@ const Feedback = () => {
               </div>
             </div>
 
-            {/* Would Recommend */}
             <div>
               <label className="block text-lg font-bold text-gray-800 mb-4 tracking-tight">
                 Would you recommend our company to others?
@@ -264,7 +198,6 @@ const Feedback = () => {
               </div>
             </div>
 
-            {/* Improvements */}
             <div>
               <label className="block text-lg font-bold text-gray-800 mb-3 tracking-tight">
                 What could we improve?
@@ -273,14 +206,12 @@ const Feedback = () => {
                 name="improvements"
                 value={feedback.improvements}
                 onChange={handleChange}
-                rows="4"
+                rows={4}
                 className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-700 font-medium placeholder-gray-400 shadow-sm"
                 placeholder="Share your suggestions..."
-                style={{ fontFamily: 'inherit' }}
               />
             </div>
 
-            {/* Additional Comments */}
             <div>
               <label className="block text-lg font-bold text-gray-800 mb-3 tracking-tight">
                 Any additional comments?
@@ -289,17 +220,16 @@ const Feedback = () => {
                 name="comments"
                 value={feedback.comments}
                 onChange={handleChange}
-                rows="5"
+                rows={5}
                 className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-700 font-medium placeholder-gray-400 shadow-sm"
                 placeholder="Tell us more about your experience..."
-                style={{ fontFamily: 'inherit' }}
               />
             </div>
 
-            {/* Submit Button */}
             <div className="pt-6">
               <button
-                type="submit"
+                type="button"
+                onClick={handleSubmit}
                 disabled={rating === 0}
                 className="w-full px-8 py-5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl text-white font-bold text-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
@@ -309,7 +239,7 @@ const Feedback = () => {
                 <p className="text-sm text-red-500 text-center mt-3 font-medium">⚠️ Please provide an overall rating</p>
               )}
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>

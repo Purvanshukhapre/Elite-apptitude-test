@@ -102,7 +102,7 @@ const isInView = useInView(heroRef, { once: true });
             transition={{ delay: 1 }}
             className="text-sm sm:text-base md:text-lg text-blue-200 mt-3 md:mt-4"
           >
-            Your Journey to Success Starts Here 🚀
+            Your Journey to Success Starts Here 
           </motion.p>
 
           {/* CTA Button */}
