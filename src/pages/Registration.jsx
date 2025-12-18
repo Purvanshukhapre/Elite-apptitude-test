@@ -9,12 +9,19 @@ const Registration = () => {
   const { addApplicant, setCurrentApplicant } = useApp();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
+    title: 'Mr',
     fullName: '',
     fatherName: '',
+    dob: '',
+    age: '',
+    maritalStatus: '',
+    gender: '',
+    countryCode: '+91',
     email: '',
     phone: '',
     education: '',
     languages: '',
+    address: '',
     experience: '',
     position: '',
     expectedSalary: '',
@@ -27,7 +34,7 @@ const Registration = () => {
     const newErrors = {};
     if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
     if (!formData.fatherName.trim())
-    newErrors.fatherName = 'father name known is required';
+    newErrors.fatherName = 'Father name is required';
 
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
@@ -43,6 +50,11 @@ const Registration = () => {
 
     if (!formData.languages.trim())
     newErrors.languages = 'Languages known is required';
+    
+    if (!formData.address?.trim()) newErrors.address = 'Address is required';
+    if (!formData.dob || formData.dob.trim() === '') newErrors.dob = 'Date of birth is required';
+    if (!formData.maritalStatus) newErrors.maritalStatus = 'Marital status is required';
+    if (!formData.gender) newErrors.gender = 'Gender is required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -63,6 +75,8 @@ const Registration = () => {
     } else if (step === 2 && validateStep2()) {
       setStep(3);
     }
+    // When step is 3, clicking Next should submit the form
+    // But we'll handle this with the submit button instead
   };
 
   const handleBack = () => {
@@ -70,17 +84,21 @@ const Registration = () => {
     setErrors({});
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const applicant = addApplicant(formData);
-    setCurrentApplicant(applicant);
-    navigate('/test');
+    try {
+      const applicant = await addApplicant(formData);
+      setCurrentApplicant(applicant);
+      navigate('/test');
+    } catch (error) {
+      console.error('Failed to submit application:', error);
+    }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    console.log(formData.fatherName)
+    // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -238,14 +256,21 @@ const Registration = () => {
                         value={formData.dob}
                         onChange={(e) => {
                           handleChange(e);
-                          const dob = new Date(e.target.value);
-                          const today = new Date();
-                          let age = today.getFullYear() - dob.getFullYear();
-                          const m = today.getMonth() - dob.getMonth();
-                          if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-                            age--;
+                          // Clear DOB error when date is entered
+                          if (errors.dob && e.target.value) {
+                            setErrors(prev => ({ ...prev, dob: '' }));
                           }
-                          setFormData({ ...formData, age });
+                          // Calculate age
+                          if (e.target.value) {
+                            const dob = new Date(e.target.value);
+                            const today = new Date();
+                            let age = today.getFullYear() - dob.getFullYear();
+                            const m = today.getMonth() - dob.getMonth();
+                            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                              age--;
+                            }
+                            setFormData(prev => ({ ...prev, age }));
+                          }
                         }}
                         className="h-5 px-3 bg-transparent outline-none border-none flex-1"
                       />
@@ -1011,7 +1036,7 @@ const Registration = () => {
                   Back
                 </button>
               )}
-              {step <= 3 ? (
+              {step < 3 ? (
                 <button
                   type="button"
                   onClick={handleNext}
