@@ -1,36 +1,28 @@
 import { useState } from 'react';
-import logo from "../assets/elitelogo.png";
+
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../context/useApp';
-import { positions } from '../data/questions';
+import { useApp } from '../../context/useApp';
+import { positions } from '../../data/questions';
 
-
-const Registration = () => {
-  const navigate = useNavigate();
+const Registration = () => {  const navigate = useNavigate();
   const { addApplicant, setCurrentApplicant } = useApp();
   const [step, setStep] = useState(1);
   const [primarySkillInput, setPrimarySkillInput] = useState('');
   const [secondarySkillInput, setSecondarySkillInput] = useState('');
   const [formData, setFormData] = useState({
-    // title: 'Mr',
+    title: 'Mr',
     fullName: '',
     fatherName: '',
     dob: '',
     age: '',
     maritalStatus: '',
     gender: '',
-    // countryCode: '+91',
+    countryCode: '+91',
     email: '',
     phone: '',
     education: '',
     languages: '',
     address: '',
-    pincode: '',
-    referenceName: '',
-    referenceNumber: '',
-    referenceName2: '',
-    referenceNumber2: '',
-    referenceBy: '',
     experience: '',
     position: '',
     expectedSalary: '',
@@ -40,7 +32,6 @@ const Registration = () => {
     primarySkills: [],
     secondarySkills: [],
   });
-
   const [errors, setErrors] = useState({});
 
   const validateStep1 = () => {
@@ -87,11 +78,11 @@ const Registration = () => {
       setStep(2);
     } else if (step === 2 && validateStep2()) {
       setStep(3);
+    } else if (step === 3) {
+      // When step is 3, clicking Next should submit the form
+      document.getElementById('registration-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
     }
-    // When step is 3, clicking Next should submit the form
-    // But we'll handle this with the submit button instead
   };
-
   const handleBack = () => {
     setStep(step - 1);
     setErrors({});
@@ -325,7 +316,17 @@ const Registration = () => {
                         <span>Married</span>
                       </label>
 
-                  
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="maritalStatus"
+                          value="Divorced"
+                          checked={formData.maritalStatus === 'Divorced'}
+                          onChange={handleChange}
+                          className="text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>Divorced</span>
+                      </label>
                     </div>
 
                     {errors.maritalStatus && (
@@ -448,7 +449,30 @@ const Registration = () => {
 
                 </div>
 
-          
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Highest Education <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="education"
+                    value={formData.education}
+                    onChange={handleChange}
+                    className={`w-full h-10 px-4 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition ${
+                      errors.education ? 'border-red-500' : 'border-gray-500'
+                    }`}
+                  >
+                    <option value="" >
+                      Select your education
+                    </option>
+                    <option value="high-school">High School</option>
+                    <option value="associate">Associate Degree</option>
+                    <option value="bachelor">Bachelor's Degree</option>
+                    <option value="master">Master's Degree</option>
+                    <option value="phd">PhD</option>
+                  </select>
+
+                  {errors.education && <p className="text-red-500 text-sm mt-1">{errors.education}</p>}
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -537,7 +561,7 @@ const Registration = () => {
                 <div className="mt-6">
 
                   <h3 className="text-md font-semibold text-gray-800 mb-3">
-                    First Reference 
+                    First Reference (Optional)
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -546,7 +570,7 @@ const Registration = () => {
                     <div>
 
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Reference Name
+                        Reference Number
                       </label>
 
                       <div
@@ -556,16 +580,16 @@ const Registration = () => {
                       >
                         <input
                           type="text"
-                          name="referenceName"
-                          value={formData.referenceName}
+                          name="referenceNumber"
+                          value={formData.referenceNumber}
                           onChange={handleChange}
                           placeholder="Enter reference number"
                           className="w-full h-10 px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
                         />
                       </div>
 
-                      {errors.referenceName && (
-                        <p className="text-red-500 text-sm mt-1">{errors.referenceName}</p>
+                      {errors.referenceNumber && (
+                        <p className="text-red-500 text-sm mt-1">{errors.referenceNumber}</p>
                       )}
                     </div>
 
@@ -609,7 +633,7 @@ const Registration = () => {
                     {/* Reference Number 2 */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Reference Name
+                        Reference Number 
                       </label>
 
                       <div
@@ -660,33 +684,6 @@ const Registration = () => {
                     </div>
 
                   </div>
-
-                  <div className='mt-4'>
-                      <label className="block text-md fond-semibold text-gray-700 mb-1">
-                        Reference By :
-                      </label>
-
-                      <div
-                        className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
-                          errors.referenceNumber2 ? 'border-red-500' : 'border-gray-500'
-                        }`}
-                      >
-                        <input
-                          type="text"
-                          name="referenceBy"
-                          value={formData.referenceBy}
-                          onChange={handleChange}
-                          placeholder="Enter reference number"
-                          className="w-full h-10 px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
-                        />
-                      </div>
-
-                      {errors.referenceNumber2 && (
-                        <p className="text-red-500 text-sm mt-1">{errors.referenceNumber2}</p>
-                      )}
-                    </div>
-
-
                 </div>
               </div>
             )}
@@ -895,7 +892,7 @@ const Registration = () => {
                       Position Applied For *
                     </label>
                     <select
-                      name="postAppliedFor"
+                      name="position"
                       value={formData.position}
                       onChange={handleChange}
                       className={`w-full h-10 px-4 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition ${
@@ -937,7 +934,6 @@ const Registration = () => {
                     )}
                   </div>
                 </div>
-
 
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1298,14 +1294,14 @@ const Registration = () => {
                   Back
                 </button>
               )}
-              {step < 3 ? (
+              {step <= 3 ? (
                 <button
                   type="button"
                   onClick={handleNext}
                   className="ml-auto px-8 py-3 bg-[#4A70A9] hover:bg-[#3F6296] 
-                  rounded-lg text-white font-medium 
-                  transform hover:-translate-y-0.5 hover:shadow-xl 
-                  transition-all duration-200"
+           rounded-lg text-white font-medium 
+           transform hover:-translate-y-0.5 hover:shadow-xl 
+           transition-all duration-200"
                   >
                   Next
                 </button>

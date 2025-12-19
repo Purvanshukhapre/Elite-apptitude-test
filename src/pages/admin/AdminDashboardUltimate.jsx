@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../context/useApp';
-
+import { useApp } from '../../context/useApp';
 const AdminDashboardUltimate = () => {
   const navigate = useNavigate();
   const { applicants, isAdminAuthenticated, adminLogout } = useApp();
@@ -31,12 +30,7 @@ const AdminDashboardUltimate = () => {
     }
   `;
   
-  const [selectedApplicant, setSelectedApplicant] = useState(null);
-  const [filter, setFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('latest');
   const [chartView, setChartView] = useState('daily');
-  const [timeRange, setTimeRange] = useState('7days');
   const [showDetailedStats, setShowDetailedStats] = useState(false);
 
   useEffect(() => {
@@ -229,46 +223,6 @@ const AdminDashboardUltimate = () => {
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 10);
   }, [applicants]);
-
-  // Filtered and sorted applicants
-  const filteredApplicants = useMemo(() => {
-    let filtered = [...applicants];
-
-    if (searchQuery) {
-      filtered = filtered.filter(a => 
-        a.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.position.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (filter !== 'all') {
-      if (filter === 'completed') {
-        filtered = filtered.filter(a => a.testData && a.feedback);
-      } else if (filter === 'pending') {
-        filtered = filtered.filter(a => !a.testData);
-      } else if (filter === 'high-score') {
-        filtered = filtered.filter(a => a.testData && parseFloat(a.testData.percentage) >= 70);
-      }
-    }
-
-    if (sortBy === 'latest') {
-      filtered.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-    } else if (sortBy === 'oldest') {
-      filtered.sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt));
-    } else if (sortBy === 'score') {
-      filtered.sort((a, b) => {
-        const scoreA = a.testData ? parseFloat(a.testData.percentage) : 0;
-        const scoreB = b.testData ? parseFloat(b.testData.percentage) : 0;
-        return scoreB - scoreA;
-      });
-    } else if (sortBy === 'name') {
-      filtered.sort((a, b) => a.fullName.localeCompare(b.fullName));
-    }
-
-    return filtered;
-  }, [applicants, searchQuery, filter, sortBy]);
-
 
   // Get icon component based on type
   const getActivityIcon = (type) => {
@@ -965,7 +919,7 @@ const AdminDashboardUltimate = () => {
                 </div>
               </div>
 
-              {/* Score Distribution */}}
+              {/* Score Distribution */}
               <div className="bg-white rounded-2xl border border-gray-200/60 shadow-xl shadow-gray-900/5 overflow-hidden">
                 <div className="p-8 border-b border-gray-100/80">
                   <div className="flex items-center justify-between">
