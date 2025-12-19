@@ -12,19 +12,25 @@ const Registration = () => {
   const [primarySkillInput, setPrimarySkillInput] = useState('');
   const [secondarySkillInput, setSecondarySkillInput] = useState('');
   const [formData, setFormData] = useState({
-    title: 'Mr',
+    // title: 'Mr',
     fullName: '',
     fatherName: '',
     dob: '',
     age: '',
     maritalStatus: '',
     gender: '',
-    countryCode: '+91',
+    // countryCode: '+91',
     email: '',
     phone: '',
     education: '',
     languages: '',
     address: '',
+    pincode: '',
+    referenceName: '',
+    referenceNumber: '',
+    referenceName2: '',
+    referenceNumber2: '',
+    referenceBy: '',
     experience: '',
     position: '',
     expectedSalary: '',
@@ -34,6 +40,7 @@ const Registration = () => {
     primarySkills: [],
     secondarySkills: [],
   });
+
   const [errors, setErrors] = useState({});
 
   const validateStep1 = () => {
@@ -288,7 +295,7 @@ const Registration = () => {
 
 
 
-                  <div className="mt-4">
+                  <div className="mt-4 pl-10">
                     <label className="block text-sm font-medium text-gray-700 mb-4">
                       Marital Status <span className="text-red-500">*</span>
                     </label>
@@ -318,17 +325,7 @@ const Registration = () => {
                         <span>Married</span>
                       </label>
 
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="maritalStatus"
-                          value="Divorced"
-                          checked={formData.maritalStatus === 'Divorced'}
-                          onChange={handleChange}
-                          className="text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>Divorced</span>
-                      </label>
+                  
                     </div>
 
                     {errors.maritalStatus && (
@@ -451,16 +448,6 @@ const Registration = () => {
 
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Highest Education <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="education"
-                    value={formData.education}
-                    onChange={handleChange}
-                    className={`w-full h-10 px-4 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition ${
-                      errors.education ? 'border-red-500' : 'border-gray-500'
           
 
                 <div>
@@ -569,16 +556,16 @@ const Registration = () => {
                       >
                         <input
                           type="text"
-                          name="referenceNumber"
-                          value={formData.referenceNumber}
+                          name="referenceName"
+                          value={formData.referenceName}
                           onChange={handleChange}
                           placeholder="Enter reference number"
                           className="w-full h-10 px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
                         />
                       </div>
 
-                      {errors.referenceNumber && (
-                        <p className="text-red-500 text-sm mt-1">{errors.referenceNumber}</p>
+                      {errors.referenceName && (
+                        <p className="text-red-500 text-sm mt-1">{errors.referenceName}</p>
                       )}
                     </div>
 
@@ -673,6 +660,33 @@ const Registration = () => {
                     </div>
 
                   </div>
+
+                  <div className='mt-4'>
+                      <label className="block text-md fond-semibold text-gray-700 mb-1">
+                        Reference By :
+                      </label>
+
+                      <div
+                        className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
+                          errors.referenceNumber2 ? 'border-red-500' : 'border-gray-500'
+                        }`}
+                      >
+                        <input
+                          type="text"
+                          name="referenceBy"
+                          value={formData.referenceBy}
+                          onChange={handleChange}
+                          placeholder="Enter reference number"
+                          className="w-full h-10 px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                        />
+                      </div>
+
+                      {errors.referenceNumber2 && (
+                        <p className="text-red-500 text-sm mt-1">{errors.referenceNumber2}</p>
+                      )}
+                    </div>
+
+
                 </div>
               </div>
             )}
@@ -881,7 +895,7 @@ const Registration = () => {
                       Position Applied For *
                     </label>
                     <select
-                      name="position"
+                      name="postAppliedFor"
                       value={formData.position}
                       onChange={handleChange}
                       className={`w-full h-10 px-4 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition ${
@@ -923,6 +937,7 @@ const Registration = () => {
                     )}
                   </div>
                 </div>
+
 
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1283,14 +1298,14 @@ const Registration = () => {
                   Back
                 </button>
               )}
-              {step <= 3 ? (
+              {step < 3 ? (
                 <button
                   type="button"
                   onClick={handleNext}
                   className="ml-auto px-8 py-3 bg-[#4A70A9] hover:bg-[#3F6296] 
-           rounded-lg text-white font-medium 
-           transform hover:-translate-y-0.5 hover:shadow-xl 
-           transition-all duration-200"
+                  rounded-lg text-white font-medium 
+                  transform hover:-translate-y-0.5 hover:shadow-xl 
+                  transition-all duration-200"
                   >
                   Next
                 </button>
