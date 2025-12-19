@@ -132,7 +132,7 @@ const Registration = () => {
 =======
     alert('Registration Complete! Proceeding to test...');
 >>>>>>> Stashed changes
-  };
+  }; 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
