@@ -461,20 +461,7 @@ const Registration = () => {
                     onChange={handleChange}
                     className={`w-full h-10 px-4 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition ${
                       errors.education ? 'border-red-500' : 'border-gray-500'
-                    }`}
-                  >
-                    <option value="" >
-                      Select your education
-                    </option>
-                    <option value="high-school">High School</option>
-                    <option value="associate">Associate Degree</option>
-                    <option value="bachelor">Bachelor's Degree</option>
-                    <option value="master">Master's Degree</option>
-                    <option value="phd">PhD</option>
-                  </select>
-
-                  {errors.education && <p className="text-red-500 text-sm mt-1">{errors.education}</p>}
-                </div>
+          
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -563,7 +550,7 @@ const Registration = () => {
                 <div className="mt-6">
 
                   <h3 className="text-md font-semibold text-gray-800 mb-3">
-                    First Reference (Optional)
+                    First Reference 
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -572,7 +559,7 @@ const Registration = () => {
                     <div>
 
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Reference Number
+                        Reference Name
                       </label>
 
                       <div
@@ -635,7 +622,7 @@ const Registration = () => {
                     {/* Reference Number 2 */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Reference Number 
+                        Reference Name
                       </label>
 
                       <div
