@@ -1,13 +1,14 @@
 import { useState } from 'react';
+<<<<<<< Updated upstream
 import logo from "../assets/elitelogo.png";
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
 import { positions } from '../data/questions';
 
+=======
+>>>>>>> Stashed changes
 
 const Registration = () => {
-  const navigate = useNavigate();
-  const { addApplicant, setCurrentApplicant } = useApp();
   const [step, setStep] = useState(1);
   const [primarySkillInput, setPrimarySkillInput] = useState('');
   const [secondarySkillInput, setSecondarySkillInput] = useState('');
@@ -19,14 +20,34 @@ const Registration = () => {
     age: '',
     maritalStatus: '',
     gender: '',
+<<<<<<< Updated upstream
     countryCode: '+91',
+=======
+>>>>>>> Stashed changes
     email: '',
+    countryCode: '+91',
     phone: '',
     education: '',
     languages: '',
     address: '',
+<<<<<<< Updated upstream
     experience: '',
+=======
+    pincode: '',
+    referenceNumber: '',
+    contactNumber: '',
+    referenceNumber2: '',
+    contactNumber2: '',
+    institution: '',
+    boardType: '',
+    boardName: '',
+    examPassed: '',
+    yearOfPassing: '',
+    mainSubjects: '',
+    percentage: '',
+>>>>>>> Stashed changes
     position: '',
+    experience: '',
     expectedSalary: '',
     resumeLink: '',
     coverLetter: '',
@@ -36,12 +57,25 @@ const Registration = () => {
   });
   const [errors, setErrors] = useState({});
 
+  const positions = [
+    'Software Engineer',
+    'Data Analyst',
+    'Product Manager',
+    'UX Designer',
+    'Marketing Manager',
+    'Sales Executive'
+  ];
+
   const validateStep1 = () => {
     const newErrors = {};
     if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+<<<<<<< Updated upstream
     if (!formData.fatherName.trim())
     newErrors.fatherName = 'Father name is required';
 
+=======
+    if (!formData.fatherName.trim()) newErrors.fatherName = "Father's name is required";
+>>>>>>> Stashed changes
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -53,9 +87,7 @@ const Registration = () => {
       newErrors.phone = 'Phone number must be 10 digits';
     }
     if (!formData.education.trim()) newErrors.education = 'Education is required';
-
-    if (!formData.languages.trim())
-    newErrors.languages = 'Languages known is required';
+    if (!formData.languages.trim()) newErrors.languages = 'Languages known is required';
     
     if (!formData.address?.trim()) newErrors.address = 'Address is required';
     if (!formData.dob || formData.dob.trim() === '') newErrors.dob = 'Date of birth is required';
@@ -92,6 +124,7 @@ const Registration = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+<<<<<<< Updated upstream
     try {
       const applicant = await addApplicant(formData);
       setCurrentApplicant(applicant);
@@ -99,6 +132,9 @@ const Registration = () => {
     } catch (error) {
       console.error('Failed to submit application:', error);
     }
+=======
+    alert('Registration Complete! Proceeding to test...');
+>>>>>>> Stashed changes
   };
 
   const handleChange = (e) => {
@@ -110,7 +146,19 @@ const Registration = () => {
     }
   };
 
+  const calculateAge = (dob) => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   return (
+<<<<<<< Updated upstream
     <div className="min-h-screen bg-[#82A1D2] flex items-center justify-center p-4">
       
       <div className="max-w-4xl w-full">
@@ -175,69 +223,121 @@ const Registration = () => {
                   <div
                     className={`flex h-10 items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
                       errors.fullName ? 'border-red-500' : 'border-gray-500'
+=======
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-10">
+          <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-3">
+            Elite Associate
+          </h1>
+          <p className="text-gray-600 text-lg">Join our team of exceptional professionals</p>
+        </div>
+
+        <div className="mb-12">
+          <div className="flex items-center justify-between max-w-2xl mx-auto">
+            {[
+              { num: 1, label: 'Personal Info' },
+              { num: 2, label: 'Professional' },
+              { num: 3, label: 'Review' }
+            ].map((s, idx) => (
+              <div key={s.num} className="flex items-center flex-1">
+                <div className="flex flex-col items-center flex-1">
+                  <div
+                    className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold transition-all duration-300 ${
+                      step >= s.num
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-110'
+                        : 'bg-white text-gray-400 border-2 border-gray-300'
+>>>>>>> Stashed changes
                     }`}
                   >
+                    {step > s.num ? '✓' : s.num}
+                  </div>
+                  <span className={`mt-2 text-sm font-medium ${step >= s.num ? 'text-blue-600' : 'text-gray-400'}`}>
+                    {s.label}
+                  </span>
+                </div>
+                {idx < 2 && (
+                  <div className={`h-1 flex-1 mx-2 rounded transition-all duration-300 ${
+                    step > s.num ? 'bg-gradient-to-r from-blue-600 to-purple-600' : 'bg-gray-300'
+                  }`} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12">
+          <form onSubmit={handleSubmit}>
+            {step === 1 && (
+              <div className="space-y-6">
+                <h2 className="text-3xl font-bold text-gray-800 mb-8 pb-4 border-b-2 border-gray-100">
+                  Personal Information
+                </h2>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <div className={`flex items-stretch border-2 rounded-xl overflow-hidden transition-all ${
+                    errors.fullName ? 'border-red-400' : 'border-gray-200 focus-within:border-blue-500'
+                  }`}>
                     <select
                       name="title"
                       value={formData.title}
                       onChange={handleChange}
-                      className="h-11 px-3 bg-transparent text-gray-700 border-none outline-none rounded-l-lg"
+                      className="px-4 bg-gray-50 border-r-2 border-gray-200 outline-none text-gray-700 font-medium"
                     >
-                      <option value="Mr">Mr</option>
+                      <option value="Mr">Mr.</option>
                       <option value="Miss">Miss</option>
-                      <option value="Mrs">Mrs</option>
+                      <option value="Mrs">Mrs.</option>
                     </select>
-
-                    {/* Divider */}
-                    <div className="h-6 w-px bg-gray-300"></div>
-
                     <input
                       type="text"
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleChange}
+<<<<<<< Updated upstream
                       placeholder="Name"
                       className="w-full px-3 bg-transparent outline-none border-none"
+=======
+                      placeholder="Enter your full name"
+                      className="flex-1 px-4 py-3 outline-none"
+>>>>>>> Stashed changes
                     />
                   </div>
-
-                  {errors.fullName && (
-                    <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
-                  )}
+                  {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
                 </div>
 
-                
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Father's Name <span className="text-red-500">*</span>
                   </label>
+<<<<<<< Updated upstream
 
                   <div
                     className={`flex h-10 items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
                       errors.fatherName ? 'border-red-500' : 'border-gray-500'
+=======
+                  <input
+                    type="text"
+                    name="fatherName"
+                    value={formData.fatherName}
+                    onChange={handleChange}
+                    placeholder="Enter father's name"
+                    className={`w-full px-4 py-3 border-2 rounded-xl outline-none transition-all ${
+                      errors.fatherName ? 'border-red-400' : 'border-gray-200 focus:border-blue-500'
+>>>>>>> Stashed changes
                     }`}
-                  >
-                    <input
-                      type="text"
-                      name="fatherName"
-                      value={formData.fatherName}
-                      onChange={handleChange}
-                      placeholder="Father's Name"
-                      className="w-full h-11 px-3 bg-transparent outline-none border-none"
-                    />
-                  </div>
-
-                  {errors.fatherName && (
-                    <p className="text-red-500 text-sm mt-1">{errors.fatherName}</p>
-                  )}
+                  />
+                  {errors.fatherName && <p className="text-red-500 text-sm mt-1">{errors.fatherName}</p>}
                 </div>
 
-                
-                <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Date of Birth <span className="text-red-500">*</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Date of Birth
                     </label>
+<<<<<<< Updated upstream
 
                     <div
                       className={`flex h-10 items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
@@ -245,21 +345,29 @@ const Registration = () => {
                       }`}
                     >
                       {/* Age box */}
+=======
+                    <div className="flex items-stretch border-2 border-gray-200 rounded-xl overflow-hidden focus-within:border-blue-500">
+>>>>>>> Stashed changes
                       <input
                         type="text"
-                        name="age"
                         value={formData.age || ''}
                         readOnly
                         placeholder="Age"
+<<<<<<< Updated upstream
                         className="w-20 h-9 px-3 bg-gray-100 text-gray-600 outline-none border-none cursor-not-allowed rounded-l-lg"
                       />
 
                       {/* Date picker */}
+=======
+                        className="w-16 px-3 bg-gray-50 text-center text-gray-600 font-medium border-r-2 border-gray-200"
+                      />
+>>>>>>> Stashed changes
                       <input
                         type="date"
                         name="dob"
                         value={formData.dob}
                         onChange={(e) => {
+<<<<<<< Updated upstream
                           const dobValue = e.target.value;
                           const dob = new Date(dobValue);
                           const today = new Date();
@@ -277,120 +385,74 @@ const Registration = () => {
                           }));
                         }}
                         className="h-9 px-3 bg-transparent outline-none border-none flex-1"
+=======
+                          handleChange(e);
+                          if (e.target.value) {
+                            const age = calculateAge(e.target.value);
+                            setFormData(prev => ({ ...prev, age: age.toString() }));
+                          }
+                        }}
+                        className="flex-1 px-4 py-3 outline-none"
+>>>>>>> Stashed changes
                       />
 
                     </div>
-
-                    {errors.dob && (
-                      <p className="text-red-500 text-sm mt-1">{errors.dob}</p>
-                    )}
                   </div>
 
+<<<<<<< Updated upstream
 
 
                   <div className="mt-4 pl-8">
                     <label className="block text-sm font-medium text-gray-700 mb-4">
                       Marital Status <span className="text-red-500">*</span>
+=======
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Marital Status
+>>>>>>> Stashed changes
                     </label>
-
-                    <div className="flex gap-12">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="maritalStatus"
-                          value="Single"
-                          checked={formData.maritalStatus === 'Single'}
-                          onChange={handleChange}
-                          className="text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>Single</span>
-                      </label>
-
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="maritalStatus"
-                          value="Married"
-                          checked={formData.maritalStatus === 'Married'}
-                          onChange={handleChange}
-                          className="text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>Married</span>
-                      </label>
-
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="maritalStatus"
-                          value="Divorced"
-                          checked={formData.maritalStatus === 'Divorced'}
-                          onChange={handleChange}
-                          className="text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>Divorced</span>
-                      </label>
+                    <div className="flex gap-4 pt-2">
+                      {['Single', 'Married', 'Divorced'].map((status) => (
+                        <label key={status} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="maritalStatus"
+                            value={status}
+                            checked={formData.maritalStatus === status}
+                            onChange={handleChange}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span className="text-gray-700">{status}</span>
+                        </label>
+                      ))}
                     </div>
-
-                    {errors.maritalStatus && (
-                      <p className="text-red-500 text-sm mt-1">{errors.maritalStatus}</p>
-                    )}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Gender <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Gender
                   </label>
-
-                  <div className="flex gap-6 mt-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="gender"
-                        value="Male"
-                        checked={formData.gender === 'Male'}
-                        onChange={handleChange}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>Male</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="gender"
-                        value="Female"
-                        checked={formData.gender === 'Female'}
-                        onChange={handleChange}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>Female</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="gender"
-                        value="Other"
-                        checked={formData.gender === 'Other'}
-                        onChange={handleChange}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>Other</span>
-                    </label>
+                  <div className="flex gap-6 pt-2">
+                    {['Male', 'Female', 'Other'].map((gender) => (
+                      <label key={gender} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="gender"
+                          value={gender}
+                          checked={formData.gender === gender}
+                          onChange={handleChange}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-gray-700">{gender}</span>
+                      </label>
+                    ))}
                   </div>
-
-                {errors.gender && (
-                  <p className="text-red-500 text-sm mt-1">{errors.gender}</p>
-                )}
-              </div>
-
-
-
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Email Address <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -398,76 +460,85 @@ const Registration = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
+<<<<<<< Updated upstream
                       className={`w-full h-10 px-4 py-3 rounded-lg border border-gray-200
                         focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent
                         transition ${
                         errors.email ? 'border-red-500' : 'border-gray-500'
+=======
+                      placeholder="you@example.com"
+                      className={`w-full px-4 py-3 border-2 rounded-xl outline-none transition-all ${
+                        errors.email ? 'border-red-400' : 'border-gray-200 focus:border-blue-500'
+>>>>>>> Stashed changes
                       }`}
-                      placeholder="john@example.com"
                     />
                     {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Phone Number <span className="text-red-500">*</span>
                     </label>
+<<<<<<< Updated upstream
 
                     <div
                       className={`flex h-10 items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
                         errors.phone ? 'border-red-500' : 'border-gray-500'
                       }`}
                     >
+=======
+                    <div className={`flex items-stretch border-2 rounded-xl overflow-hidden transition-all ${
+                      errors.phone ? 'border-red-400' : 'border-gray-200 focus-within:border-blue-500'
+                    }`}>
+>>>>>>> Stashed changes
                       <select
                         name="countryCode"
                         value={formData.countryCode}
                         onChange={handleChange}
+<<<<<<< Updated upstream
                         className="h-9 px-3 bg-transparent text-gray-700 border-none outline-none rounded-l-lg"
+=======
+                        className="px-3 bg-gray-50 border-r-2 border-gray-200 outline-none"
+>>>>>>> Stashed changes
                       >
-                        <option value="+1">🇺🇸 +1</option>
-                        <option value="+91">🇮🇳 +91</option>
-                        <option value="+44">🇬🇧 +44</option>
-                        <option value="+61">🇦🇺 +61</option>
+                        <option value="+1">+1</option>
+                        <option value="+91">+91</option>
+                        <option value="+44">+44</option>
                       </select>
-
-                      {/* Divider */}
-                      {/* <div className="h-7 w-px bg-gray-300"></div> */}
-
                       <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        placeholder="Phone Number"
-                        className="w-full h-12 px-3 bg-transparent outline-none border-none"
+                        placeholder="Enter phone number"
+                        className="flex-1 px-4 py-3 outline-none"
                       />
                     </div>
-
-                    {errors.phone && (
-                      <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
-                    )}
+                    {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
                   </div>
-
-
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Highest Education <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="education"
                     value={formData.education}
                     onChange={handleChange}
+<<<<<<< Updated upstream
                     className={`w-full h-10 px-4 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition ${
                       errors.education ? 'border-red-500' : 'border-gray-500'
+=======
+                    className={`w-full px-4 py-3 border-2 rounded-xl outline-none transition-all ${
+                      errors.education ? 'border-red-400' : 'border-gray-200 focus:border-blue-500'
+>>>>>>> Stashed changes
                     }`}
                   >
                     <option value="" >
                       Select your education
                     </option>
                     <option value="high-school">High School</option>
-                    <option value="associate">Associate Degree</option>
                     <option value="bachelor">Bachelor's Degree</option>
                     <option value="master">Master's Degree</option>
                     <option value="phd">PhD</option>
@@ -477,30 +548,30 @@ const Registration = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Languages Known <span className="text-red-500">*</span>
                   </label>
+<<<<<<< Updated upstream
 
                   <div
                     className={`border h-10 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
                       errors.languages ? 'border-red-500' : 'border-gray-500'
+=======
+                  <textarea
+                    name="languages"
+                    value={formData.languages}
+                    onChange={handleChange}
+                    placeholder="e.g., English, Hindi, Tamil"
+                    rows={3}
+                    className={`w-full px-4 py-3 border-2 rounded-xl outline-none transition-all resize-none ${
+                      errors.languages ? 'border-red-400' : 'border-gray-200 focus:border-blue-500'
+>>>>>>> Stashed changes
                     }`}
-                  >
-                    <textarea
-                      name="languages"
-                      placeholder="e.g. English, Hindi, Tamil"
-                      value={formData.languages}
-                      onChange={handleChange}
-                      rows={3}
-                      className="w-full h-10 px-3 py-3 bg-transparent outline-none border-none resize-none placeholder-gray-400"
-                    />
-                  </div>
-
-                  {errors.languages && (
-                    <p className="text-red-500 text-sm mt-1">{errors.languages}</p>
-                  )}
+                  />
+                  {errors.languages && <p className="text-red-500 text-sm mt-1">{errors.languages}</p>}
                 </div>
 
+<<<<<<< Updated upstream
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -512,16 +583,24 @@ const Registration = () => {
                       errors.address ? 'border-red-500' : 'border-gray-500'
                     }`}
                   >
+=======
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Address
+                    </label>
+>>>>>>> Stashed changes
                     <textarea
                       name="address"
-                      rows={3}
                       value={formData.address}
                       onChange={handleChange}
                       placeholder="Enter your address"
-                      className="w-full h-10 px-3 py-2 bg-transparent outline-none border-none resize-none placeholder-gray-400"
+                      rows={3}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500 resize-none"
                     />
                   </div>
 
+<<<<<<< Updated upstream
                   {errors.address && (
                     <p className="text-red-500 text-sm mt-1">{errors.address}</p>
                   )}
@@ -538,35 +617,50 @@ const Registration = () => {
                       errors.pincode ? 'border-red-500' : 'border-gray-500'
                     }`}
                   >
+=======
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Pincode
+                    </label>
+>>>>>>> Stashed changes
                     <input
                       type="text"
                       name="pincode"
                       value={formData.pincode}
                       onChange={(e) => {
-                        const value = e.target.value;
-                        if (/^\d*$/.test(value)) {
-                          handleChange(e);
-                        }
+                        if (/^\d*$/.test(e.target.value)) handleChange(e);
                       }}
-                      placeholder="Enter your pincode"
-                      className="w-full h-11 px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
-                      inputMode="numeric"
+                      placeholder="Enter pincode"
                       maxLength={6}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-2xl p-6 space-y-6">
+                  <h3 className="text-lg font-bold text-gray-800">References (Optional)</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      name="referenceNumber"
+                      value={formData.referenceNumber}
+                      onChange={handleChange}
+                      placeholder="Reference 1 Name"
+                      className="px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500"
+                    />
+                    <input
+                      type="tel"
+                      name="contactNumber"
+                      value={formData.contactNumber}
+                      onChange={handleChange}
+                      placeholder="Contact Number"
+                      className="px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500"
                     />
                   </div>
 
-                  {errors.pincode && (
-                    <p className="text-red-500 text-sm mt-1">{errors.pincode}</p>
-                  )}
-                </div>
-
-                <div className="mt-6">
-
-                  <h3 className="text-md font-semibold text-gray-800 mb-3">
-                    First Reference (Optional)
-                  </h3>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+<<<<<<< Updated upstream
 
                     {/* Reference Number */}
                     <div>
@@ -685,25 +779,40 @@ const Registration = () => {
                       )}
                     </div>
 
+=======
+                    <input
+                      type="text"
+                      name="referenceNumber2"
+                      value={formData.referenceNumber2}
+                      onChange={handleChange}
+                      placeholder="Reference 2 Name"
+                      className="px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500"
+                    />
+                    <input
+                      type="tel"
+                      name="contactNumber2"
+                      value={formData.contactNumber2}
+                      onChange={handleChange}
+                      placeholder="Contact Number"
+                      maxLength={10}
+                      className="px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500"
+                    />
+>>>>>>> Stashed changes
                   </div>
                 </div>
               </div>
             )}
 
-
-
-            {/* Step 2: Position Details */}
-
-            
             {step === 2 && (
-              <div>
-                <div className="mt-6">
-                <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                  Academic Records
-                </h3>
+              <div className="space-y-6">
+                <h2 className="text-3xl font-bold text-gray-800 mb-8 pb-4 border-b-2 border-gray-100">
+                  Professional Details
+                </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 space-y-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">Academic Records</h3>
 
+<<<<<<< Updated upstream
                   {/* Institution Name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -713,21 +822,30 @@ const Registration = () => {
                       className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
                         errors.institution ? 'border-red-500' : 'border-gray-500'
                       }`}
-                    >
-                      <input
-                        type="text"
-                        name="institution"
-                        value={formData.institution}
-                        onChange={handleChange}
-                        placeholder="Enter school or college name"
-                        className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
-                      />
-                    </div>
-                    {errors.institution && (
-                      <p className="text-red-500 text-sm mt-1">{errors.institution}</p>
-                    )}
-                  </div>
+=======
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <input
+                      type="text"
+                      name="institution"
+                      value={formData.institution}
+                      onChange={handleChange}
+                      placeholder="School / College Name"
+                      className="px-4 py-3 border-2 border-white rounded-xl outline-none focus:border-blue-500 bg-white"
+                    />
 
+                    <select
+                      name="boardType"
+                      value={formData.boardType}
+                      onChange={handleChange}
+                      className="px-4 py-3 border-2 border-white rounded-xl outline-none focus:border-blue-500 bg-white"
+>>>>>>> Stashed changes
+                    >
+                      <option value="">Board / University Type</option>
+                      <option value="School">School</option>
+                      <option value="University">University</option>
+                    </select>
+
+<<<<<<< Updated upstream
                   {/* Board / University Type */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -737,22 +855,58 @@ const Registration = () => {
                       className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
                         errors.boardType ? 'border-red-500' : 'border-gray-500'
                       }`}
+=======
+                    <input
+                      type="text"
+                      name="boardName"
+                      value={formData.boardName}
+                      onChange={handleChange}
+                      placeholder="Board / University Name"
+                      className="px-4 py-3 border-2 border-white rounded-xl outline-none focus:border-blue-500 bg-white"
+                    />
+
+                    <input
+                      type="text"
+                      name="examPassed"
+                      value={formData.examPassed}
+                      onChange={handleChange}
+                      placeholder="Examination Passed"
+                      className="px-4 py-3 border-2 border-white rounded-xl outline-none focus:border-blue-500 bg-white"
+                    />
+
+                    <select
+                      name="yearOfPassing"
+                      value={formData.yearOfPassing}
+                      onChange={handleChange}
+                      className="px-4 py-3 border-2 border-white rounded-xl outline-none focus:border-blue-500 bg-white"
+>>>>>>> Stashed changes
                     >
-                      <select
-                        name="boardType"
-                        value={formData.boardType}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
-                      >
-                        <option value="">Select board / university type</option>
-                        <option value="School">School</option>
-                        <option value="University">University</option>
-                      </select>
-                    </div>
-                    {errors.boardType && (
-                      <p className="text-red-500 text-sm mt-1">{errors.boardType}</p>
-                    )}
+                      <option value="">Year of Passing</option>
+                      <option value="Pursuing">Pursuing</option>
+                      {Array.from({ length: 50 }, (_, i) => 2024 - i).map((year) => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="text"
+                      name="mainSubjects"
+                      value={formData.mainSubjects}
+                      onChange={handleChange}
+                      placeholder="Main Subjects"
+                      className="px-4 py-3 border-2 border-white rounded-xl outline-none focus:border-blue-500 bg-white"
+                    />
+
+                    <input
+                      type="number"
+                      name="percentage"
+                      value={formData.percentage}
+                      onChange={handleChange}
+                      placeholder="Percentage / CGPA"
+                      className="px-4 py-3 border-2 border-white rounded-xl outline-none focus:border-blue-500 bg-white"
+                    />
                   </div>
+<<<<<<< Updated upstream
 
                   {/* Name of Board / University */}
                   <div>
@@ -1216,103 +1370,159 @@ const Registration = () => {
 
                 
               </div>
+=======
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Position Applied For <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="position"
+                      value={formData.position}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-3 border-2 rounded-xl outline-none transition-all ${
+                        errors.position ? 'border-red-400' : 'border-gray-200 focus:border-blue-500'
+                      }`}
+                    >
+                      <option value="">Select a position</option>
+                      {positions.map(pos => (
+                        <option key={pos} value={pos}>{pos}</option>
+                      ))}
+                    </select>
+                    {errors.position && <p className="text-red-500 text-sm mt-1">{errors.position}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Years of Experience <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="experience"
+                      value={formData.experience}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-3 border-2 rounded-xl outline-none transition-all ${
+                        errors.experience ? 'border-red-400' : 'border-gray-200 focus:border-blue-500'
+                      }`}
+                    >
+                      <option value="">Select experience</option>
+                      <option value="fresher">Fresher (0 years)</option>
+                      <option value="0-1">0-1 years</option>
+                      <option value="1-3">1-3 years</option>
+                      <option value="3-5">3-5 years</option>
+                      <option value="5-10">5-10 years</option>
+                      <option value="10+">10+ years</option>
+                    </select>
+                    {errors.experience && <p className="text-red-500 text-sm mt-1">{errors.experience}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Expected Salary (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      name="expectedSalary"
+                      value={formData.expectedSalary}
+                      onChange={handleChange}
+                      placeholder="e.g., ₹50,000 - ₹70,000"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      LinkedIn Profile (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      name="resumeLink"
+                      value={formData.resumeLink}
+                      onChange={handleChange}
+                      placeholder="https://linkedin.com/in/yourprofile"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+>>>>>>> Stashed changes
               </div>
             )}
 
-            {/* Step 3: Review */}
             {step === 3 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">Review Your Information</h2>
+                <h2 className="text-3xl font-bold text-gray-800 mb-8 pb-4 border-b-2 border-gray-100">
+                  Review Your Information
+                </h2>
                 
-                <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-600">Full Name</p>
-                      <p className="font-semibold text-gray-900">{formData.fullName}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Email</p>
-                      <p className="font-semibold text-gray-900">{formData.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Phone</p>
-                      <p className="font-semibold text-gray-900">{formData.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Education</p>
-                      <p className="font-semibold text-gray-900 capitalize">{formData.education.replace('-', ' ')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Position</p>
-                      <p className="font-semibold text-gray-900">{formData.position}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Experience</p>
-                      <p className="font-semibold text-gray-900 capitalize">{formData.experience} years</p>
-                    </div>
+                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[
+                      { label: 'Full Name', value: `${formData.title} ${formData.fullName}` },
+                      { label: 'Email', value: formData.email },
+                      { label: 'Phone', value: `${formData.countryCode} ${formData.phone}` },
+                      { label: 'Education', value: formData.education },
+                      { label: 'Position', value: formData.position },
+                      { label: 'Experience', value: formData.experience }
+                    ].map((item, idx) => (
+                      <div key={idx} className="bg-white rounded-xl p-4">
+                        <p className="text-sm text-gray-500 mb-1">{item.label}</p>
+                        <p className="font-semibold text-gray-900">{item.value}</p>
+                      </div>
+                    ))}
                   </div>
-                  
-                  {formData.expectedSalary && (
-                    <div>
-                      <p className="text-sm text-gray-600">Expected Salary</p>
-                      <p className="font-semibold text-gray-900">{formData.expectedSalary}</p>
-                    </div>
-                  )}
-                  
-                  {formData.resumeLink && (
-                    <div>
-                      <p className="text-sm text-gray-600">Resume Link</p>
-                      <a href={formData.resumeLink} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 hover:underline">
-                        View Resume
-                      </a>
-                    </div>
-                  )}
-                  
-                  {formData.coverLetter && (
-                    <div>
-                      <p className="text-sm text-gray-600">Cover Letter</p>
-                      <p className="text-gray-900">{formData.coverLetter}</p>
-                    </div>
-                  )}
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-800">
-                    <strong>Next Step:</strong> After confirming your details, you'll proceed to the aptitude test. 
-                    The test consists of 10 questions and you'll have 30 minutes to complete it.
-                  </p>
+                <div className="bg-blue-100 border-2 border-blue-300 rounded-2xl p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-xl">ℹ</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-blue-900 mb-2">Next Step: Aptitude Test</p>
+                      <p className="text-blue-800 text-sm">
+                        After confirming your details, you will proceed to the aptitude test with 10 questions. 
+                        You will have 30 minutes to complete it. Good luck!
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+            <div className="flex justify-between items-center mt-10 pt-8 border-t-2 border-gray-100">
               {step > 1 && (
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition"
+                  className="px-8 py-3 border-2 border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 transition-all"
                 >
                   Back
                 </button>
               )}
-              {step <= 3 ? (
+              {step < 3 ? (
                 <button
                   type="button"
                   onClick={handleNext}
+<<<<<<< Updated upstream
                   className="ml-auto px-8 py-3 bg-[#4A70A9] hover:bg-[#3F6296] 
            rounded-lg text-white font-medium 
            transform hover:-translate-y-0.5 hover:shadow-xl 
            transition-all duration-200"
                   >
                   Next
+=======
+                  className="ml-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl text-white font-semibold hover:shadow-lg transform hover:scale-105 transition-all"
+                >
+                  Continue
+>>>>>>> Stashed changes
                 </button>
               ) : (
                 <button
                   type="submit"
-                  className="ml-auto px-8 py-3 bg-green-600 rounded-lg text-white font-medium hover:bg-green-700 hover:shadow-lg transition transform hover:-translate-y-0.5"
+                  className="ml-auto px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-semibold hover:shadow-lg transform hover:scale-105 transition-all"
                 >
-                  Confirm & Start Test
+                  Confirm and Start Test
                 </button>
               )}
             </div>
