@@ -2,10 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
 import { sampleQuestions } from '../../data/questions';
+import { submitTest } from '../../api';
 
 const AptitudeTest = () => {
   const navigate = useNavigate();
-  const { currentApplicant, updateApplicantTest } = useApp();
+  const { currentApplicant, updateApplicantTest, testQuestions } = useApp();
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes in seconds
@@ -15,28 +18,82 @@ const AptitudeTest = () => {
   const [isTestDisqualified, setIsTestDisqualified] = useState(false);
   const [copyAttempts, setCopyAttempts] = useState(0);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     let score = 0;
-    sampleQuestions.forEach(q => {
-      if (answers[q.id] === q.correctAnswer) {
+    const questionsToUse = questions.length > 0 ? questions : sampleQuestions;
+    const detailedAnswers = {};
+    
+    questionsToUse.forEach(q => {
+      const isCorrect = answers[q.id] === q.correctAnswer;
+      if (isCorrect) {
         score++;
       }
+      
+      // Store detailed answer information
+      detailedAnswers[q.id] = {
+        selectedOption: answers[q.id],
+        correctOption: q.correctAnswer,
+        isCorrect: isCorrect,
+        optionText: answers[q.id] !== undefined ? q.options[answers[q.id]] : 'Not answered',
+        correctOptionText: q.options[q.correctAnswer]
+      };
     });
 
+    const percentage = (score / questionsToUse.length) * 100;
+    const passFailStatus = percentage >= 60 ? 'Pass' : 'Fail'; // 60% to pass
+    
     const testData = {
       answers,
+      questions: questionsToUse,
+      detailedAnswers,
       score,
-      totalQuestions: sampleQuestions.length,
-      percentage: ((score / sampleQuestions.length) * 100).toFixed(2),
+      totalQuestions: questionsToUse.length,
+      correctAnswers: score,
+      percentage: percentage.toFixed(2),
+      passFailStatus,
       timeSpent: 1800 - timeLeft,
       tabSwitchCount,
       copyAttempts,
-      disqualified: isTestDisqualified
+      disqualified: isTestDisqualified,
+      applicantId: currentApplicant.id,
+      applicantName: currentApplicant.fullName
     };
+    
+    // console.log('Test Results:', testData);
 
-    updateApplicantTest(currentApplicant.id, testData);
-    navigate('/feedback');
-  }, [answers, timeLeft, currentApplicant, updateApplicantTest, navigate, tabSwitchCount, isTestDisqualified, copyAttempts]);
+    try {
+      // Submit test data to API
+      const result = await submitTest(testData);
+      // console.log('Test submission result:', result);
+      
+      // Update applicant with test data
+      updateApplicantTest(currentApplicant.id, {
+        ...testData,
+        score: result.score || `${score}/${questionsToUse.length}`,
+        result: result,
+        // Ensure correctAnswers is included even if API submission fails later
+        correctAnswers: result.correctAnswers
+      });
+      
+      // Only navigate to feedback if submission was successful
+      navigate('/feedback');
+    } catch (error) {
+      console.error('Error submitting test:', error);
+      
+      // Update applicant with local test data including the calculated correct answers
+      // The testData object already contains correctAnswers: score from line 51
+      updateApplicantTest(currentApplicant.id, {
+        ...testData,
+        // Use the correctAnswers that was already calculated in the testData object
+        correctAnswers: testData.correctAnswers
+      });
+      
+      // Show error message to user
+      if (window.confirm('Test submission failed due to a network error. Your test has been saved locally. Would you like to continue to the feedback page?')) {
+        navigate('/feedback');
+      }
+    }
+  }, [answers, timeLeft, currentApplicant, updateApplicantTest, navigate, tabSwitchCount, isTestDisqualified, copyAttempts, questions]);
 
   // Copy/Paste/Right-click Protection
   useEffect(() => {
@@ -178,6 +235,72 @@ const AptitudeTest = () => {
     };
   }, [handleSubmit]);
 
+  // Use questions from context or fallback to sample questions
+  useEffect(() => {
+    setLoading(true);
+    try {
+      // console.log('testQuestions from context:', testQuestions);
+      if (testQuestions && testQuestions.length > 0) {
+        // console.log('Using dynamic questions from API');
+        // Transform API questions to match expected format
+        const transformedQuestions = testQuestions.map((q, index) => ({
+          // Use the original question ID if available, otherwise generate one
+          id: q.id || index + 1,
+          question: q.question,
+          options: q.options,
+          // Convert letter answer (A,B,C,D) to index (0,1,2,3)
+          // Handle the format where correctAnswer is a letter (A,B,C,D)
+          correctAnswer: (() => {
+            // Log the question structure for debugging
+            // console.log('Processing question:', q);
+            // console.log('Options:', q.options);
+            // console.log('Correct answer:', q.correctAnswer);
+            
+            // Handle when correctAnswer is already a number (from mock data)
+            if (typeof q.correctAnswer === 'number') {
+              // console.log('Correct answer is already a number:', q.correctAnswer);
+              return q.correctAnswer;
+            }
+            
+            // If correctAnswer is a single letter (A,B,C,D) from real API
+            if (q.correctAnswer && typeof q.correctAnswer === 'string' && q.correctAnswer.length === 1) {
+              const letterIndex = q.correctAnswer.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
+              // console.log('Letter answer:', q.correctAnswer, 'Index:', letterIndex, 'Options length:', q.options.length);
+              const result = letterIndex >= 0 && letterIndex < q.options.length ? letterIndex : 0;
+              // console.log('Final index:', result);
+              return result;
+            }
+            
+            // Fallback: try to find in options
+            const index = q.options.findIndex(opt => 
+              opt.startsWith(q.correctAnswer + '.') || 
+              opt.startsWith(q.correctAnswer + ')') ||
+              opt.startsWith(q.correctAnswer + ' ')
+            );
+            
+            // console.log('Fallback index:', index);
+            return index >= 0 ? index : 0;
+          })(),
+          category: q.category || q.type || 'General',
+          difficulty: q.difficulty || 'Medium'
+        }));
+        
+        // console.log('Transformed questions:', transformedQuestions);
+        setQuestions(transformedQuestions);
+      } else {
+        // console.log('No dynamic questions available, using sample questions');
+        // Fallback to sample questions
+        setQuestions(sampleQuestions);
+      }
+    } catch (err) {
+      console.error('Failed to process questions:', err);
+      // Fallback to sample questions
+      setQuestions(sampleQuestions);
+    } finally {
+      setLoading(false);
+    }
+  }, [testQuestions]);
+
   useEffect(() => {
     if (!currentApplicant) {
       navigate('/');
@@ -214,10 +337,26 @@ const AptitudeTest = () => {
     }));
   };
 
+  const questionsToUse = questions.length > 0 ? questions : sampleQuestions;
   const answeredCount = Object.keys(answers).length;
-  const progress = (answeredCount / sampleQuestions.length) * 100;
+  const progress = (answeredCount / questionsToUse.length) * 100;
 
   if (!currentApplicant) return null;
+
+  // Show loading state while fetching questions
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Loading Questions...</h2>
+          <p className="text-gray-600">Preparing your aptitude test</p>
+        </div>
+      </div>
+    );
+  }
+
+
 
   // Disqualification Modal
   if (isTestDisqualified) {
@@ -255,7 +394,7 @@ const AptitudeTest = () => {
             <div className="flex items-center space-x-6">
               <div className="text-center">
                 <p className="text-sm text-gray-600">Progress</p>
-                <p className="text-lg font-bold text-blue-600">{answeredCount}/{sampleQuestions.length}</p>
+                <p className="text-lg font-bold text-blue-600">{answeredCount}/{questionsToUse.length}</p>
               </div>
               <div className={`text-center px-4 py-2 rounded-lg ${
                 timeLeft < 300 ? 'bg-red-100 animate-pulse' : 'bg-blue-100'
@@ -322,7 +461,7 @@ const AptitudeTest = () => {
             <div className="bg-white rounded-lg shadow-sm p-6 sticky top-32">
               <h3 className="font-bold text-gray-900 mb-4">Question Navigator</h3>
               <div className="grid grid-cols-5 gap-2">
-                {sampleQuestions.map((q, idx) => (
+                {questionsToUse.map((q, idx) => (
                   <button
                     key={q.id}
                     onClick={() => setCurrentQuestion(idx)}
@@ -361,42 +500,47 @@ const AptitudeTest = () => {
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                    {sampleQuestions[currentQuestion].category}
+                    {questionsToUse[currentQuestion]?.category || 'General'}
+                    {questionsToUse[currentQuestion]?.difficulty && (
+                      <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-200 text-gray-700">
+                        {questionsToUse[currentQuestion].difficulty}
+                      </span>
+                    )}
                   </span>
                   <span className="text-sm text-gray-600">
-                    Question {currentQuestion + 1} of {sampleQuestions.length}
+                    Question {currentQuestion + 1} of {questionsToUse.length}
                   </span>
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {sampleQuestions[currentQuestion].question}
+                  {questionsToUse[currentQuestion]?.question || 'Loading question...'}
                 </h2>
               </div>
 
               <div className="space-y-4">
-                {sampleQuestions[currentQuestion].options.map((option, idx) => (
+                {questionsToUse[currentQuestion]?.options?.map((option, idx) => (
                   <button
                     key={idx}
-                    onClick={() => handleAnswer(sampleQuestions[currentQuestion].id, idx)}
+                    onClick={() => handleAnswer(questionsToUse[currentQuestion].id, idx)}
                     className={`w-full text-left p-4 rounded-lg border-2 transition transform hover:scale-102 ${
-                      answers[sampleQuestions[currentQuestion].id] === idx
+                      answers[questionsToUse[currentQuestion].id] === idx
                         ? 'border-blue-600 bg-blue-50'
                         : 'border-gray-200 hover:border-blue-300'
                     }`}
                   >
                     <div className="flex items-center">
                       <div className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${
-                        answers[sampleQuestions[currentQuestion].id] === idx
+                        answers[questionsToUse[currentQuestion].id] === idx
                           ? 'border-blue-600 bg-blue-600'
                           : 'border-gray-300'
                       }`}>
-                        {answers[sampleQuestions[currentQuestion].id] === idx && (
+                        {answers[questionsToUse[currentQuestion].id] === idx && (
                           <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         )}
                       </div>
                       <span className={`text-lg ${
-                        answers[sampleQuestions[currentQuestion].id] === idx
+                        answers[questionsToUse[currentQuestion].id] === idx
                           ? 'font-semibold text-blue-900'
                           : 'text-gray-700'
                       }`}>
@@ -417,9 +561,9 @@ const AptitudeTest = () => {
                   Previous
                 </button>
                 
-                {currentQuestion < sampleQuestions.length - 1 ? (
+                {currentQuestion < questionsToUse.length - 1 ? (
                   <button
-                    onClick={() => setCurrentQuestion(prev => Math.min(sampleQuestions.length - 1, prev + 1))}
+                    onClick={() => setCurrentQuestion(prev => Math.min(questionsToUse.length - 1, prev + 1))}
                     className="px-6 py-3 gradient-primary rounded-lg font-medium text-white hover:shadow-lg transition"
                   >
                     Next

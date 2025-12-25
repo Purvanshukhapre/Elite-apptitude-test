@@ -1,4 +1,3 @@
-import React from 'react';
 
 const PositionPerformance = ({ analytics, applicants }) => {
   return (

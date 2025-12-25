@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { AppContext } from './AppContextDefinition';
-import { addApplicant as apiAddApplicant, updateApplicantTest as apiUpdateApplicantTest, updateApplicantFeedback as apiUpdateApplicantFeedback, getApplicants as apiGetApplicants } from '../api';
+import { addApplicant as apiAddApplicant, updateApplicantTest as apiUpdateApplicantTest, updateApplicantFeedback as apiUpdateApplicantFeedback, getApplicants as apiGetApplicants, mockQuestions } from '../api';
+// mockQuestions is now properly exported from api.js
 
 export const AppProvider = ({ children }) => {
   const [applicants, setApplicants] = useState([]);
   const [currentApplicant, setCurrentApplicant] = useState(null);
+  const [testQuestions, setTestQuestions] = useState([]);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     const saved = localStorage.getItem('adminAuth');
     return saved === 'true';
@@ -16,66 +18,125 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('adminAuth', isAdminAuthenticated.toString());
   }, [isAdminAuthenticated]);
 
-  // Fetch applicants from API or localStorage
+  // Initialize by fetching applicants from API
   useEffect(() => {
     const fetchApplicants = async () => {
       try {
-        // Try to fetch from API first
-        console.log('Attempting to fetch applicants from API...');
         const apiApplicants = await apiGetApplicants();
-        console.log('Successfully fetched applicants from API:', apiApplicants);
-        setApplicants(Array.isArray(apiApplicants) ? apiApplicants : []);
+        setApplicants(apiApplicants);
+        console.log('Applicants loaded from API:', apiApplicants);
       } catch (error) {
         console.error('Failed to fetch applicants from API:', error);
-        // Check if it's a CORS error
-        if (error instanceof TypeError && error.message.includes('fetch')) {
-          console.warn('CORS or network error detected, using localStorage fallback');
-        }
         // Fallback to localStorage
-        const saved = localStorage.getItem('applicants');
-        const parsedApplicants = saved ? JSON.parse(saved) : [];
-        console.log('Using localStorage applicants:', parsedApplicants);
-        setApplicants(parsedApplicants);
+        const savedApplicants = localStorage.getItem('applicants');
+        if (savedApplicants) {
+          setApplicants(JSON.parse(savedApplicants));
+        }
       } finally {
         setLoading(false);
       }
     };
-
+    
     fetchApplicants();
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('applicants', JSON.stringify(applicants));
-  }, [applicants]);
+    if (!loading) {
+      localStorage.setItem('applicants', JSON.stringify(applicants));
+    }
+  }, [applicants, loading]);
 
-  const addApplicant = async (applicantData) => {
+  const addApplicant = async (formData) => {
     try {
-      console.log('Submitting applicant data to API:', applicantData);
-      const response = await apiAddApplicant(applicantData);
-      console.log('API response:', response);
-      // The real API should return the created applicant with an ID
-      const newApplicant = {
-        ...applicantData,
-        id: response.id || Date.now().toString(),
-        submittedAt: response.submittedAt || new Date().toISOString(),
-        status: response.status || 'pending'
+      // Transform the form data to match the expected backend structure
+      const applicantData = {
+        fullName: formData.fullName,
+        fatherName: formData.fatherName,
+        postAppliedFor: formData.position,
+        referenceName: formData.referenceNumber || '',
+        dateOfBirth: formData.dob,
+        age: formData.age || 0,
+        maritalStatus: formData.maritalStatus,
+        sex: formData.gender,
+        linkedInProfile: formData.resumeLink || '',
+        language: formData.languages,
+        permanentAddressLine: formData.address,
+        permanentPin: formData.pincode,
+        permanentPhone: formData.phone,
+        permanentEmail: formData.email,
+        reference1Name: formData.referenceNumber || '',
+        reference1Mobile: formData.contactNumber || '',
+        reference2Name: formData.referenceNumber2 || '',
+        reference2Mobile: formData.contactNumber2 || '',
+        academicRecords: [
+          {
+            schoolOrCollege: formData.institution,
+            boardOrUniversity: formData.boardName,
+            examinationPassed: formData.examPassed,
+            yearOfPassing: parseInt(formData.yearOfPassing) || 0,
+            mainSubjects: formData.mainSubjects,
+            percentage: parseFloat(formData.percentage) || 0
+          }
+        ],
+        workExperiences: formData.experience !== 'fresher' ? [
+          {
+            employerName: formData.institution || 'Previous Employer',
+            durationFrom: formData.experienceFromText,
+            durationTo: formData.experienceToText,
+            designation: formData.designation,
+            briefJobProfile: formData.briefJobProfile,
+            totalSalary: 0, // Will be set later if provided
+            joiningDate: formData.experienceFromText,
+            lastDate: formData.experienceToText
+          }
+        ] : [],
+        experienceLevel: formData.experienceLevel,
+        yearsOfExperience: formData.experience === 'fresher' ? 0 : (formData.experience === '0-1' ? 1 : 
+                   formData.experience === '1-3' ? 2 : 
+                   formData.experience === '3-5' ? 4 : 
+                   formData.experience === '5-10' ? 7 : 15),
+        primarySkills: formData.primarySkills || [],
+        secondarySkills: formData.secondarySkills || []
       };
-      setApplicants(prev => [newApplicant, ...prev]);
-      return newApplicant;
-    } catch (error) {
-      console.error('Failed to add applicant:', error);
-      // Check if it's a CORS error
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.warn('CORS or network error when submitting applicant, data saved to localStorage');
+
+      const result = await apiAddApplicant(applicantData);
+      
+      // If the result contains questions (from successful API call), update the context
+      if (result && Array.isArray(result)) {
+        // The API returned questions, store them
+        setTestQuestions(result);
+        // console.log('Questions received from API:', result);
+      } else if (result && result.questions && Array.isArray(result.questions)) {
+        // The API returned an object with questions property
+        setTestQuestions(result.questions);
+        // console.log('Questions received from API:', result.questions);
+      } else {
+        // Fallback to mock questions if API doesn't return them
+        setTestQuestions(mockQuestions);
       }
-      // Fallback to local storage
+
+      // Add the applicant to the state
       const newApplicant = {
-        id: Date.now().toString(),
+        id: result.id || Date.now().toString(),
         ...applicantData,
         submittedAt: new Date().toISOString(),
         status: 'pending'
       };
-      setApplicants(prev => [newApplicant, ...prev]);
+      
+      setApplicants(prev => [...prev, newApplicant]);
+      return newApplicant;
+    } catch (error) {
+      console.error('Failed to add applicant:', error);
+      // Even if API call fails, we should return mock questions for the test
+      setTestQuestions(mockQuestions);
+      // Return a basic applicant object to continue with the flow
+      const newApplicant = {
+        id: Date.now().toString(),
+        ...formData,
+        submittedAt: new Date().toISOString(),
+        status: 'pending'
+      };
+      setApplicants(prev => [...prev, newApplicant]);
       return newApplicant;
     }
   };
@@ -85,7 +146,14 @@ export const AppProvider = ({ children }) => {
       await apiUpdateApplicantTest(applicantId, testData);
       setApplicants(prev => prev.map(app => 
         app.id === applicantId 
-          ? { ...app, testData, testCompletedAt: new Date().toISOString() }
+          ? { 
+              ...app, 
+              testData, 
+              // Update top-level correctAnswer field if available in testData (handle both correctAnswer and correctAnswers)
+              correctAnswer: testData.correctAnswer !== undefined ? testData.correctAnswer : 
+                         testData.correctAnswers !== undefined ? testData.correctAnswers : app.correctAnswer,
+              testCompletedAt: new Date().toISOString() 
+            }
           : app
       ));
     } catch (error) {
@@ -93,7 +161,14 @@ export const AppProvider = ({ children }) => {
       // Fallback to local storage
       setApplicants(prev => prev.map(app => 
         app.id === applicantId 
-          ? { ...app, testData, testCompletedAt: new Date().toISOString() }
+          ? { 
+              ...app, 
+              testData, 
+              // Update top-level correctAnswer field if available in testData (handle both correctAnswer and correctAnswers)
+              correctAnswer: testData.correctAnswer !== undefined ? testData.correctAnswer : 
+                         testData.correctAnswers !== undefined ? testData.correctAnswers : app.correctAnswer,
+              testCompletedAt: new Date().toISOString() 
+            }
           : app
       ));
     }
@@ -136,6 +211,8 @@ export const AppProvider = ({ children }) => {
     loading,
     currentApplicant,
     setCurrentApplicant,
+    testQuestions,
+    setTestQuestions,
     addApplicant,
     updateApplicantTest,
     updateApplicantFeedback,

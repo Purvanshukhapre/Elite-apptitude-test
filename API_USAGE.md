@@ -1,155 +1,75 @@
-# API Configuration and Usage Guide
+# Production-Ready API Guide
 
-## Overview
-This project uses a centralized API configuration system that makes it easy to switch between different environments (development, staging, production) by simply changing the base URL.
+## What the API does
+The API connects your frontend to a backend server at `https://eliterecruitmentbackend-production.up.railway.app` to save and retrieve data. It includes fallback mechanisms to mock data when the backend is unavailable.
 
-## Configuration File
-The API configuration is located at `src/api.js` and contains:
+## Available API Functions
 
-1. **Base URL Configuration**
-2. **Endpoint Definitions**
-3. **Utility Functions**
-4. **Specific API Methods**
+### Applicant Functions
 
-## How to Use
-
-### 1. Changing the Base URL
-To switch to your production API, simply update the `API_BASE_URL` constant:
-
+#### Get all applicants
 ```javascript
-// In src/api.js
-export const API_BASE_URL = 'https://your-production-domain.com/api';
+const applicants = await getApplicants();
 ```
 
-### 2. Using API Endpoints
-Import the API functions in your components:
-
+#### Get applicants by name
 ```javascript
-import { getApplicants, addApplicant, updateApplicantTest } from '../api';
-
-// Example usage
-const fetchData = async () => {
-  try {
-    const applicants = await getApplicants();
-    console.log(applicants);
-  } catch (error) {
-    console.error('Failed to fetch applicants:', error);
-  }
-};
+const applicants = await getApplicantsByName('Aryan');
 ```
 
-### 3. Available API Methods
-- `getApplicants()` - Fetch all applicants
-- `getApplicantById(id)` - Fetch a specific applicant
-- `addApplicant(data)` - Add a new applicant
-- `updateApplicantTest(applicantId, testData)` - Update applicant test data
-- `updateApplicantFeedback(applicantId, feedback)` - Update applicant feedback
-- `getQuestions()` - Fetch test questions
-- `submitTest(testData)` - Submit test results
-- `getAnalyticsDashboard()` - Fetch analytics data
-- `getFeedback()` - Fetch feedback data
-- `submitFeedback(feedbackData)` - Submit feedback
-
-### 4. Custom API Calls
-For custom API endpoints, use the `apiCall` function:
-
+#### Add new applicant
 ```javascript
-import { apiCall, API_ENDPOINTS } from '../api';
-
-// Example custom call
-const customCall = async () => {
-  try {
-    const result = await apiCall('/custom-endpoint', {
-      method: 'POST',
-      body: JSON.stringify({ key: 'value' })
-    });
-    return result;
-  } catch (error) {
-    console.error('Custom call failed:', error);
-  }
-};
+const result = await addApplicant(applicantData);
 ```
 
-## Endpoint Structure
-All endpoints are defined in the `API_ENDPOINTS` object:
+### Test & Analytics Functions
 
+#### Get analytics dashboard data
 ```javascript
-export const API_ENDPOINTS = {
-  // Applicants
-  APPLICANTS: '/applicants',
-  APPLICANT_BY_ID: (id) => `/applicants/${id}`,
-  APPLICANT_TEST_DATA: (id) => `/applicants/${id}/test-data`,
-  APPLICANT_FEEDBACK: (id) => `/applicants/${id}/feedback`,
-  
-  // Tests
-  QUESTIONS: '/questions',
-  SUBMIT_TEST: '/tests/submit',
-  
-  // Analytics
-  ANALYTICS_DASHBOARD: '/analytics/dashboard',
-  ANALYTICS_PERFORMANCE: '/analytics/performance',
-  ANALYTICS_SCORES: '/analytics/scores',
-  
-  // Feedback
-  FEEDBACK: '/feedback',
-  FEEDBACK_SUMMARY: '/feedback/summary'
-};
+const analytics = await getAnalyticsDashboard();
+```
+
+#### Submit test results
+```javascript
+const result = await submitTest(testData);
+```
+
+### Feedback Functions
+
+#### Submit feedback (new endpoint)
+```javascript
+const result = await submitFeedback(feedbackData);
+// feedbackData should include: rating (integer), problem1, problem2, problem3, problem4, problem5 (all as strings)
+```
+
+#### Get all feedback (new endpoint)
+```javascript
+const feedback = await getAllFeedback();
 ```
 
 ## Error Handling
-The API functions include built-in error handling with fallback to localStorage when API calls fail. This ensures the application remains functional even when the backend is unavailable.
 
-## Best Practices
-1. Always use the provided API functions instead of direct fetch calls
-2. Update `API_BASE_URL` when deploying to different environments
-3. Add new endpoints to the `API_ENDPOINTS` object for consistency
-4. Handle errors appropriately in your components
-5. Use async/await for API calls to ensure proper error handling
-
-## Example Implementation
-Here's a complete example of how to use the API in a React component:
+All API functions may throw errors, so always use try/catch:
 
 ```javascript
-import { useState, useEffect } from 'react';
-import { getApplicants, addApplicant } from '../api';
-
-const MyComponent = () => {
-  const [applicants, setApplicants] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchApplicants();
-  }, []);
-
-  const fetchApplicants = async () => {
-    try {
-      setLoading(true);
-      const data = await getApplicants();
-      setApplicants(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddApplicant = async (applicantData) => {
-    try {
-      const newApplicant = await addApplicant(applicantData);
-      setApplicants(prev => [newApplicant, ...prev]);
-    } catch (err) {
-      console.error('Failed to add applicant:', err);
-    }
-  };
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
-
-  return (
-    <div>
-      {/* Render applicants */}
-    </div>
-  );
-};
+try {
+  const feedback = await getAllFeedback();
+  console.log(feedback);
+} catch (error) {
+  console.error('Error fetching feedback:', error);
+}
 ```
+
+## Production Features
+
+- **Backend Integration**: Connects to the live backend at Railway
+- **Fallback System**: Automatically falls back to mock data if backend is unavailable
+- **Error Handling**: Comprehensive error handling with user-friendly messages
+- **Loading States**: Includes loading indicators for better UX
+- **CORS Support**: Handles cross-origin requests properly
+
+## New Feedback Endpoints
+
+The website now supports two new feedback endpoints:
+- POST `/feedback/submit` - Submit user feedback
+- GET `/feedback/all` - Get all feedback for admin dashboard

@@ -1,4 +1,3 @@
-import React from 'react';
 
 const AnimatedLineChart = ({ data, title, description, color, xAxis = 'x', yAxis = 'y', minValue = 0, maxValue = 100 }) => {
   // Calculate dynamic scale based on data

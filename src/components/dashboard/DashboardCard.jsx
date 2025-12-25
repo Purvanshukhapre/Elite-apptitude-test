@@ -1,4 +1,3 @@
-import React from 'react';
 
 const DashboardCard = ({ title, value, change, changeType, color, icon, description }) => {
   const colorClasses = {

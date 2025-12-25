@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useApp } from '../../context/useApp';
+import { submitFeedback } from '../../api';
 
 const Feedback = () => {
   const navigate = useNavigate();
+  const { currentApplicant } = useApp();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [feedback, setFeedback] = useState({
@@ -13,15 +16,41 @@ const Feedback = () => {
     comments: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFeedback(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    
+    // Map feedback data to the expected backend format
+    const feedbackData = {
+      rating: rating,  // Backend expects 'rating' as integer
+      problem1: feedback.testDifficulty || '',  // Send as string
+      problem2: feedback.platformExperience || '',  // Send as string
+      problem3: feedback.improvements || '',  // Send as string
+      problem4: feedback.wouldRecommend || '',  // Send as string
+      problem5: feedback.comments || '',  // Send as string
+      name: currentApplicant?.fullName || '',  // Include applicant's name
+      email: currentApplicant?.email || '',  // Include applicant's email
+      position: currentApplicant?.position || '',  // Include position applied for
+      submittedAt: new Date().toISOString()  // Include timestamp
+    };
+    
+    setSubmitting(true);
+    
+    try {
+      await submitFeedback(feedbackData);
+      setSubmitted(true);
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert('There was an error submitting your feedback. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 {/* Floating Background Blobs */}
   if (submitted) {
@@ -113,7 +142,7 @@ const Feedback = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth="2"
-                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
                       />
                     </svg>
                   </button>
@@ -128,6 +157,8 @@ const Feedback = () => {
                 {rating === 5 && '⭐⭐⭐⭐⭐ Excellent'}
               </p>
             </div>
+
+
 
             <div>
               <label className="block text-lg font-bold text-gray-800 mb-4 tracking-tight">
@@ -226,14 +257,16 @@ const Feedback = () => {
               />
             </div>
 
+
+
             <div className="pt-6">
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={rating === 0}
+                disabled={rating === 0 || submitting}
                 className="w-full px-8 py-5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl text-white font-bold text-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                Submit Feedback
+                {submitting ? 'Submitting...' : 'Submit Feedback'}
               </button>
               {rating === 0 && (
                 <p className="text-sm text-red-500 text-center mt-3 font-medium">⚠️ Please provide an overall rating</p>

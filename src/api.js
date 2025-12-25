@@ -1,34 +1,41 @@
-// API Configuration File
-// This file contains all API endpoints and configuration
-// To switch to production, simply update the API_BASE_URL
+// API Service Import
+import {
+  API_BASE_URL,
+  API_ENDPOINTS,
+  buildUrl,
+  apiCall,
+  getApplicants,
+  getApplicantsByName,
+  addApplicant,
+  updateApplicantTest,
+  updateApplicantFeedback,
+  submitTest,
+  calculateCorrectAnswers,
+  submitFeedback,
+  getAllFeedback
+} from './services/apiService';
 
-// Configuration
-export const API_BASE_URL = 'https://eliterecruitmentbackend-production.up.railway.app'; // Change this to your production URL
-
-// API Endpoints
-export const API_ENDPOINTS = {
-  // Applicants
-  APPLICANTS: '/auth/student/submit',
-  ALL_APPLICANTS: '/applicants',
-  APPLICANT_TEST_DATA: (id) => `/applicants/${id}/test-data`,
-  APPLICANT_FEEDBACK: (id) => `/applicants/${id}/feedback`,
-  
-  // Tests
-  QUESTIONS: '/questions',
-  SUBMIT_TEST: '/tests/submit',
-  
-  // Analytics
-  ANALYTICS_DASHBOARD: '/analytics/dashboard',
-  ANALYTICS_PERFORMANCE: '/analytics/performance',
-  ANALYTICS_SCORES: '/analytics/scores',
-  
-  // Feedback
-  FEEDBACK: '/feedback',
-  FEEDBACK_SUMMARY: '/feedback/summary'
+// Named exports for individual functions
+export {
+  API_BASE_URL,
+  API_ENDPOINTS,
+  buildUrl,
+  apiCall,
+  getApplicants,
+  getApplicantsByName,
+  addApplicant,
+  updateApplicantTest,
+  updateApplicantFeedback,
+  submitTest,
+  calculateCorrectAnswers,
+  submitFeedback,
+  getAllFeedback
 };
 
+
+
 // Mock data for fake APIs
-const mockApplicants = [
+export const mockApplicants = [
   {
     id: '1',
     fullName: 'John Doe',
@@ -42,6 +49,7 @@ const mockApplicants = [
     coverLetter: 'I am excited to apply for the Software Engineer position...',
     submittedAt: '2023-05-15T10:30:00Z',
     status: 'completed',
+    correctAnswer: 8,
     testData: {
       score: 85,
       percentage: 85,
@@ -87,6 +95,7 @@ const mockApplicants = [
     coverLetter: 'With over 5 years of product management experience...',
     submittedAt: '2023-05-16T14:45:00Z',
     status: 'completed',
+    correctAnswer: 9,
     testData: {
       score: 92,
       percentage: 92,
@@ -132,6 +141,7 @@ const mockApplicants = [
     coverLetter: 'Recent PhD graduate with expertise in machine learning...',
     submittedAt: '2023-05-17T09:15:00Z',
     status: 'completed',
+    correctAnswer: 7,
     testData: {
       score: 78,
       percentage: 78,
@@ -166,24 +176,175 @@ const mockApplicants = [
   }
 ];
 
-const mockQuestions = [
+export const mockQuestions = [
+  // Easy Questions (5)
   {
     id: 1,
-    question: "What is the capital of France?",
-    options: ["London", "Berlin", "Paris", "Madrid"],
-    correctAnswer: 2,
-    category: "Geography"
+    question: "What does HTML stand for?",
+    options: [
+      "Hyper Text Markup Language",
+      "High Tech Modern Language",
+      "Home Tool Markup Language",
+      "Hyperlinks and Text Markup Language"
+    ],
+    correctAnswer: 0,
+    category: "Web Development",
+    difficulty: "Easy"
   },
   {
     id: 2,
-    question: "Which planet is known as the Red Planet?",
-    options: ["Venus", "Mars", "Jupiter", "Saturn"],
+    question: "Which SQL command is used to retrieve data from a database?",
+    options: ["GET", "SELECT", "RETRIEVE", "FETCH"],
     correctAnswer: 1,
-    category: "Science"
+    category: "Database",
+    difficulty: "Easy"
+  },
+  {
+    id: 3,
+    question: "What does CSS stand for?",
+    options: [
+      "Cascading Style Sheets",
+      "Computer Style Sheets",
+      "Creative Style Sheets",
+      "Colorful Style Sheets"
+    ],
+    correctAnswer: 0,
+    category: "Web Development",
+    difficulty: "Easy"
+  },
+  {
+    id: 4,
+    question: "Which of the following is NOT a JavaScript data type?",
+    options: ["String", "Boolean", "Float", "Undefined"],
+    correctAnswer: 2,
+    category: "Programming",
+    difficulty: "Easy"
+  },
+  {
+    id: 5,
+    question: "What is the primary purpose of Git?",
+    options: [
+      "Version Control",
+      "Database Management",
+      "Code Compilation",
+      "Web Hosting"
+    ],
+    correctAnswer: 0,
+    category: "Tools",
+    difficulty: "Easy"
+  },
+
+  // Medium Questions (5)
+  {
+    id: 6,
+    question: "What is the time complexity of binary search?",
+    options: ["O(n)", "O(log n)", "O(n²)", "O(1)"],
+    correctAnswer: 1,
+    category: "Algorithms",
+    difficulty: "Medium"
+  },
+  {
+    id: 7,
+    question: "Which data structure uses LIFO (Last In First Out)?",
+    options: ["Queue", "Stack", "Array", "Linked List"],
+    correctAnswer: 1,
+    category: "Data Structures",
+    difficulty: "Medium"
+  },
+  {
+    id: 8,
+    question: "In Object-Oriented Programming, what does 'inheritance' mean?",
+    options: [
+      "Sharing memory between objects",
+      "Creating multiple instances",
+      "Acquiring properties from parent class",
+      "Hiding implementation details"
+    ],
+    correctAnswer: 2,
+    category: "Programming Concepts",
+    difficulty: "Medium"
+  },
+  {
+    id: 9,
+    question: "What is the output of: console.log(typeof null)?",
+    options: ["null", "undefined", "object", "number"],
+    correctAnswer: 2,
+    category: "Programming",
+    difficulty: "Medium"
+  },
+  {
+    id: 10,
+    question: "Which of the following is a Python web framework?",
+    options: ["React", "Angular", "Django", "Vue"],
+    correctAnswer: 2,
+    category: "Programming",
+    difficulty: "Medium"
+  },
+
+  // Hard Questions (5)
+  {
+    id: 11,
+    question: "What is the difference between == and === in JavaScript?",
+    options: [
+      "== compares values, === compares values and types",
+      "== compares types, === compares values",
+      "Both work the same way",
+      "== is deprecated, === is the new standard"
+    ],
+    correctAnswer: 0,
+    category: "Programming",
+    difficulty: "Hard"
+  },
+  {
+    id: 12,
+    question: "What is the purpose of a closure in JavaScript?",
+    options: [
+      "To encapsulate private variables and methods",
+      "To close HTML tags",
+      "To terminate loops",
+      "To compress code"
+    ],
+    correctAnswer: 0,
+    category: "Programming",
+    difficulty: "Hard"
+  },
+  {
+    id: 13,
+    question: "What is the CAP theorem in distributed systems?",
+    options: [
+      "Consistency, Availability, Partition tolerance - can only guarantee two",
+      "Capacity, Accuracy, Performance - system design principles",
+      "Centralization, Automation, Parallelization - deployment strategy",
+      "Compression, Authentication, Privacy - security measures"
+    ],
+    correctAnswer: 0,
+    category: "Distributed Systems",
+    difficulty: "Hard"
+  },
+  {
+    id: 14,
+    question: "What is the time complexity of merge sort?",
+    options: ["O(n)", "O(log n)", "O(n log n)", "O(n²)"],
+    correctAnswer: 2,
+    category: "Algorithms",
+    difficulty: "Hard"
+  },
+  {
+    id: 15,
+    question: "What is the difference between TCP and UDP?",
+    options: [
+      "TCP is connection-oriented and reliable, UDP is connectionless and unreliable",
+      "TCP is faster than UDP",
+      "UDP is used for web browsing, TCP for streaming",
+      "There is no difference, they are the same protocol"
+    ],
+    correctAnswer: 0,
+    category: "Networking",
+    difficulty: "Hard"
   }
 ];
 
-const mockAnalytics = {
+const MOCK_ANALYTICS = {
   totalApplicants: 42,
   averageScore: 78.5,
   passRate: 85.7,
@@ -194,7 +355,7 @@ const mockAnalytics = {
   ]
 };
 
-const mockFeedback = [
+const MOCK_FEEDBACK = [
   {
     id: '1',
     applicantId: '1',
@@ -204,222 +365,21 @@ const mockFeedback = [
   }
 ];
 
-// Utility function to build full URL
-export const buildUrl = (endpoint) => {
-  // If endpoint is a full URL, return it as is
-  if (endpoint.startsWith('http')) {
-    return endpoint;
-  }
-  // If endpoint already starts with /, don't add extra /
-  if (endpoint.startsWith('/')) {
-    return `${API_BASE_URL}${endpoint}`;
-  }
-  return `${API_BASE_URL}/${endpoint}`;
-};
-
-// Simulate API delay
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Generic API call function with mock data support
-export const apiCall = async (endpoint, options = {}) => {
-  // Simulate network delay
-  await delay(500);
-  
-  const url = buildUrl(endpoint);
-  
-  // For demo purposes, we'll return mock data based on the endpoint
-  // In a real implementation, this would make actual HTTP requests
-  
-  const defaultOptions = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers
-    },
-    credentials: 'include',
-    ...options
-  };
-  
-  try {
-    // Mock API responses based on endpoint
-    if (endpoint === API_ENDPOINTS.APPLICANTS) {
-      if (options.method === 'POST') {
-        // For the real API, we'll make an actual request
-        try {
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...defaultOptions.headers
-            },
-            body: options.body,
-            credentials: 'include'
-          });
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          return data;
-        } catch (fetchError) {
-          // If CORS error occurs, throw the error to be handled by caller
-          console.error('Failed to submit applicant data:', fetchError);
-          throw fetchError;
-        }
-      } else {
-        // Handle GET requests for applicants
-        try {
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              ...defaultOptions.headers
-            },
-            credentials: 'include'
-          });
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const data = await response.json();
-          return data;
-        } catch (fetchError) {
-          // If CORS error occurs, throw the error to be handled by caller
-          console.error('Failed to fetch applicants:', fetchError);
-          throw fetchError;
-        }
-      }
-    } else if (endpoint === API_ENDPOINTS.ALL_APPLICANTS) {
-      // Handle GET requests for all applicants
-      try {
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            ...defaultOptions.headers
-          }
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-      } catch (fetchError) {
-        // If CORS error occurs, return mock data as fallback
-        console.warn('CORS error or network issue, using mock data as fallback:', fetchError);
-        return mockApplicants;
-      }
-    } else if (endpoint.includes('/test-data')) {
-      // Handle test data updates
-      return { success: true, message: 'Test data updated successfully' };
-    } else if (endpoint.includes('/feedback')) {
-      // Handle feedback updates
-      return { success: true, message: 'Feedback submitted successfully' };
-    } else if (endpoint === API_ENDPOINTS.QUESTIONS) {
-      return mockQuestions;
-    } else if (endpoint === API_ENDPOINTS.SUBMIT_TEST) {
-      return { success: true, message: 'Test submitted successfully' };
-    } else if (endpoint === API_ENDPOINTS.ANALYTICS_DASHBOARD) {
-      return mockAnalytics;
-    } else if (endpoint === API_ENDPOINTS.FEEDBACK) {
-      return mockFeedback;
-    } else {
-      // Default response for other endpoints
-      try {
-        const response = await fetch(url, {
-          ...defaultOptions,
-          credentials: 'include'
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        return data;
-      } catch (fetchError) {
-        // If CORS error occurs, re-throw to be handled by caller
-        console.error('API call failed:', fetchError);
-        throw fetchError;
-      }
-    }
-  } catch (error) {
-    console.error('API call failed:', error);
-    throw error;
-  }
-};
-
-// Specific API functions
-export const getApplicants = async () => {
-  return apiCall(API_ENDPOINTS.ALL_APPLICANTS);
-};
-
-export const getApplicantById = async (id) => {
-  // We can get applicant data from the main applicants collection
-  // This function is kept for potential future use
-  const applicants = await getApplicants();
-  return applicants.find(applicant => applicant.id === id);
-};
-
-export const addApplicant = async (applicantData) => {
-  return apiCall(API_ENDPOINTS.APPLICANTS, {
-    method: 'POST',
-    body: JSON.stringify(applicantData)
-  });
-};
-
-export const updateApplicantTest = async (applicantId, testData) => {
-  return apiCall(API_ENDPOINTS.APPLICANT_TEST_DATA(applicantId), {
-    method: 'PUT',
-    body: JSON.stringify(testData)
-  });
-};
-
-export const updateApplicantFeedback = async (applicantId, feedback) => {
-  return apiCall(API_ENDPOINTS.APPLICANT_FEEDBACK(applicantId), {
-    method: 'PUT',
-    body: JSON.stringify(feedback)
-  });
-};
-
-export const getQuestions = async () => {
-  return apiCall(API_ENDPOINTS.QUESTIONS);
-};
-
-export const submitTest = async (testData) => {
-  return apiCall(API_ENDPOINTS.SUBMIT_TEST, {
-    method: 'POST',
-    body: JSON.stringify(testData)
-  });
-};
-
-export const getAnalyticsDashboard = async () => {
-  return apiCall(API_ENDPOINTS.ANALYTICS_DASHBOARD);
-};
-
-export const getFeedback = async () => {
-  return apiCall(API_ENDPOINTS.FEEDBACK);
-};
-
-export const submitFeedback = async (feedbackData) => {
-  return apiCall(API_ENDPOINTS.FEEDBACK, {
-    method: 'POST',
-    body: JSON.stringify(feedbackData)
-  });
-};
-
+// Export the API functions and data
 export default {
   API_BASE_URL,
   API_ENDPOINTS,
   buildUrl,
   apiCall,
   getApplicants,
-  getApplicantById,
+  getApplicantsByName,
   addApplicant,
   updateApplicantTest,
   updateApplicantFeedback,
-  getQuestions,
   submitTest,
-  getAnalyticsDashboard,
-  getFeedback,
-  submitFeedback
+  calculateCorrectAnswers,
+  submitFeedback,
+  getAllFeedback,
+  mockQuestions,
+  mockApplicants
 };

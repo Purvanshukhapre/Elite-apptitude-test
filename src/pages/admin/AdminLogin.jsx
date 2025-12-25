@@ -11,7 +11,7 @@ const AdminLogin = () => {
 
   useEffect(() => {
     if (isAdminAuthenticated) {
-      navigate('/admin/dashboard');
+      navigate('/admin/modern');
     }
   }, [isAdminAuthenticated, navigate]);
 
@@ -24,7 +24,7 @@ const AdminLogin = () => {
     setTimeout(() => {
       const success = adminLogin(credentials.username, credentials.password);
       if (success) {
-        navigate('/admin/dashboard');
+        navigate('/admin/modern');
       } else {
         setError('Invalid username or password');
         setLoading(false);
