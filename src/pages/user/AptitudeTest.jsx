@@ -11,14 +11,18 @@ const AptitudeTest = () => {
   const [loading, setLoading] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(900); // 15 minutes in seconds
   const [showWarning, setShowWarning] = useState(false);
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const [showTabWarning, setShowTabWarning] = useState(false);
   const [isTestDisqualified, setIsTestDisqualified] = useState(false);
   const [copyAttempts, setCopyAttempts] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = useCallback(async () => {
+    // Set submitting state to prevent multiple clicks
+    setIsSubmitting(true);
+    
     let score = 0;
     const questionsToUse = questions.length > 0 ? questions : sampleQuestions;
     const detailedAnswers = {};
@@ -51,12 +55,13 @@ const AptitudeTest = () => {
       correctAnswers: score,
       percentage: percentage.toFixed(2),
       passFailStatus,
-      timeSpent: 1800 - timeLeft,
+      timeSpent: 900 - timeLeft, // Updated for 15 minutes
       tabSwitchCount,
       copyAttempts,
       disqualified: isTestDisqualified,
       applicantId: currentApplicant.id,
-      applicantName: currentApplicant.fullName
+      applicantName: currentApplicant.fullName,
+      email: currentApplicant.permanentEmail || currentApplicant.email
     };
     
     // console.log('Test Results:', testData);
@@ -85,13 +90,17 @@ const AptitudeTest = () => {
       updateApplicantTest(currentApplicant.id, {
         ...testData,
         // Use the correctAnswers that was already calculated in the testData object
-        correctAnswers: testData.correctAnswers
+        correctAnswers: testData.correctAnswers,
+        email: currentApplicant.permanentEmail || currentApplicant.email
       });
       
       // Show error message to user
       if (window.confirm('Test submission failed due to a network error. Your test has been saved locally. Would you like to continue to the feedback page?')) {
         navigate('/feedback');
       }
+    } finally {
+      // Reset submitting state
+      setIsSubmitting(false);
     }
   }, [answers, timeLeft, currentApplicant, updateApplicantTest, navigate, tabSwitchCount, isTestDisqualified, copyAttempts, questions]);
 
@@ -313,7 +322,7 @@ const AptitudeTest = () => {
           handleSubmit();
           return 0;
         }
-        if (prev === 300) { // 5 minutes warning
+        if (prev === 300) { // 5 minutes warning (300 seconds = 5 minutes)
           setShowWarning(true);
           setTimeout(() => setShowWarning(false), 3000);
         }
@@ -571,9 +580,20 @@ const AptitudeTest = () => {
                 ) : (
                   <button
                     onClick={handleSubmit}
-                    className="px-8 py-3 bg-green-600 rounded-lg font-medium text-white hover:bg-green-700 hover:shadow-lg transition"
+                    disabled={isSubmitting}
+                    className="px-8 py-3 bg-green-600 rounded-lg font-medium text-white hover:bg-green-700 hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
-                    Submit Test
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Submitting...
+                      </>
+                    ) : (
+                      'Submit Test'
+                    )}
                   </button>
                 )}
               </div>

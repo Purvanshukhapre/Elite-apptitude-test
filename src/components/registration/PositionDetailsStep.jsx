@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { positions } from '../../data/questions';
 
 const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
   const [primarySkillInput, setPrimarySkillInput] = useState('');
@@ -7,10 +6,46 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+    
+    // Handle nested form data
+    if (name.includes('academicRecords')) {
+      const [arrayAndIndex, field] = name.split('.');
+      const indexMatch = arrayAndIndex.match(/\[(\d+)\]/);
+      const index = indexMatch ? parseInt(indexMatch[1]) : 0;
+      setFormData(prev => ({
+        ...prev,
+        academicRecords: [
+          ...prev.academicRecords.slice(0, index),
+          { ...prev.academicRecords[index], [field]: value },
+          ...prev.academicRecords.slice(index + 1)
+        ]
+      }));
+      // Clear error for this field when user starts typing
+      if (errors[field]) {
+        setErrors(prev => ({ ...prev, [field]: '' }));
+      }
+    } else if (name.includes('workExperiences')) {
+      const [arrayAndIndex, field] = name.split('.');
+      const indexMatch = arrayAndIndex.match(/\[(\d+)\]/);
+      const index = indexMatch ? parseInt(indexMatch[1]) : 0;
+      setFormData(prev => ({
+        ...prev,
+        workExperiences: [
+          ...prev.workExperiences.slice(0, index),
+          { ...prev.workExperiences[index], [field]: value },
+          ...prev.workExperiences.slice(index + 1)
+        ]
+      }));
+      // Clear error for this field when user starts typing
+      if (errors[field]) {
+        setErrors(prev => ({ ...prev, [field]: '' }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+      // Clear error for this field when user starts typing
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
     }
   };
 
@@ -57,472 +92,502 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
   };
 
   return (
-    <div>
-      <div className="mt-6">
-        <h3 className="text-2xl font-bold text-gray-800 mb-4">
+    <div className="space-y-8">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Position Details</h2>
+        <p className="text-gray-600">Provide information about your desired position and experience</p>
+      </div>
+      
+      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
           Academic Records
         </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
           {/* Institution Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               School / College Name <span className="text-red-500">*</span>
             </label>
-            <div
-              className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
-                errors.institution ? 'border-red-500' : 'border-gray-500'
-              }`}
-            >
+            <div className={`relative rounded-lg transition-all duration-200 ${errors.schoolOrCollege ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
               <input
                 type="text"
-                name="institution"
-                value={formData.institution || ''}
+                name="academicRecords[0].schoolOrCollege"
+                value={formData.academicRecords[0].schoolOrCollege || ''}
                 onChange={handleChange}
                 placeholder="Enter school or college name"
-                className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
-            {errors.institution && (
-              <p className="text-red-500 text-sm mt-1">{errors.institution}</p>
+            {errors.schoolOrCollege && (
+              <p className="text-red-500 text-sm mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.schoolOrCollege}
+              </p>
             )}
           </div>
 
-          {/* Board / University Type */}
+          {/* Board / University */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Board / University <span className="text-red-500">*</span>
             </label>
-            <div
-              className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
-                errors.boardType ? 'border-red-500' : 'border-gray-500'
-              }`}
-            >
-              <select
-                name="boardType"
-                value={formData.boardType || ''}
-                onChange={handleChange}
-                className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
-              >
-                <option value="">Select board / university type</option>
-                <option value="School">School</option>
-                <option value="University">University</option>
-              </select>
-            </div>
-            {errors.boardType && (
-              <p className="text-red-500 text-sm mt-1">{errors.boardType}</p>
-            )}
-          </div>
-
-          {/* Name of Board / University */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Name of Board / University <span className="text-red-500">*</span>
-            </label>
-            <div
-              className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
-                errors.boardName ? 'border-red-500' : 'border-gray-500'
-              }`}
-            >
+            <div className={`relative rounded-lg transition-all duration-200 ${errors.boardOrUniversity ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
               <input
                 type="text"
-                name="boardName"
-                value={formData.boardName || ''}
+                name="academicRecords[0].boardOrUniversity"
+                value={formData.academicRecords[0].boardOrUniversity || ''}
                 onChange={handleChange}
                 placeholder="Enter board or university name"
-                className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
-            {errors.boardName && (
-              <p className="text-red-500 text-sm mt-1">{errors.boardName}</p>
+            {errors.boardOrUniversity && (
+              <p className="text-red-500 text-sm mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.boardOrUniversity}
+              </p>
             )}
           </div>
 
           {/* Examination Passed */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Examination Passed <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Highest Qualification <span className="text-red-500">*</span>
             </label>
-            <div
-              className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
-                errors.examPassed ? 'border-red-500' : 'border-gray-500'
-              }`}
-            >
+            <div className={`relative rounded-lg transition-all duration-200 ${errors.examinationPassed ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
               <input
                 type="text"
-                name="examPassed"
-                value={formData.examPassed || ''}
+                name="academicRecords[0].examinationPassed"
+                value={formData.academicRecords[0].examinationPassed || ''}
                 onChange={handleChange}
-                placeholder="Enter exam passed"
-                className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                placeholder="Enter examination passed"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
-            {errors.examPassed && (
-              <p className="text-red-500 text-sm mt-1">{errors.examPassed}</p>
+            {errors.examinationPassed && (
+              <p className="text-red-500 text-sm mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.examinationPassed}
+              </p>
             )}
           </div>
 
           {/* Year of Passing */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Year of Passing <span className="text-red-500">*</span>
             </label>
-            <div
-              className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
-                errors.yearOfPassing ? 'border-red-500' : 'border-gray-500'
-              }`}
-            >
-              <select
-                name="yearOfPassing"
-                value={formData.yearOfPassing || ''}
+            <div className={`relative rounded-lg transition-all duration-200 ${errors.yearOfPassing ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+              <input
+                type="text"
+                name="academicRecords[0].yearOfPassing"
+                value={formData.academicRecords[0].yearOfPassing || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
-              >
-                <option value="">Select year or pursuing</option>
-                <option value="Pursuing">Pursuing</option>
-                {Array.from({ length: 50 }, (_, i) => 1975 + i).map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
+                placeholder="Enter year (e.g. 2024)"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
             </div>
             {errors.yearOfPassing && (
-              <p className="text-red-500 text-sm mt-1">{errors.yearOfPassing}</p>
+              <p className="text-red-500 text-sm mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.yearOfPassing}
+              </p>
             )}
           </div>
 
           {/* Main Subjects */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Main Subjects <span className="text-red-500">*</span>
             </label>
-            <div
-              className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
-                errors.mainSubjects ? 'border-red-500' : 'border-gray-500'
-              }`}
-            >
+            <div className={`relative rounded-lg transition-all duration-200 ${errors.mainSubjects ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
               <input
                 type="text"
-                name="mainSubjects"
-                value={formData.mainSubjects || ''}
+                name="academicRecords[0].mainSubjects"
+                value={formData.academicRecords[0].mainSubjects || ''}
                 onChange={handleChange}
                 placeholder="Enter main subjects"
-                className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
             {errors.mainSubjects && (
-              <p className="text-red-500 text-sm mt-1">{errors.mainSubjects}</p>
+              <p className="text-red-500 text-sm mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.mainSubjects}
+              </p>
             )}
           </div>
 
           {/* Percentage / CGPA */}
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Percentage / CGPA <span className="text-red-500">*</span>
             </label>
-            <div
-              className={`border rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-300 transition ${
-                errors.percentage ? 'border-red-500' : 'border-gray-500'
-              }`}
-            >
+            <div className={`relative rounded-lg transition-all duration-200 ${errors.percentage ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
               <input
                 type="number"
-                name="percentage"
-                value={formData.percentage || ''}
+                name="academicRecords[0].percentage"
+                value={formData.academicRecords[0].percentage || ''}
                 onChange={handleChange}
                 placeholder="Enter percentage or CGPA"
-                className="w-full px-3 py-2 bg-transparent outline-none border-none placeholder-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                step="0.01"
               />
             </div>
             {errors.percentage && (
-              <p className="text-red-500 text-sm mt-1">{errors.percentage}</p>
+              <p className="text-red-500 text-sm mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.percentage}
+              </p>
             )}
           </div>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Position Details</h2>
+      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0H8m8 0v2a2 2 0 002 2M8 6v2a2 2 0 002 2h4a2 2 0 002-2V8" />
+          </svg>
+          Position Information
+        </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Position Applied For *
+              Position Applied For <span className="text-red-500">*</span>
             </label>
-            <select
-              name="position"
-              value={formData.position || ''}
-              onChange={handleChange}
-              className={`w-full h-10 px-4 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition ${
-                errors.position ? 'border-red-500' : 'border-gray-500'
-              }`}
-            >
-              <option value="">Select a position</option>
-              {positions.map(pos => (
-                <option key={pos} value={pos}>{pos}</option>
-              ))}
-            </select>
-            {errors.position && (
-              <p className="text-red-500 text-sm mt-1">{errors.position}</p>
+            <div className={`relative rounded-lg transition-all duration-200 ${errors.postAppliedFor ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+              <input
+                type="text"
+                name="postAppliedFor"
+                value={formData.postAppliedFor || ''}
+                onChange={handleChange}
+                placeholder="Enter position you're applying for"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+            </div>
+            {errors.postAppliedFor && (
+              <p className="text-red-500 text-sm mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.postAppliedFor}
+              </p>
             )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Years of Experience *
+              Experience Level <span className="text-red-500">*</span>
             </label>
-            <select
-              name="experience"
-              value={formData.experience || ''}
-              onChange={handleChange}
-              className={`w-full h-10 px-4 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition ${
-                errors.experience ? 'border-red-500' : 'border-gray-500'
-              }`}
-            >
-              <option value="">Select experience</option>
-              <option value="fresher">Fresher (0 years)</option>
-              <option value="0-1">0-1 years</option>
-              <option value="1-3">1-3 years</option>
-              <option value="3-5">3-5 years</option>
-              <option value="5-10">5-10 years</option>
-              <option value="10+">10+ years</option>
-            </select>
+            <div className={`relative rounded-lg transition-all duration-200 ${errors.experienceLevel ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+              <select
+                name="experienceLevel"
+                value={formData.experienceLevel || ''}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              >
+                <option value="">Select experience level</option>
+                <option value="beginner">Entry Level</option>
+                <option value="intermediate">Mid Level</option>
+                <option value="advanced">Senior Level</option>
+                <option value="expert">Expert/Lead</option>
+              </select>
+            </div>
+            {errors.experienceLevel && (
+              <p className="text-red-500 text-sm mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.experienceLevel}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Years of Experience <span className="text-red-500">*</span>
+            </label>
+            <div className={`relative rounded-lg transition-all duration-200 ${errors.experience ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+              <select
+                name="experience"
+                value={formData.experience || ''}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              >
+                <option value="">Select experience</option>
+                <option value="fresher">Fresher (0 years)</option>
+                <option value="0-1">0-1 years</option>
+                <option value="1-3">1-3 years</option>
+                <option value="3-5">3-5 years</option>
+                <option value="5-10">5-10 years</option>
+                <option value="10+">10+ years</option>
+              </select>
+            </div>
             {errors.experience && (
-              <p className="text-red-500 text-sm mt-1">{errors.experience}</p>
+              <p className="text-red-500 text-sm mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.experience}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              LinkedIn Profile
+            </label>
+            <div className={`relative rounded-lg transition-all duration-200 ${errors.linkedInProfile ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+              <input
+                type="url"
+                name="linkedInProfile"
+                value={formData.linkedInProfile || ''}
+                onChange={handleChange}
+                placeholder="https://linkedin.com/in/yourprofile"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+            </div>
+            {errors.linkedInProfile && (
+              <p className="text-red-500 text-sm mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.linkedInProfile}
+              </p>
             )}
           </div>
         </div>
+      </div>
 
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Previous Job Duration *
-          </label>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* From Date */}
+      {/* Conditionally render work experience fields only if user is not a fresher */}
+      {formData.experience !== 'fresher' && (
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0H8m8 0v2a2 2 0 002 2M8 6v2a2 2 0 002 2h4a2 2 0 002-2V8" />
+            </svg>
+            Work Experience Details
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">
-                From
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Employer Name <span className="text-red-500">*</span>
               </label>
-              <textarea
-                name="experienceFromText"
-                value={formData.experienceFromText || ''}
-                onChange={handleChange}
-                rows={2}
-                placeholder="e.g. Jan 2021"
-                className={`w-full h-10 px-4 py-2 border rounded-lg resize-none focus:ring-2 focus:ring-blue-300 outline-none transition ${
-                  errors.experienceFromText ? 'border-red-500' : 'border-gray-500'
-                }`}
-              />
-              {errors.experienceFromText && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.experienceFromText}
+              <div className={`relative rounded-lg transition-all duration-200 ${errors.employerName ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+                <input
+                  type="text"
+                  name="workExperiences[0].employerName"
+                  value={formData.workExperiences[0].employerName || ''}
+                  onChange={handleChange}
+                  placeholder="Enter employer name"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+              </div>
+              {errors.employerName && (
+                <p className="text-red-500 text-sm mt-1 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.employerName}
                 </p>
               )}
             </div>
 
-            {/* To Date */}
             <div>
-              <label className="block text-xs text-gray-600 mb-1">
-                To
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Designation <span className="text-red-500">*</span>
               </label>
-              <textarea
-                name="experienceToText"
-                value={formData.experienceToText || ''}
-                onChange={handleChange}
-                rows={1}
-                placeholder="e.g. Mar 2024 / Present"
-                className={`w-full h-10 px-4 py-2 border rounded-lg resize-none focus:ring-2 focus:ring-blue-300 outline-none transition ${
-                  errors.experienceToText ? 'border-red-500' : 'border-gray-500'
-                }`}
-              />
-              {errors.experienceToText && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.experienceToText}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <p className="text-xs text-gray-500 mt-1">
-            Example: <span className="italic">Jan 2021 – Mar 2024</span> or <span className="italic">Present</span>
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Expected Salary (Optional)
-          </label>
-          <input
-            type="text"
-            name="expectedSalary"
-            value={formData.expectedSalary || ''}
-            onChange={handleChange}
-            className="w-full h-10 px-4 py-3 border border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            placeholder="e.g., $50,000 - $70,000"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Linkdin (Optional)
-          </label>
-          <input
-            type="url"
-            name="resumeLink"
-            value={formData.resumeLink || ''}
-            onChange={handleChange}
-            className="w-full h-10 px-4 py-3 border border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            placeholder="linkdin profile..."
-          />
-        </div>
-
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Previous Job Details
-          </label>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Designation */}
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">
-                Designation *
-              </label>
-              <textarea
-                name="designation"
-                value={formData.designation || ''}
-                onChange={handleChange}
-                rows={2}
-                placeholder="e.g. Junior Software Developer"
-                className={`w-full h-10 px-4 py-2 border rounded-lg resize-none focus:ring-2 focus:ring-blue-300 outline-none transition ${
-                  errors.designation ? 'border-red-500' : 'border-gray-500'
-                }`}
-              />
+              <div className={`relative rounded-lg transition-all duration-200 ${errors.designation ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+                <input
+                  type="text"
+                  name="workExperiences[0].designation"
+                  value={formData.workExperiences[0].designation || ''}
+                  onChange={handleChange}
+                  placeholder="Enter your designation"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+              </div>
               {errors.designation && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-red-500 text-sm mt-1 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
                   {errors.designation}
                 </p>
               )}
             </div>
+          </div>
 
-            {/* Brief Job Profile */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">
-                Brief Job Profile *
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Duration From <span className="text-red-500">*</span>
               </label>
-              <textarea
-                name="briefJobProfile"
-                value={formData.briefJobProfile || ''}
-                onChange={handleChange}
-                rows={2}
-                placeholder="e.g. Worked on REST APIs and database integration"
-                className={`w-full h-10 px-4 py-2 border rounded-lg resize-none focus:ring-2 focus:ring-blue-300 outline-none transition ${
-                  errors.briefJobProfile ? 'border-red-500' : 'border-gray-500'
-                }`}
-              />
-              {errors.briefJobProfile && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.briefJobProfile}
+              <div className={`relative rounded-lg transition-all duration-200 ${errors.durationFrom ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+                <input
+                  type="date"
+                  name="workExperiences[0].durationFrom"
+                  value={formData.workExperiences[0].durationFrom || ''}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+              </div>
+              {errors.durationFrom && (
+                <p className="text-red-500 text-sm mt-1 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.durationFrom}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Duration To <span className="text-red-500">*</span>
+              </label>
+              <div className={`relative rounded-lg transition-all duration-200 ${errors.durationTo ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+                <input
+                  type="date"
+                  name="workExperiences[0].durationTo"
+                  value={formData.workExperiences[0].durationTo || ''}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+              </div>
+              {errors.durationTo && (
+                <p className="text-red-500 text-sm mt-1 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.durationTo}
                 </p>
               )}
             </div>
           </div>
-        </div>
 
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Brief Job Profile <span className="text-red-500">*</span>
+            </label>
+            <div className={`relative rounded-lg transition-all duration-200 ${errors.briefJobProfile ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+              <textarea
+                name="workExperiences[0].briefJobProfile"
+                value={formData.workExperiences[0].briefJobProfile || ''}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Describe your job responsibilities and achievements"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+              />
+            </div>
+            {errors.briefJobProfile && (
+              <p className="text-red-500 text-sm mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.briefJobProfile}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+          Skills
+        </h3>
+        
         <div className="mt-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Primary Skills (Learned in College)
           </label>
-
-          <textarea
-            rows={2}
-            placeholder="Type a skill and press Enter (e.g. Data Structures)"
-            value={primarySkillInput}
-            onChange={(e) => setPrimarySkillInput(e.target.value)}
-            onKeyDown={handlePrimarySkillAdd}
-            className="w-full h-10 px-4 py-2 border border-gray-500 rounded-lg resize-none focus:ring-2 focus:ring-blue-300 outline-none"
-          />
-
+          <div className="relative rounded-lg transition-all duration-200 focus-within:ring-2 focus-within:ring-blue-500">
+            <input
+              type="text"
+              placeholder="Type a skill and press Enter (e.g. Data Structures)"
+              value={primarySkillInput}
+              onChange={(e) => setPrimarySkillInput(e.target.value)}
+              onKeyDown={handlePrimarySkillAdd}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            />
+          </div>
+          
           {/* Skill tags */}
           <div className="flex flex-wrap gap-2 mt-3">
             {formData.primarySkills.map((skill, index) => (
               <span
                 key={index}
-                className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
               >
                 {skill}
                 <button
                   type="button"
                   onClick={() => removePrimarySkill(index)}
-                  className="text-blue-500 hover:text-red-500"
+                  className="text-blue-600 hover:text-red-600"
                 >
                   ✕
                 </button>
               </span>
             ))}
           </div>
+        </div>
 
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Secondary Skills (Applied in Work Experience)
-            </label>
-
-            <textarea
-              rows={2}
+        <div className="mt-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Secondary Skills (Applied in Work Experience)
+          </label>
+          <div className="relative rounded-lg transition-all duration-200 focus-within:ring-2 focus-within:ring-blue-500">
+            <input
+              type="text"
               placeholder="Type a skill and press Enter (e.g. REST APIs)"
               value={secondarySkillInput}
               onChange={(e) => setSecondarySkillInput(e.target.value)}
               onKeyDown={handleSecondarySkillAdd}
-              className="w-full h-10 px-4 py-2 border border-gray-500 rounded-lg resize-none focus:ring-2 focus:ring-blue-300 outline-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
-
-            {/* Skill tags */}
-            <div className="flex flex-wrap gap-2 mt-3">
-              {formData.secondarySkills.map((skill, index) => (
-                <span
-                  key={index}
-                  className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm flex items-center gap-2"
-                >
-                  {skill}
-                  <button
-                    type="button"
-                    onClick={() => removeSecondarySkill(index)}
-                    className="text-green-500 hover:text-red-500"
-                  >
-                    ✕
-                  </button>
-                </span>
-              ))}
-            </div>
           </div>
-
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Experience Level *
-            </label>
-
-            <select
-              name="experienceLevel"
-              value={formData.experienceLevel || ''}
-              onChange={handleChange}
-              className={`w-full h-10 px-4 border rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition ${
-                errors.experienceLevel ? 'border-red-500' : 'border-gray-500'
-              }`}
-            >
-              <option value="">Select experience level</option>
-              <option value="beginner">Entry</option>
-              <option value="intermediate">mid-senior</option>
-              <option value="advanced">senior</option>
-              <option value="expert">lead</option>
-              <option value="expert">principle</option>
-            </select>
-
-            {errors.experienceLevel && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.experienceLevel}
-              </p>
-            )}
+          
+          {/* Skill tags */}
+          <div className="flex flex-wrap gap-2 mt-3">
+            {formData.secondarySkills.map((skill, index) => (
+              <span
+                key={index}
+                className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+              >
+                {skill}
+                <button
+                  type="button"
+                  onClick={() => removeSecondarySkill(index)}
+                  className="text-green-600 hover:text-red-600"
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
           </div>
         </div>
       </div>

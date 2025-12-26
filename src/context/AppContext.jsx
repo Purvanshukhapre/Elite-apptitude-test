@@ -24,7 +24,7 @@ export const AppProvider = ({ children }) => {
       try {
         const apiApplicants = await apiGetApplicants();
         setApplicants(apiApplicants);
-        console.log('Applicants loaded from API:', apiApplicants);
+        // console.log('Applicants loaded from API:', apiApplicants);
       } catch (error) {
         console.error('Failed to fetch applicants from API:', error);
         // Fallback to localStorage
@@ -52,42 +52,42 @@ export const AppProvider = ({ children }) => {
       const applicantData = {
         fullName: formData.fullName,
         fatherName: formData.fatherName,
-        postAppliedFor: formData.position,
-        referenceName: formData.referenceNumber || '',
-        dateOfBirth: formData.dob,
+        postAppliedFor: formData.postAppliedFor,
+        referenceName: formData.reference1Name || '',
+        dateOfBirth: formData.dateOfBirth,
         age: formData.age || 0,
         maritalStatus: formData.maritalStatus,
-        sex: formData.gender,
-        linkedInProfile: formData.resumeLink || '',
-        language: formData.languages,
-        permanentAddressLine: formData.address,
-        permanentPin: formData.pincode,
-        permanentPhone: formData.phone,
-        permanentEmail: formData.email,
-        reference1Name: formData.referenceNumber || '',
-        reference1Mobile: formData.contactNumber || '',
-        reference2Name: formData.referenceNumber2 || '',
-        reference2Mobile: formData.contactNumber2 || '',
+        sex: formData.sex,
+        linkedInProfile: formData.linkedInProfile || '',
+        language: formData.language,
+        permanentAddressLine: formData.permanentAddressLine,
+        permanentPin: formData.permanentPin,
+        permanentPhone: formData.permanentPhone,
+        permanentEmail: formData.permanentEmail,
+        reference1Name: formData.reference1Name || '',
+        reference1Mobile: formData.reference1Mobile || '',
+        reference2Name: formData.reference2Name || '',
+        reference2Mobile: formData.reference2Mobile || '',
         academicRecords: [
           {
-            schoolOrCollege: formData.institution,
-            boardOrUniversity: formData.boardName,
-            examinationPassed: formData.examPassed,
-            yearOfPassing: parseInt(formData.yearOfPassing) || 0,
-            mainSubjects: formData.mainSubjects,
-            percentage: parseFloat(formData.percentage) || 0
+            schoolOrCollege: formData.academicRecords[0].schoolOrCollege,
+            boardOrUniversity: formData.academicRecords[0].boardOrUniversity,
+            examinationPassed: formData.academicRecords[0].examinationPassed,
+            yearOfPassing: parseInt(formData.academicRecords[0].yearOfPassing) || 0,
+            mainSubjects: formData.academicRecords[0].mainSubjects,
+            percentage: parseFloat(formData.academicRecords[0].percentage) || 0
           }
         ],
         workExperiences: formData.experience !== 'fresher' ? [
           {
-            employerName: formData.institution || 'Previous Employer',
-            durationFrom: formData.experienceFromText,
-            durationTo: formData.experienceToText,
-            designation: formData.designation,
-            briefJobProfile: formData.briefJobProfile,
-            totalSalary: 0, // Will be set later if provided
-            joiningDate: formData.experienceFromText,
-            lastDate: formData.experienceToText
+            employerName: formData.workExperiences[0].employerName || 'Previous Employer',
+            durationFrom: formData.workExperiences[0].durationFrom,
+            durationTo: formData.workExperiences[0].durationTo,
+            designation: formData.workExperiences[0].designation,
+            briefJobProfile: formData.workExperiences[0].briefJobProfile,
+            totalSalary: formData.workExperiences[0].totalSalary || 0,
+            joiningDate: formData.workExperiences[0].joiningDate,
+            lastDate: formData.workExperiences[0].lastDate
           }
         ] : [],
         experienceLevel: formData.experienceLevel,
@@ -145,7 +145,7 @@ export const AppProvider = ({ children }) => {
     try {
       await apiUpdateApplicantTest(applicantId, testData);
       setApplicants(prev => prev.map(app => 
-        app.id === applicantId 
+        (app.id === applicantId || app.email === testData.applicantId || app.fullName === testData.applicantName) // Also match by email or name if ID doesn't match
           ? { 
               ...app, 
               testData, 
@@ -160,7 +160,7 @@ export const AppProvider = ({ children }) => {
       console.error('Failed to update applicant test:', error);
       // Fallback to local storage
       setApplicants(prev => prev.map(app => 
-        app.id === applicantId 
+        (app.id === applicantId || app.email === testData.applicantId || app.fullName === testData.applicantName) // Also match by email or name if ID doesn't match
           ? { 
               ...app, 
               testData, 

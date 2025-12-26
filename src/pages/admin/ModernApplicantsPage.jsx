@@ -1,14 +1,15 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
-import { getAllFeedback } from '../../api';
+import { getAllFeedback, getAllTestResults } from '../../api';
 import StarRating from '../../components/StarRating';
 
 const ModernApplicantsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { applicants, isAdminAuthenticated, adminLogout } = useApp();
+  const { applicants, loading: applicantsLoading, isAdminAuthenticated, adminLogout } = useApp();
   const [feedbackData, setFeedbackData] = useState([]);
+  const [testResults, setTestResults] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -16,24 +17,46 @@ const ModernApplicantsPage = () => {
 
 
 
-  // Fetch feedback data on component mount
-  useEffect(() => {
-    const fetchFeedback = async () => {
-      try {
-        const data = await getAllFeedback();
-        setFeedbackData(data);
-      } catch (error) {
-        console.error('Failed to fetch feedback:', error);
-        setFeedbackData([]);
-      }
-    };
+  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+
+  // Function to manually fetch feedback data
+  const fetchFeedback = async () => {
+    if (!isAdminAuthenticated) return;
     
+    setIsFeedbackLoading(true);
+    try {
+      const data = await getAllFeedback();
+      setFeedbackData(data);
+    } catch (error) {
+      console.error('Failed to fetch feedback:', error);
+      setFeedbackData([]);
+    } finally {
+      setIsFeedbackLoading(false);
+    }
+  };
+
+  // Function to fetch all test results
+  const fetchTestResults = async () => {
+    if (!isAdminAuthenticated) return;
+    
+    try {
+      const data = await getAllTestResults();
+      setTestResults(data);
+    } catch (error) {
+      console.error('Failed to fetch test results:', error);
+      setTestResults([]);
+    }
+  };
+
+  // Fetch feedback and test results data on component mount only once
+  useEffect(() => {
     if (isAdminAuthenticated) {
       fetchFeedback();
+      fetchTestResults();
     }
-  }, [isAdminAuthenticated]);
+  }, []);
 
-  // Combine applicants with feedback data
+  // Combine applicants with feedback and test result data
   const combinedApplicants = useMemo(() => {
     return applicants.map(applicant => {
       // Look for feedback associated with this applicant
@@ -41,23 +64,79 @@ const ModernApplicantsPage = () => {
         feedback.email === applicant.email || feedback.name === applicant.fullName
       );
       
+      // Look for test result associated with this applicant by fullName or id
+      const applicantTestResult = testResults.find(testResult => 
+        testResult.fullName === applicant.fullName || testResult.fullName === applicant.name || testResult.id === applicant.id
+      );
+      
+      // Extract test result data from various possible locations
+      const testResult = applicant.testResult || applicant.testData || applicant.test || applicant.result || applicantTestResult || {};
+      
+      // Extract correct answers from various possible locations
+      const correctAnswers = applicantTestResult?.correctAnswer || // Prioritize from test results API
+                            applicant.correctAnswer || 
+                            testResult.correctAnswers || 
+                            testResult.correctAnswer || 
+                            (applicant.testData && (applicant.testData.correctAnswers || applicant.testData.correctAnswer)) ||
+                            (applicant.test && (applicant.test.correctAnswers || applicant.test.correctAnswer)) ||
+                            (applicant.testResult && (applicant.testResult.correctAnswers || applicant.testResult.correctAnswer)) ||
+                            (applicant.result && (applicant.result.correctAnswers || applicant.result.correctAnswer)) ||
+                            (testResult && (testResult.correctAnswers || testResult.correctAnswer)) ||
+                            null;
+      
+      // Extract percentage from various possible locations
+      const percentage = applicant.percentage ||
+                         testResult.percentage ||
+                         testResult.overallPercentage ||
+                         (applicant.testData && (applicant.testData.percentage || applicant.testData.overallPercentage)) ||
+                         (applicant.test && (applicant.test.percentage || applicant.test.overallPercentage)) ||
+                         (applicant.testResult && (applicant.testResult.percentage || applicant.testResult.overallPercentage)) ||
+                         (applicant.result && (applicant.result.percentage || applicant.result.overallPercentage)) ||
+                         null;
+      
+      // Extract score from various possible locations
+      const score = applicant.score ||
+                    testResult.score ||
+                    (applicant.testData && applicant.testData.score) ||
+                    (applicant.test && applicant.test.score) ||
+                    (applicant.testResult && applicant.testResult.score) ||
+                    (applicant.result && applicant.result.score) ||
+                    null;
+      
+      // Check if test is completed based on multiple possible indicators
+      const isTestCompleted = applicant.testCompletedAt ||
+                              applicant.testCompleted ||
+                              applicantTestResult || // If test result exists from API
+                              (applicant.testData && Object.keys(applicant.testData).length > 0) ||
+                              (applicant.testResult && Object.keys(applicant.testResult).length > 0) ||
+                              (applicant.test && Object.keys(applicant.test).length > 0) ||
+                              (applicant.result && Object.keys(applicant.result).length > 0) ||
+                              correctAnswers !== null ||
+                              percentage !== null ||
+                              score !== null ||
+                              (applicant.correctAnswer !== undefined && applicant.correctAnswer !== null) ||
+                              (applicant.testData && applicant.testData.correctAnswers !== undefined) ||
+                              (applicant.testData && applicant.testData.percentage !== undefined);
+      
       return {
         ...applicant,
         feedback: applicantFeedback || null,
+        testResultFromAPI: applicantTestResult, // Store the specific test result from API
         // Use existing testData, or null
-        testData: applicant.testData || null,
+        testData: applicant.testData || applicant.testResult || applicant.test || applicant.result || null,
+        testResult: testResult,
         // Include rating and correctAnswer from applicant
-        rating: applicant.rating,
-        correctAnswer: applicant.correctAnswer !== undefined 
-          ? applicant.correctAnswer 
-          : (applicant.testData?.correctAnswers !== undefined 
-            ? applicant.testData.correctAnswers 
-            : applicant.correctAnswer),
+        rating: applicant.rating || applicant.overallRating,
+        correctAnswer: correctAnswers,
+        percentage: percentage,
+        score: score,
+        testCompletedAt: applicant.testCompletedAt,
+        isTestCompleted: isTestCompleted,
         // If feedback exists, use its rating; otherwise undefined
-        overallRating: applicantFeedback ? applicantFeedback.rating : undefined
+        overallRating: applicantFeedback ? applicantFeedback.rating : (applicant.rating || applicant.overallRating)
       };
     });
-  }, [applicants, feedbackData]);
+  }, [applicants, feedbackData, testResults]);
 
   // Get unique positions for filter
   const uniquePositions = useMemo(() => {
@@ -237,6 +316,22 @@ const ModernApplicantsPage = () => {
 
 
                 <div className="flex items-center space-x-3">
+                  <button
+                    onClick={fetchFeedback}
+                    disabled={isFeedbackLoading}
+                    className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Refresh data"
+                  >
+                    {isFeedbackLoading ? (
+                      <svg className="w-5 h-5 text-gray-500 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    )}
+                  </button>
                   <div className="text-right hidden md:block">
                     <p className="text-sm font-semibold text-gray-900">Admin User</p>
                     <p className="text-xs text-gray-500">System Administrator</p>
@@ -310,7 +405,7 @@ const ModernApplicantsPage = () => {
                           <div className="text-sm text-gray-900">{applicant.postAppliedFor || applicant.position || 'N/A'}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {(applicant.testData || applicant.correctAnswer !== undefined) ? (
+                          {applicant.isTestCompleted ? (
                             <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                               Completed
                             </span>
@@ -321,12 +416,30 @@ const ModernApplicantsPage = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {applicant.testData?.percentage !== undefined ? (
-                            <span className="font-bold">{applicant.testData.percentage}%</span>
+                          {applicant.score ? (
+                            <span className="font-bold">{applicant.score}</span>
+                          ) : applicant.percentage !== undefined && applicant.percentage !== null ? (
+                            <span className="font-bold">{applicant.percentage}%</span>
                           ) : applicant.correctAnswer !== undefined && applicant.testData?.totalQuestions ? (
                             <span className="font-bold">{applicant.correctAnswer}/{applicant.testData.totalQuestions} ({((applicant.correctAnswer / applicant.testData.totalQuestions) * 100).toFixed(1)}%)</span>
                           ) : applicant.correctAnswer !== undefined ? (
                             <span className="font-bold">{applicant.correctAnswer} correct</span>
+                          ) : applicant.testData?.correctAnswers !== undefined && applicant.testData?.totalQuestions ? (
+                            <span className="font-bold">{applicant.testData.correctAnswers}/{applicant.testData.totalQuestions} ({((applicant.testData.correctAnswers / applicant.testData.totalQuestions) * 100).toFixed(1)}%)</span>
+                          ) : applicant.testData?.correctAnswers !== undefined ? (
+                            <span className="font-bold">{applicant.testData.correctAnswers} correct</span>
+                          ) : applicant.testResult?.correctAnswers !== undefined && applicant.testResult?.totalQuestions ? (
+                            <span className="font-bold">{applicant.testResult.correctAnswers}/{applicant.testResult.totalQuestions} ({((applicant.testResult.correctAnswers / applicant.testResult.totalQuestions) * 100).toFixed(1)}%)</span>
+                          ) : applicant.testResult?.correctAnswers !== undefined ? (
+                            <span className="font-bold">{applicant.testResult.correctAnswers} correct</span>
+                          ) : applicant.test?.correctAnswers !== undefined && applicant.test?.totalQuestions ? (
+                            <span className="font-bold">{applicant.test.correctAnswers}/{applicant.test.totalQuestions} ({((applicant.test.correctAnswers / applicant.test.totalQuestions) * 100).toFixed(1)}%)</span>
+                          ) : applicant.test?.correctAnswers !== undefined ? (
+                            <span className="font-bold">{applicant.test.correctAnswers} correct</span>
+                          ) : applicant.result?.correctAnswers !== undefined && applicant.result?.totalQuestions ? (
+                            <span className="font-bold">{applicant.result.correctAnswers}/{applicant.result.totalQuestions} ({((applicant.result.correctAnswers / applicant.result.totalQuestions) * 100).toFixed(1)}%)</span>
+                          ) : applicant.result?.correctAnswers !== undefined ? (
+                            <span className="font-bold">{applicant.result.correctAnswers} correct</span>
                           ) : applicant.rating !== undefined && applicant.rating !== null ? (
                             <span className="font-bold">{((applicant.rating / 5) * 100).toFixed(1)}%</span>
                           ) : (
@@ -334,8 +447,8 @@ const ModernApplicantsPage = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {applicant.rating !== undefined && applicant.rating > 0 ? (
-                            <StarRating rating={applicant.rating} maxRating={5} />
+                          {(applicant.rating !== undefined && applicant.rating > 0) || (applicant.overallRating !== undefined && applicant.overallRating > 0) ? (
+                            <StarRating rating={applicant.rating || applicant.overallRating} maxRating={5} />
                           ) : (
                             <span className="text-gray-500 text-sm">No rating</span>
                           )}

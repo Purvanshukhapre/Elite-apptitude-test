@@ -12,7 +12,8 @@ import {
   submitTest,
   calculateCorrectAnswers,
   submitFeedback,
-  getAllFeedback
+  getAllFeedback,
+  getAllTestResults
 } from './services/apiService';
 
 // Named exports for individual functions
@@ -29,7 +30,8 @@ export {
   submitTest,
   calculateCorrectAnswers,
   submitFeedback,
-  getAllFeedback
+  getAllFeedback,
+  getAllTestResults
 };
 
 
@@ -341,6 +343,100 @@ export const mockQuestions = [
     correctAnswer: 0,
     category: "Networking",
     difficulty: "Hard"
+  },
+  // Additional Questions (16-26)
+  {
+    id: 16,
+    question: "What is the time complexity of accessing an element in an array?",
+    options: ["O(n)", "O(log n)", "O(1)", "O(n²)"],
+    correctAnswer: 2,
+    category: "Algorithms",
+    difficulty: "Easy"
+  },
+  {
+    id: 17,
+    question: "Which of the following is a valid CSS property for centering an element horizontally?",
+    options: ["center: auto", "margin: 0 auto", "text-align: center", "align: center"],
+    correctAnswer: 1,
+    category: "Web Development",
+    difficulty: "Easy"
+  },
+  {
+    id: 18,
+    question: "What does API stand for?",
+    options: ["Application Programming Interface", "Advanced Program Implementation", "Automated Processing Interface", "Application Process Integration"],
+    correctAnswer: 0,
+    category: "General",
+    difficulty: "Easy"
+  },
+  {
+    id: 19,
+    question: "Which of the following is NOT a JavaScript framework?",
+    options: ["React", "Angular", "Vue.js", "SASS"],
+    correctAnswer: 3,
+    category: "Programming",
+    difficulty: "Medium"
+  },
+  {
+    id: 20,
+    question: "What is the purpose of an index in a database?",
+    options: ["To store data", "To improve query performance", "To encrypt data", "To backup data"],
+    correctAnswer: 1,
+    category: "Database",
+    difficulty: "Medium"
+  },
+  {
+    id: 21,
+    question: "Which HTTP status code indicates 'Not Found'?",
+    options: ["200", "404", "500", "301"],
+    correctAnswer: 1,
+    category: "Web Development",
+    difficulty: "Easy"
+  },
+  {
+    id: 22,
+    question: "What is the main advantage of using version control?",
+    options: ["Faster compilation", "Better UI design", "Track changes and collaborate", "Automatic bug fixing"],
+    correctAnswer: 2,
+    category: "Tools",
+    difficulty: "Easy"
+  },
+  {
+    id: 23,
+    question: "Which sorting algorithm has the best average time complexity?",
+    options: ["Bubble Sort", "Quick Sort", "Selection Sort", "Insertion Sort"],
+    correctAnswer: 1,
+    category: "Algorithms",
+    difficulty: "Medium"
+  },
+  {
+    id: 24,
+    question: "What is the purpose of a constructor in object-oriented programming?",
+    options: ["To destroy objects", "To initialize objects", "To copy objects", "To compare objects"],
+    correctAnswer: 1,
+    category: "Programming Concepts",
+    difficulty: "Medium"
+  },
+  {
+    id: 25,
+    question: "Which of the following is a NoSQL database?",
+    options: ["MySQL", "PostgreSQL", "MongoDB", "Oracle"],
+    correctAnswer: 2,
+    category: "Database",
+    difficulty: "Medium"
+  },
+  {
+    id: 26,
+    question: "What is the main purpose of a REST API?",
+    options: [
+      "To provide a standardized way for applications to communicate over HTTP",
+      "To store data in a database",
+      "To format HTML documents",
+      "To encrypt network traffic"
+    ],
+    correctAnswer: 0,
+    category: "Web Development",
+    difficulty: "Hard"
   }
 ];
 
@@ -380,6 +476,7 @@ export default {
   calculateCorrectAnswers,
   submitFeedback,
   getAllFeedback,
+  getAllTestResults,
   mockQuestions,
   mockApplicants
 };

@@ -179,3 +179,7 @@ export const submitFeedback = async (feedbackData) => {
 export const getAllFeedback = async () => {
   return apiCall(API_ENDPOINTS.FEEDBACK_ALL);
 };
+
+export const getAllTestResults = async () => {
+  return apiCall('/result/all'); // Use the endpoint as provided
+};
