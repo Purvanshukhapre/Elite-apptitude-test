@@ -119,7 +119,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
                 value={formData.academicRecords[0].schoolOrCollege || ''}
                 onChange={handleChange}
                 placeholder="Enter school or college name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
             {errors.schoolOrCollege && (
@@ -144,7 +144,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
                 value={formData.academicRecords[0].boardOrUniversity || ''}
                 onChange={handleChange}
                 placeholder="Enter board or university name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
             {errors.boardOrUniversity && (
@@ -169,7 +169,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
                 value={formData.academicRecords[0].examinationPassed || ''}
                 onChange={handleChange}
                 placeholder="Enter examination passed"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
             {errors.examinationPassed && (
@@ -194,7 +194,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
                 value={formData.academicRecords[0].yearOfPassing || ''}
                 onChange={handleChange}
                 placeholder="Enter year (e.g. 2024)"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
             {errors.yearOfPassing && (
@@ -219,7 +219,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
                 value={formData.academicRecords[0].mainSubjects || ''}
                 onChange={handleChange}
                 placeholder="Enter main subjects"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
             {errors.mainSubjects && (
@@ -244,7 +244,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
                 value={formData.academicRecords[0].percentage || ''}
                 onChange={handleChange}
                 placeholder="Enter percentage or CGPA"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 step="0.01"
               />
             </div>
@@ -498,7 +498,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
                 onChange={handleChange}
                 rows={3}
                 placeholder="Describe your job responsibilities and achievements"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
               />
             </div>
             {errors.briefJobProfile && (
