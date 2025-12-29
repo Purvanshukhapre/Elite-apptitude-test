@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
 import { sampleQuestions } from '../../data/questions';
 import { submitTest } from '../../api';
+import { submitTestQuestions } from '../../services/apiService';
 
 const AptitudeTest = () => {
   const navigate = useNavigate();
@@ -27,24 +28,58 @@ const AptitudeTest = () => {
     const questionsToUse = questions.length > 0 ? questions : sampleQuestions;
     const detailedAnswers = {};
     
+    // Prepare data for the new API
+    const questionsForSubmission = [];
+    
     questionsToUse.forEach(q => {
-      const isCorrect = answers[q.id] === q.correctAnswer;
+      const userAnswer = answers[q.id];
+      const isCorrect = userAnswer === q.correctAnswer;
       if (isCorrect) {
         score++;
       }
       
       // Store detailed answer information
       detailedAnswers[q.id] = {
-        selectedOption: answers[q.id],
+        selectedOption: userAnswer,
         correctOption: q.correctAnswer,
         isCorrect: isCorrect,
-        optionText: answers[q.id] !== undefined ? q.options[answers[q.id]] : 'Not answered',
+        optionText: userAnswer !== undefined ? q.options[userAnswer] : 'Not answered',
         correctOptionText: q.options[q.correctAnswer]
       };
+      
+      // Prepare data for the new API submission
+      questionsForSubmission.push({
+        questionId: q.id,
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        correctOptionText: q.options[q.correctAnswer],
+        userSelectedOption: userAnswer,
+        userSelectedOptionText: userAnswer !== undefined ? q.options[userAnswer] : null,
+        isCorrect: isCorrect,
+        category: q.category,
+        difficulty: q.difficulty
+      });
     });
 
     const percentage = (score / questionsToUse.length) * 100;
     const passFailStatus = percentage >= 60 ? 'Pass' : 'Fail'; // 60% to pass
+    
+    // Prepare data for the new API submission
+    const testQuestionsData = {
+      applicantName: currentApplicant.fullName,
+      email: currentApplicant.permanentEmail || currentApplicant.email,
+      questions: questionsForSubmission,
+      totalQuestions: questionsToUse.length,
+      correctAnswers: score,
+      percentage: percentage.toFixed(2),
+      passFailStatus,
+      timeSpent: 900 - timeLeft,
+      tabSwitchCount,
+      copyAttempts,
+      disqualified: isTestDisqualified,
+      submittedAt: new Date().toISOString()
+    };
     
     const testData = {
       answers,
@@ -67,7 +102,11 @@ const AptitudeTest = () => {
     // console.log('Test Results:', testData);
 
     try {
-      // Submit test data to API
+      // Submit test questions data to the new API
+      await submitTestQuestions(testQuestionsData);
+      // console.log('Test questions submission result:', questionsResult);
+      
+      // Submit test data to the original API
       const result = await submitTest(testData);
       // console.log('Test submission result:', result);
       

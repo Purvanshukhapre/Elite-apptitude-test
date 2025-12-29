@@ -13,6 +13,7 @@ import ModernApplicantsPage from './pages/admin/ModernApplicantsPage';
 import ModernAnalyticsDashboard from './pages/admin/ModernAnalyticsDashboard';
 import ModernFeedbackDashboard from './pages/admin/ModernFeedbackDashboard';
 import ViewApplicantsPage from './pages/admin/ViewApplicantsPage';
+import EmailPage from './pages/admin/EmailPage';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
             <Route path="/admin/modern/analytics" element={<ModernAnalyticsDashboard />} />
             <Route path="/admin/modern/feedback" element={<ModernFeedbackDashboard />} />
             <Route path="/admin/view-applicants" element={<ViewApplicantsPage />} />
+            <Route path="/admin/email" element={<EmailPage />} />
           </Routes>
         </Router>
       </ErrorBoundary>

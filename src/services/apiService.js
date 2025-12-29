@@ -13,6 +13,9 @@ export const API_ENDPOINTS = {
   APPLICANT_TEST_RESULT: (id) => `/test/result/${id}`,
   APPLICANT_FEEDBACK_RESULT: (id) => `/feedback/${id}`,
   SUBMIT_TEST: '/result/submit',
+  TEST_QUESTIONS_SUBMIT: 'https://eliterecruitmentbackend-production.up.railway.app/questions/submit',
+  TEST_QUESTIONS_ALL: 'https://eliterecruitmentbackend-production.up.railway.app/questions/all',
+  TEST_QUESTIONS_BY_EMAIL: (email) => `https://eliterecruitmentbackend-production.up.railway.app/questions/email/${email}`,
   
   // Analytics
   ANALYTICS_DASHBOARD: '/analytics/dashboard',
@@ -199,4 +202,26 @@ export const getAllFeedback = async () => {
 
 export const getAllTestResults = async () => {
   return apiCall('/result/all'); // Use the endpoint as provided
+};
+
+// New API functions for test questions
+export const submitTestQuestions = async (testData) => {
+  // Submit all questions with user answers to the backend
+  return apiCall(API_ENDPOINTS.TEST_QUESTIONS_SUBMIT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(testData)
+  });
+};
+
+export const getAllTestQuestions = async () => {
+  // Get all test questions with answers from the backend
+  return apiCall(API_ENDPOINTS.TEST_QUESTIONS_ALL);
+};
+
+export const getTestQuestionsByEmail = async (email) => {
+  // Get test questions for a specific user by email
+  return apiCall(API_ENDPOINTS.TEST_QUESTIONS_BY_EMAIL(email));
 };

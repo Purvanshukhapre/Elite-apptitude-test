@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
-import { getApplicantsByName } from '../../api';
 import AdminLayout from '../../components/AdminLayout';
 
 const ApplicantDetailsPage = () => {
@@ -46,27 +45,8 @@ const ApplicantDetailsPage = () => {
             setFeedback(foundApplicant.feedback);
           }
         } else {
-          // If not found in context, try to fetch applicant by name
-          try {
-            const applicantData = await getApplicantsByName(applicantName);
-            // The endpoint returns a single applicant object, not an array
-            if (applicantData && typeof applicantData === 'object' && applicantData.fullName) {
-              const matchedApplicant = applicantData;
-              setApplicant(matchedApplicant);
-              
-              // Set test result if available in the applicant data
-              if (matchedApplicant.testData) {
-                setTestResult(matchedApplicant.testData);
-              }
-              
-              // Set feedback if available in the applicant data
-              if (matchedApplicant.feedback) {
-                setFeedback(matchedApplicant.feedback);
-              }
-            }
-          } catch (error) {
-            console.error('Error fetching applicant by name:', error);
-          }
+          // If not found in context, show not found message
+          console.log('Applicant not found in context:', applicantName);
         }
       } catch (err) {
         setError(err.message);

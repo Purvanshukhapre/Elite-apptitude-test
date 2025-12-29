@@ -1,576 +1,319 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
-import { getApplicants, getAllFeedback, getAllTestResults } from '../../api';
 import StarRating from '../../components/StarRating';
+import AdminLayout from '../../components/AdminLayout';
 
 const ModernApplicantsPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { applicants: contextApplicants, isAdminAuthenticated, adminLogout } = useApp();
-  const [feedbackData, setFeedbackData] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { applicants } = useApp();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [positionFilter, setPositionFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
 
-
-  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
-
-  // State for local applicants data
-  const [localApplicants, setLocalApplicants] = useState([]);
-  const [localApplicantsLoading, setLocalApplicantsLoading] = useState(true);
-  
-  // Function to fetch all applicants and combine with test results and feedback
-  const fetchAllApplicants = async () => {
-    if (!isAdminAuthenticated) return;
-    
-    setLocalApplicantsLoading(true);
-    try {
-      const [apiApplicants, testResults, feedbackResults] = await Promise.all([
-        getApplicants(),
-        getAllTestResults().catch(error => {
-          console.error('Failed to fetch test results:', error);
-          return [];
-        }),
-        getAllFeedback().catch(error => {
-          console.error('Failed to fetch feedback:', error);
-          return [];
-        })
-      ]);
-      
-      // Combine applicants with test results and feedback
-      const combinedApplicants = apiApplicants.map(applicant => {
-        // Find corresponding test result by fullName
-        const testResult = testResults.find(result => 
-          result.fullName === applicant.fullName || result.name === applicant.fullName
-        );
-        
-        // Find corresponding feedback by fullName or email
-        const feedback = feedbackResults.find(f => 
-          f.fullName === applicant.fullName || f.name === applicant.fullName || f.email === applicant.permanentEmail
-        );
-        
-        return {
-          ...applicant,
-          // Add test result data if available
-          ...testResult,
-          // Add feedback data if available
-          feedback,
-          // Ensure test completion status is set
-          isTestCompleted: !!testResult,
-          // Set test completed at date if available
-          testCompletedAt: testResult?.submittedAt || testResult?.createdAt || applicant.testCompletedAt,
-          // Set correct answers if available
-          correctAnswer: testResult?.correctAnswer || testResult?.correctAnswers || applicant.correctAnswer,
-          // Set score if available
-          score: testResult?.score || applicant.score,
-          // Set percentage if available
-          percentage: testResult?.percentage || testResult?.overallPercentage || applicant.percentage,
-          // Set rating from feedback if available
-          rating: feedback?.rating || applicant.rating,
-          // Set feedback submitted at date if available
-          feedbackSubmittedAt: feedback?.submittedAt || feedback?.createdAt
-        };
-      });
-      
-      setLocalApplicants(combinedApplicants);
-    } catch (error) {
-      console.error('Failed to fetch applicants:', error);
-      setLocalApplicants([]);
-      // Show user-friendly message
-      if (typeof window !== 'undefined') {
-        console.warn('Could not load applicant data. Using cached data if available.');
-      }
-    } finally {
-      setLocalApplicantsLoading(false);
-    }
-  };
-
-  // Function to manually fetch feedback data
-  const fetchFeedback = async () => {
-    if (!isAdminAuthenticated) return;
-    
-    setIsFeedbackLoading(true);
-    try {
-      const data = await getAllFeedback();
-      setFeedbackData(data);
-    } catch (error) {
-      console.error('Failed to fetch feedback:', error);
-      setFeedbackData([]);
-      // Show user-friendly message
-      if (typeof window !== 'undefined') {
-        console.warn('Could not load feedback data. Using cached data if available.');
-      }
-    } finally {
-      setIsFeedbackLoading(false);
-    }
-  };
-
-  // Fetch all data on component mount
-  useEffect(() => {
-    if (!isAdminAuthenticated) {
-      return;
-    }
-    
-    const fetchData = async () => {
-      // Fetch all data - fetchAllApplicants now combines applicants, test results, and feedback
-      fetchAllApplicants();
-    };
-    
-    fetchData();
-    
-    // Clean up function
-    return () => {
-      // No cleanup needed
-    };
-  }, [isAdminAuthenticated]);
-
-  // Update local applicants when context applicants change
-  useEffect(() => {
-    if (contextApplicants && contextApplicants.length > 0 && localApplicants.length === 0) {
-      // Only update if we don't have local data yet
-      setLocalApplicants(contextApplicants);
-    }
-  }, [contextApplicants, localApplicants.length]);
-
-  // Combine applicants with feedback data (test results are already combined in fetchAllApplicants)
-  const combinedApplicants = useMemo(() => {
-    // Use localApplicants if available, otherwise fallback to contextApplicants
-    const applicantsToUse = localApplicants.length > 0 ? localApplicants : contextApplicants;
-    
-    return applicantsToUse.map(applicant => {
-      // Look for feedback associated with this applicant from feedbackData state
-      const applicantFeedback = feedbackData.find(feedback => 
-        feedback.email === applicant.email || feedback.name === applicant.fullName
-      );
-      
-      // The test result and feedback data is already combined in the applicant object
-      // Extract test result data from various possible locations
-      const testResult = applicant.testResult || applicant.testData || applicant.test || applicant.result || applicant || {};
-      
-      // Extract correct answers from various possible locations
-      const correctAnswers = applicant.correctAnswer || 
-                            testResult.correctAnswers || 
-                            testResult.correctAnswer || 
-                            (applicant.testData && (applicant.testData.correctAnswers || applicant.testData.correctAnswer)) ||
-                            (applicant.test && (applicant.test.correctAnswers || applicant.test.correctAnswer)) ||
-                            (applicant.testResult && (applicant.testResult.correctAnswers || applicant.testResult.correctAnswer)) ||
-                            (applicant.result && (applicant.result.correctAnswers || applicant.result.correctAnswer)) ||
-                            (testResult && (testResult.correctAnswers || testResult.correctAnswer)) ||
-                            null;
-      
-      // Extract percentage from various possible locations
-      const percentage = applicant.percentage ||
-                         testResult.percentage ||
-                         testResult.overallPercentage ||
-                         (applicant.testData && (applicant.testData.percentage || applicant.testData.overallPercentage)) ||
-                         (applicant.test && (applicant.test.percentage || applicant.test.overallPercentage)) ||
-                         (applicant.testResult && (applicant.testResult.percentage || applicant.testResult.overallPercentage)) ||
-                         (applicant.result && (applicant.result.percentage || applicant.result.overallPercentage)) ||
-                         null;
-      
-      // Extract score from various possible locations
-      const score = applicant.score ||
-                    testResult.score ||
-                    (applicant.testData && applicant.testData.score) ||
-                    (applicant.test && applicant.test.score) ||
-                    (applicant.testResult && applicant.testResult.score) ||
-                    (applicant.result && applicant.result.score) ||
-                    null;
-      
-      // Check if test is completed based on multiple possible indicators
-      const isTestCompleted = applicant.isTestCompleted || // Use the combined field from context
-                              applicant.testCompletedAt ||
-                              applicant.testCompleted ||
-                              (applicant.testData && Object.keys(applicant.testData).length > 0) ||
-                              (applicant.testResult && Object.keys(applicant.testResult).length > 0) ||
-                              (applicant.test && Object.keys(applicant.test).length > 0) ||
-                              (applicant.result && Object.keys(applicant.result).length > 0) ||
-                              correctAnswers !== null ||
-                              percentage !== null ||
-                              score !== null ||
-                              (applicant.correctAnswer !== undefined && applicant.correctAnswer !== null) ||
-                              (applicant.testData && applicant.testData.correctAnswers !== undefined) ||
-                              (applicant.testData && applicant.testData.percentage !== undefined);
-      
-      return {
-        ...applicant,
-        feedback: applicantFeedback || applicant.feedback || null, // Use feedback from either source
-        // Use existing testData, or null
-        testData: applicant.testData || applicant.testResult || applicant.test || applicant.result || null,
-        testResult: testResult,
-        // Include rating and correctAnswer from applicant
-        rating: applicant.rating || applicant.overallRating,
-        correctAnswer: correctAnswers,
-        percentage: percentage,
-        score: score,
-        testCompletedAt: applicant.testCompletedAt || applicant.testResult?.submittedAt || applicant.testResult?.createdAt,
-        isTestCompleted: isTestCompleted,
-        // If feedback exists, use its rating; otherwise undefined
-        overallRating: applicantFeedback ? applicantFeedback.rating : (applicant.rating || applicant.overallRating || applicant.feedback?.rating)
-      };
-    });
-  }, [localApplicants, contextApplicants, feedbackData]);
-
-  // Get unique positions for filter
+  // Calculate unique positions for filter dropdown
   const uniquePositions = useMemo(() => {
-    const applicantsToUse = localApplicants.length > 0 ? localApplicants : contextApplicants;
-    const positions = [...new Set(applicantsToUse.map(applicant => applicant.postAppliedFor || applicant.position))];
-    return ['all', ...positions.filter(pos => pos)];
-  }, [localApplicants, contextApplicants]);
+    const positions = new Set(applicants.map(applicant => applicant.postAppliedFor || applicant.position || 'Unknown'));
+    return ['all', ...Array.from(positions)];
+  }, [applicants]);
+
 
   // Filter applicants based on search term and filters
   const filteredApplicants = useMemo(() => {
-    // Use localApplicants if available, otherwise fallback to contextApplicants
-    const applicantsToUse = localApplicants.length > 0 ? localApplicants : combinedApplicants;
-    let filtered = applicantsToUse;
-    
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(applicant => 
-        applicant.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        applicant.postAppliedFor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        applicant.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(applicant => {
-        const hasTestData = applicant.testData || applicant.correctAnswer !== undefined;
-        if (statusFilter === 'completed') return hasTestData;
-        if (statusFilter === 'pending') return !hasTestData;
-        return true;
-      });
-    }
-    
-    // Apply position filter
-    if (positionFilter !== 'all') {
-      filtered = filtered.filter(applicant => 
-        (applicant.postAppliedFor || applicant.position) === positionFilter
-      );
-    }
-    
-    return filtered;
-  }, [combinedApplicants, localApplicants, contextApplicants, searchTerm, statusFilter, positionFilter]);
+    return applicants.filter(applicant => {
+      const matchesSearch = 
+        (applicant.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (applicant.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (applicant.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (applicant.postAppliedFor || applicant.position || '').toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || 
+        (statusFilter === 'completed' && (applicant.testData || applicant.rating !== undefined || applicant.correctAnswer !== undefined)) ||
+        (statusFilter === 'pending' && !applicant.testData && applicant.rating === undefined && applicant.correctAnswer === undefined);
+      
+      const matchesPosition = positionFilter === 'all' || 
+        (positionFilter === (applicant.postAppliedFor || applicant.position || 'Unknown'));
 
-  // Navigation highlighting
-  const isActive = (path) => {
-    if (path === '/admin/modern') {
-      // For Overview, only highlight if exact match (not for sub-paths like /admin/modern/applicants)
-      return location.pathname === path;
+      return matchesSearch && matchesStatus && matchesPosition;
+    });
+  }, [applicants, searchTerm, statusFilter, positionFilter]);
+
+  // Simulate loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Helper function to extract numeric score from test data
+  const getNumericScore = (applicant) => {
+    // First check if the applicant has a rating field (new API structure)
+    if (applicant.rating !== undefined && applicant.rating !== null) {
+      // Convert rating out of 5 to percentage (e.g., 4/5 = 80%)
+      return (applicant.rating / 5) * 100;
     }
-    // For other paths, use includes to handle sub-paths
-    return location.pathname.includes(path);
+    
+    // If no rating, check for correctAnswer field (new API structure)
+    if (applicant.correctAnswer !== undefined && applicant.testData?.totalQuestions) {
+      // Calculate percentage from correct answers
+      return (applicant.correctAnswer / applicant.testData.totalQuestions) * 100;
+    }
+    
+    // If no new fields, fall back to old testData structure
+    const testData = applicant.testData;
+    if (!testData) return 0;
+    
+    // If score is in X/Y format (e.g., "7/15"), extract the percentage
+    if (typeof testData.score === 'string' && testData.score.includes('/')) {
+      const [correct, total] = testData.score.split('/').map(Number);
+      if (total > 0) {
+        return (correct / total) * 100;
+      }
+    }
+    
+    // If percentage is available directly
+    if (testData.percentage) {
+      return parseFloat(testData.percentage);
+    }
+    
+    // If score is available directly
+    if (testData.score && typeof testData.score === 'number') {
+      return testData.score;
+    }
+    
+    // If test data contains correctAnswers and totalQuestions
+    if (testData.correctAnswers !== undefined && testData.totalQuestions) {
+      return (testData.correctAnswers / testData.totalQuestions) * 100;
+    }
+    
+    return 0;
   };
-
-  const handleLogout = () => {
-    adminLogout();
-    navigate('/admin');
-  };
-
-  // Navigation items
-  const navItems = [
-    { name: 'Overview', icon: '📊', path: '/admin/modern' },
-    { name: 'Applicants', icon: '👥', path: '/admin/modern/applicants' },
-    { name: 'Analytics', icon: '📈', path: '/admin/modern/analytics' },
-    { name: 'Feedback', icon: '💬', path: '/admin/modern/feedback' },
-  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white/90 backdrop-blur-xl border-r border-gray-200/50 transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center justify-between p-6 border-b border-gray-200/50">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">EA</span>
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">Elite Associate</h1>
-              <p className="text-xs text-gray-500">Admin Panel</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+    <AdminLayout activeTab="applicants">
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">All Applicants</h1>
+          <p className="text-gray-600">Manage and review all applicant information</p>
         </div>
 
-        <nav className="p-4 space-y-2">
-          {navItems.map((item) => (
-            <button
-              key={item.name}
-              onClick={() => navigate(item.path)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                isActive(item.path)
-                  ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/25'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-              }`}
-            >
-              <span className="text-lg">{item.icon}</span>
-              <span className="font-medium">{item.name}</span>
-            </button>
-          ))}
-        </nav>
-
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200/50">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-red-500/10 text-red-600 rounded-xl hover:bg-red-500/20 transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span className="font-medium">Logout</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-0 lg:ml-64' : 'ml-0'}`}>
-        {/* Top Navigation */}
-        <header className="bg-white/90 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-40">
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors hidden lg:block"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-                <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">
-                    All Applicants
-                  </h1>
-                  <p className="text-sm text-gray-500">Manage all recruitment applicants</p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search applicants..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All Status</option>
-                  <option value="completed">Completed</option>
-                  <option value="pending">Pending</option>
-                </select>
-
-                <select
-                  value={positionFilter}
-                  onChange={(e) => setPositionFilter(e.target.value)}
-                  className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {uniquePositions.map(position => (
-                    <option key={position} value={position}>
-                      {position === 'all' ? 'All Positions' : position}
-                    </option>
-                  ))}
-                </select>
-
-
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={fetchFeedback}
-                    disabled={isFeedbackLoading}
-                    className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Refresh data"
-                  >
-                    {isFeedbackLoading ? (
-                      <svg className="w-5 h-5 text-gray-500 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                    )}
-                  </button>
-                  <div className="text-right hidden md:block">
-                    <p className="text-sm font-semibold text-gray-900">Admin User</p>
-                    <p className="text-xs text-gray-500">System Administrator</p>
-                  </div>
-                  <div className="w-10 h-10 relative group cursor-pointer">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-full group-hover:shadow-lg group-hover:shadow-purple-300/50 transition-all"></div>
-                    <div className="relative w-full h-full rounded-full flex items-center justify-center text-white font-bold shadow-lg ring-2 ring-white">
-                      AU
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Applicants Content */}
-        <main className="p-6">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-2xl p-6 border border-gray-100/50 shadow-xl shadow-gray-900/5">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-gray-900">Applicant Management</h3>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-500">{filteredApplicants.length} applicants</span>
-                <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:from-blue-600 hover:to-indigo-600 transition-all">
-                  Add Applicant
-                </button>
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
               </div>
+              <div className="text-right">
+                <p className="text-sm font-bold text-gray-500">Total</p>
+                <p className="text-2xl font-bold text-gray-900">{applicants.length}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 border border-gray-100/50 shadow-xl shadow-gray-900/5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-bold text-gray-500">Completed</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {applicants.filter(a => a.testData || a.rating !== undefined || a.correctAnswer !== undefined).length}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 border border-gray-100/50 shadow-xl shadow-gray-900/5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-bold text-gray-500">Pending</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {applicants.filter(a => !a.testData && a.rating === undefined && a.correctAnswer === undefined).length}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 border border-gray-100/50 shadow-xl shadow-gray-900/5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-bold text-gray-500">Avg Score</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {applicants.length > 0 
+                    ? (applicants.filter(a => a.testData || a.rating !== undefined || a.correctAnswer !== undefined)
+                        .reduce((sum, a) => sum + getNumericScore(a), 0) / 
+                       applicants.filter(a => a.testData || a.rating !== undefined || a.correctAnswer !== undefined).length
+                      ).toFixed(1) + '%'
+                    : '0%'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters and Search */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-100/50 shadow-xl shadow-gray-900/5 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+              <input
+                type="text"
+                placeholder="Search by name, email, or position..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
             
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Statuses</option>
+                <option value="completed">Completed Test</option>
+                <option value="pending">Pending Test</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Position</label>
+              <select
+                value={positionFilter}
+                onChange={(e) => setPositionFilter(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {uniquePositions.map(position => (
+                  <option key={position} value={position}>{position}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="flex items-end">
+              <div className="text-sm text-gray-600">
+                <span className="font-medium">{filteredApplicants.length}</span> applicants
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Applicants Table */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-100/50 shadow-xl shadow-gray-900/5">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <p className="text-gray-500">Loading applicants...</p>
+              </div>
+            </div>
+          ) : filteredApplicants.length === 0 ? (
+            <div className="text-center py-12">
+              <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No applicants found</h3>
+              <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+            </div>
+          ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {localApplicantsLoading ? (
-                    <tr>
-                      <td colSpan="7" className="px-6 py-12 text-center">
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                          <p className="text-gray-500">Loading applicants...</p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : filteredApplicants.length === 0 ? (
-                    <tr>
-                      <td colSpan="7" className="px-6 py-12 text-center">
-                        <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No applicants found</h3>
-                        <p className="text-gray-500">Try adjusting your search or filter criteria</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredApplicants.map((applicant, index) => (
-                      <tr key={applicant._id || applicant.id || applicant.email || `applicant-${index}`} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
-                                {(applicant.fullName || applicant.name || 'A').charAt(0)}
-                              </div>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{applicant.fullName || applicant.name || 'Unknown'}</div>
-                              <div className="text-sm text-gray-500">{applicant.permanentEmail || applicant.email || 'No email'}</div>
+                  {filteredApplicants.map((applicant) => (
+                    <tr key={applicant._id || applicant.id || applicant.email} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
+                              {(applicant.fullName || 'A').charAt(0)}
                             </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{applicant.postAppliedFor || applicant.position || 'N/A'}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {applicant.isTestCompleted ? (
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                              Completed
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{applicant.fullName}</div>
+                            <div className="text-sm text-gray-500">{applicant.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{applicant.postAppliedFor || applicant.position || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{applicant.phone || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          (applicant.testData || applicant.rating !== undefined || applicant.correctAnswer !== undefined)
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {(applicant.testData || applicant.rating !== undefined || applicant.correctAnswer !== undefined) ? 'Completed' : 'Pending'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {applicant.testData || applicant.rating !== undefined || applicant.correctAnswer !== undefined ? (
+                          <div className="flex items-center">
+                            <span className="text-sm font-medium text-gray-900 mr-2">
+                              {getNumericScore(applicant).toFixed(1)}%
                             </span>
-                          ) : (
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                              Pending
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {applicant.score ? (
-                            <span className="font-bold">{applicant.score}</span>
-                          ) : applicant.percentage !== undefined && applicant.percentage !== null ? (
-                            <span className="font-bold">{applicant.percentage}%</span>
-                          ) : applicant.correctAnswer !== undefined && applicant.testData?.totalQuestions ? (
-                            <span className="font-bold">{applicant.correctAnswer}/{applicant.testData.totalQuestions} ({((applicant.correctAnswer / applicant.testData.totalQuestions) * 100).toFixed(1)}%)</span>
-                          ) : applicant.correctAnswer !== undefined ? (
-                            <span className="font-bold">{applicant.correctAnswer} correct</span>
-                          ) : applicant.testData?.correctAnswers !== undefined && applicant.testData?.totalQuestions ? (
-                            <span className="font-bold">{applicant.testData.correctAnswers}/{applicant.testData.totalQuestions} ({((applicant.testData.correctAnswers / applicant.testData.totalQuestions) * 100).toFixed(1)}%)</span>
-                          ) : applicant.testData?.correctAnswers !== undefined ? (
-                            <span className="font-bold">{applicant.testData.correctAnswers} correct</span>
-                          ) : applicant.testResult?.correctAnswers !== undefined && applicant.testResult?.totalQuestions ? (
-                            <span className="font-bold">{applicant.testResult.correctAnswers}/{applicant.testResult.totalQuestions} ({((applicant.testResult.correctAnswers / applicant.testResult.totalQuestions) * 100).toFixed(1)}%)</span>
-                          ) : applicant.testResult?.correctAnswers !== undefined ? (
-                            <span className="font-bold">{applicant.testResult.correctAnswers} correct</span>
-                          ) : applicant.test?.correctAnswers !== undefined && applicant.test?.totalQuestions ? (
-                            <span className="font-bold">{applicant.test.correctAnswers}/{applicant.test.totalQuestions} ({((applicant.test.correctAnswers / applicant.test.totalQuestions) * 100).toFixed(1)}%)</span>
-                          ) : applicant.test?.correctAnswers !== undefined ? (
-                            <span className="font-bold">{applicant.test.correctAnswers} correct</span>
-                          ) : applicant.result?.correctAnswers !== undefined && applicant.result?.totalQuestions ? (
-                            <span className="font-bold">{applicant.result.correctAnswers}/{applicant.result.totalQuestions} ({((applicant.result.correctAnswers / applicant.result.totalQuestions) * 100).toFixed(1)}%)</span>
-                          ) : applicant.result?.correctAnswers !== undefined ? (
-                            <span className="font-bold">{applicant.result.correctAnswers} correct</span>
-                          ) : applicant.rating !== undefined && applicant.rating !== null ? (
-                            <span className="font-bold">{((applicant.rating / 5) * 100).toFixed(1)}%</span>
-                          ) : (
-                            <span className="text-gray-500">N/A</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {(applicant.rating !== undefined && applicant.rating > 0) || (applicant.overallRating !== undefined && applicant.overallRating > 0) ? (
-                            <StarRating rating={applicant.rating || applicant.overallRating} maxRating={5} />
-                          ) : (
-                            <span className="text-gray-500 text-sm">No rating</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {applicant.submittedAt || applicant.testCompletedAt || applicant.feedbackSubmittedAt || applicant.createdAt ? new Date(applicant.submittedAt || applicant.testCompletedAt || applicant.feedbackSubmittedAt || applicant.createdAt).toLocaleDateString() : applicant.id ? new Date(parseInt(applicant.id.substring(0, 8), 16) * 1000).toLocaleDateString() : 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => navigate(`/admin/applicant/${encodeURIComponent(applicant.fullName || applicant.name || 'Unknown')}`)}
-                            className="text-blue-600 hover:text-blue-900 mr-4"
-                          >
-                            View
-                          </button>
-                          <button className="text-gray-600 hover:text-gray-900">
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                            {applicant.rating && <StarRating rating={applicant.rating} maxRating={5} />}
+                            {applicant.correctAnswer && applicant.testData?.totalQuestions && (
+                              <span className="text-xs text-gray-500 ml-1">
+                                ({applicant.correctAnswer}/{applicant.testData.totalQuestions})
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-500">No test</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => navigate(`/admin/applicant/${applicant._id || applicant.id || applicant.email}`)}
+                          className="text-blue-600 hover:text-blue-900 transition-colors"
+                        >
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
-          </div>
-        </main>
+          )}
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 
