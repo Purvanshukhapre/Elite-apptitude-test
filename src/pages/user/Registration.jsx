@@ -55,6 +55,7 @@ const Registration = () => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   const validateStep1 = () => {
     const newErrors = {};
@@ -66,6 +67,8 @@ const Registration = () => {
       newErrors.permanentEmail = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.permanentEmail)) {
       newErrors.permanentEmail = 'Email is invalid';
+    } else if (!isEmailVerified) {
+      newErrors.permanentEmail = 'Email must be verified';
     }
     if (!formData.permanentPhone?.trim()) {
       newErrors.permanentPhone = 'Phone number is required';
@@ -80,7 +83,11 @@ const Registration = () => {
     if (!formData.age || formData.age.toString().trim() === '') newErrors.age = 'Age is required';
     if (!formData.maritalStatus) newErrors.maritalStatus = 'Marital status is required';
     if (!formData.sex) newErrors.sex = 'Gender is required';
-    if (!formData.permanentPin?.trim()) newErrors.permanentPin = 'Pincode is required';
+    if (!formData.permanentPin?.trim()) {
+      newErrors.permanentPin = 'Pincode is required';
+    } else if (formData.permanentPin.length !== 6 || !/^[0-9]{6}$/.test(formData.permanentPin)) {
+      newErrors.permanentPin = 'Pincode must be exactly 6 digits';
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -153,6 +160,13 @@ const Registration = () => {
             setFormData={setFormData}
             errors={errors}
             setErrors={setErrors}
+            onEmailVerified={(isVerified) => {
+              setIsEmailVerified(isVerified);
+              if (isVerified) {
+                // Email is verified, user can proceed
+                console.log('Email verified, user can proceed');
+              }
+            }}
           />
         );
       case 2:
@@ -171,50 +185,7 @@ const Registration = () => {
     }
   };
 
-  const isStepValid = () => {
-    // Simple validation without triggering state updates
-    if (step === 1) {
-      return formData.fullName?.trim() && 
-             formData.fatherName?.trim() && 
-             formData.permanentEmail?.trim() && 
-             /\S+@\S+\.\S+/.test(formData.permanentEmail) &&
-             formData.permanentPhone?.trim() && 
-             /^\d{10}$/.test(formData.permanentPhone.replace(/[-\s]/g, '')) &&
-             formData.language?.trim() &&
-             formData.permanentAddressLine?.trim() &&
-             formData.age?.toString().trim() &&
-             formData.maritalStatus &&
-             formData.sex &&
-             formData.permanentPin?.trim();
-    } else if (step === 2) {
-      // Validate required fields for all users
-      const basicValid = formData.postAppliedFor && 
-             formData.experience && 
-             formData.academicRecords[0].schoolOrCollege?.trim() && 
-             formData.academicRecords[0].boardOrUniversity?.trim() && 
-             formData.academicRecords[0].examinationPassed?.trim() && 
-             formData.academicRecords[0].yearOfPassing && 
-             formData.academicRecords[0].mainSubjects?.trim() && 
-             formData.academicRecords[0].percentage?.trim() && 
-             formData.experienceLevel &&
-             formData.primarySkills && formData.primarySkills.length > 0 &&
-             formData.secondarySkills && formData.secondarySkills.length > 0;
-      
-      // If user is not a fresher, validate work experience fields
-      if (formData.experience !== 'fresher') {
-        return basicValid && 
-               formData.workExperiences[0].designation?.trim() && 
-               formData.workExperiences[0].briefJobProfile?.trim() && 
-               formData.workExperiences[0].durationFrom?.trim() && 
-               formData.workExperiences[0].durationTo?.trim() &&
-               formData.workExperiences[0].employerName?.trim();
-      }
-      
-      // If user is a fresher, work experience fields are not required
-      return basicValid;
-    }
-    return true;
-  };
+
 
   return (
     <div className="min-h-screen bg-[#82a1d2] flex items-center justify-center p-4">
@@ -247,7 +218,6 @@ const Registration = () => {
               onBack={handleBack}
               onNext={handleNext}
               onSubmit={handleSubmit}
-              isValid={isStepValid()}
               isSubmitting={isSubmitting}
             />
           </form>

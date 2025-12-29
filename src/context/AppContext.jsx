@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AppContext } from './AppContextDefinition';
-import { addApplicant as apiAddApplicant, updateApplicantTest as apiUpdateApplicantTest, updateApplicantFeedback as apiUpdateApplicantFeedback, getApplicants as apiGetApplicants, mockQuestions } from '../api';
+import { addApplicant as apiAddApplicant, updateApplicantTest as apiUpdateApplicantTest, updateApplicantFeedback as apiUpdateApplicantFeedback, getApplicants as apiGetApplicants, getAllTestResults, getAllFeedback, mockQuestions } from '../api';
 // mockQuestions is now properly exported from api.js
 
 export const AppProvider = ({ children }) => {
@@ -18,19 +18,77 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('adminAuth', isAdminAuthenticated.toString());
   }, [isAdminAuthenticated]);
 
-  // Initialize by fetching applicants from API
+  // Initialize by fetching applicants, test results, and feedback from API
   useEffect(() => {
     const fetchApplicants = async () => {
       try {
-        const apiApplicants = await apiGetApplicants();
-        setApplicants(apiApplicants);
-        // console.log('Applicants loaded from API:', apiApplicants);
+        const [apiApplicants, testResults, feedbackResults] = await Promise.all([
+          apiGetApplicants(),
+          getAllTestResults().catch(error => {
+            console.error('Failed to fetch test results:', error);
+            return [];
+          }),
+          getAllFeedback().catch(error => {
+            console.error('Failed to fetch feedback:', error);
+            return [];
+          })
+        ]);
+        
+        // Combine applicants with test results and feedback
+        const combinedApplicants = apiApplicants.map(applicant => {
+          // Find corresponding test result by fullName
+          const testResult = testResults.find(result => 
+            result.fullName === applicant.fullName || result.name === applicant.fullName
+          );
+          
+          // Find corresponding feedback by fullName or email
+          const feedback = feedbackResults.find(f => 
+            f.fullName === applicant.fullName || f.name === applicant.fullName || f.email === applicant.permanentEmail
+          );
+          
+          return {
+            ...applicant,
+            // Add test result data if available
+            ...testResult,
+            // Add feedback data if available
+            feedback,
+            // Ensure test completion status is set
+            isTestCompleted: !!testResult,
+            // Set test completed at date if available
+            testCompletedAt: testResult?.submittedAt || testResult?.createdAt || applicant.testCompletedAt,
+            // Set correct answers if available
+            correctAnswer: testResult?.correctAnswer || testResult?.correctAnswers || applicant.correctAnswer,
+            // Set score if available
+            score: testResult?.score || applicant.score,
+            // Set percentage if available
+            percentage: testResult?.percentage || testResult?.overallPercentage || applicant.percentage,
+            // Set rating from feedback if available
+            rating: feedback?.rating || applicant.rating,
+            // Set feedback submitted at date if available
+            feedbackSubmittedAt: feedback?.submittedAt || feedback?.createdAt
+          };
+        });
+        
+        setApplicants(combinedApplicants);
+        // console.log('Applicants loaded from API:', combinedApplicants);
       } catch (error) {
         console.error('Failed to fetch applicants from API:', error);
         // Fallback to localStorage
         const savedApplicants = localStorage.getItem('applicants');
         if (savedApplicants) {
-          setApplicants(JSON.parse(savedApplicants));
+          const parsedApplicants = JSON.parse(savedApplicants);
+          // Check if the data contains placeholder data like "ARYAN NAGARDHANKAR" and clear if so
+          const hasPlaceholderData = parsedApplicants.some(applicant => 
+            applicant.fullName && applicant.fullName.includes('ARYAN') && applicant.fullName.includes('NAGARDHANKAR')
+          );
+          
+          if (hasPlaceholderData) {
+            console.warn('Found placeholder data in localStorage, clearing it');
+            localStorage.removeItem('applicants');
+            setApplicants([]);
+          } else {
+            setApplicants(parsedApplicants);
+          }
         }
       } finally {
         setLoading(false);
@@ -39,6 +97,64 @@ export const AppProvider = ({ children }) => {
     
     fetchApplicants();
   }, []);
+
+  // Function to refresh applicants from API
+  const refreshApplicants = async () => {
+    try {
+      const [apiApplicants, testResults, feedbackResults] = await Promise.all([
+        apiGetApplicants(),
+        getAllTestResults().catch(error => {
+          console.error('Failed to fetch test results:', error);
+          return [];
+        }),
+        getAllFeedback().catch(error => {
+          console.error('Failed to fetch feedback:', error);
+          return [];
+        })
+      ]);
+      
+      // Combine applicants with test results and feedback
+      const combinedApplicants = apiApplicants.map(applicant => {
+        // Find corresponding test result by fullName
+        const testResult = testResults.find(result => 
+          result.fullName === applicant.fullName || result.name === applicant.fullName
+        );
+        
+        // Find corresponding feedback by fullName or email
+        const feedback = feedbackResults.find(f => 
+          f.fullName === applicant.fullName || f.name === applicant.fullName || f.email === applicant.permanentEmail
+        );
+        
+        return {
+          ...applicant,
+          // Add test result data if available
+          ...testResult,
+          // Add feedback data if available
+          feedback,
+          // Ensure test completion status is set
+          isTestCompleted: !!testResult,
+          // Set test completed at date if available
+          testCompletedAt: testResult?.submittedAt || testResult?.createdAt || applicant.testCompletedAt,
+          // Set correct answers if available
+          correctAnswer: testResult?.correctAnswer || testResult?.correctAnswers || applicant.correctAnswer,
+          // Set score if available
+          score: testResult?.score || applicant.score,
+          // Set percentage if available
+          percentage: testResult?.percentage || testResult?.overallPercentage || applicant.percentage,
+          // Set rating from feedback if available
+          rating: feedback?.rating || applicant.rating,
+          // Set feedback submitted at date if available
+          feedbackSubmittedAt: feedback?.submittedAt || feedback?.createdAt
+        };
+      });
+      
+      setApplicants(combinedApplicants);
+      return combinedApplicants;
+    } catch (error) {
+      console.error('Failed to refresh applicants from API:', error);
+      return applicants; // Return current applicants if refresh fails
+    }
+  };
 
   useEffect(() => {
     if (!loading) {
@@ -145,14 +261,20 @@ export const AppProvider = ({ children }) => {
     try {
       await apiUpdateApplicantTest(applicantId, testData);
       setApplicants(prev => prev.map(app => 
-        (app.id === applicantId || app.email === testData.applicantId || app.fullName === testData.applicantName) // Also match by email or name if ID doesn't match
+        (app.id === applicantId || app.email === testData.applicantId || app.fullName === testData.applicantName || app.name === testData.applicantName) // Also match by email, name, or fullName if ID doesn't match
           ? { 
               ...app, 
               testData, 
               // Update top-level correctAnswer field if available in testData (handle both correctAnswer and correctAnswers)
               correctAnswer: testData.correctAnswer !== undefined ? testData.correctAnswer : 
                          testData.correctAnswers !== undefined ? testData.correctAnswers : app.correctAnswer,
-              testCompletedAt: new Date().toISOString() 
+              // Update other test-related fields
+              percentage: testData.percentage !== undefined ? testData.percentage : 
+                        testData.overallPercentage !== undefined ? testData.overallPercentage : app.percentage,
+              score: testData.score !== undefined ? testData.score : app.score,
+              rating: testData.rating !== undefined ? testData.rating : app.rating,
+              testCompletedAt: new Date().toISOString(),
+              isTestCompleted: true
             }
           : app
       ));
@@ -160,14 +282,20 @@ export const AppProvider = ({ children }) => {
       console.error('Failed to update applicant test:', error);
       // Fallback to local storage
       setApplicants(prev => prev.map(app => 
-        (app.id === applicantId || app.email === testData.applicantId || app.fullName === testData.applicantName) // Also match by email or name if ID doesn't match
+        (app.id === applicantId || app.email === testData.applicantId || app.fullName === testData.applicantName || app.name === testData.applicantName) // Also match by email, name, or fullName if ID doesn't match
           ? { 
               ...app, 
               testData, 
               // Update top-level correctAnswer field if available in testData (handle both correctAnswer and correctAnswers)
               correctAnswer: testData.correctAnswer !== undefined ? testData.correctAnswer : 
                          testData.correctAnswers !== undefined ? testData.correctAnswers : app.correctAnswer,
-              testCompletedAt: new Date().toISOString() 
+              // Update other test-related fields
+              percentage: testData.percentage !== undefined ? testData.percentage : 
+                        testData.overallPercentage !== undefined ? testData.overallPercentage : app.percentage,
+              score: testData.score !== undefined ? testData.score : app.score,
+              rating: testData.rating !== undefined ? testData.rating : app.rating,
+              testCompletedAt: new Date().toISOString(),
+              isTestCompleted: true
             }
           : app
       ));
@@ -218,7 +346,8 @@ export const AppProvider = ({ children }) => {
     updateApplicantFeedback,
     isAdminAuthenticated,
     adminLogin,
-    adminLogout
+    adminLogout,
+    refreshApplicants
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

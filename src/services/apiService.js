@@ -1,5 +1,5 @@
 // Configuration
-export const API_BASE_URL = 'https://eliterecruitmentbackend-production.up.railway.app'; // Change this to your production URL
+export const API_BASE_URL = ''; // Using proxy in development, so empty string for relative paths
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -59,8 +59,6 @@ export const apiCall = async (endpoint, options = {}) => {
     ...options
   };
 
-  // Check if this is the test result fetching endpoint (which commonly returns 403)
-  // Exclude the submission endpoint from this special handling
   try {
     // Check if this is an applicant by name endpoint to avoid CORS issues
     const isApplicantByName = typeof endpoint === 'string' && endpoint.includes('/auth/student/name/');
@@ -71,15 +69,32 @@ export const apiCall = async (endpoint, options = {}) => {
       ...(isApplicantByName ? {} : { credentials: 'include' })
     });
     
+    // For specific endpoints that might return 403, return empty data instead of throwing error
+    if (!response.ok && response.status === 403) {
+      console.warn(`API endpoint ${endpoint} returned 403 - returning empty data`);
+      return []; // Return empty array as default for 403 responses
+    }
+    
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
     }
     
     const data = await response.json();
     return data;
-  } catch {
-    // If CORS error occurs for other endpoints, re-throw to be handled by caller
-    throw new Error('API request failed');
+  } catch (error) {
+    // More specific error handling
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      console.error('Network error occurred:', error.message);
+      throw new Error('Network error: Please check your connection');
+    }
+    
+    if (error.message.includes('HTTP error')) {
+      console.error('HTTP error occurred:', error.message);
+      throw error;
+    }
+    
+    console.error('API request failed:', error);
+    throw new Error('API request failed: ' + error.message);
   }
 };
 
@@ -138,12 +153,14 @@ export const submitTest = async (testData) => {
       score: `${testData.correctAnswers || 0}/${testData.questions ? testData.questions.length : 0}`
     };
   } catch (submitError) {
+    console.error('Test submission failed:', submitError);
     // Fallback response when API submission fails
     return {
       correctAnswers: testData.correctAnswers || 0,
-      totalQuestions: testData.questions ? testData.questions.length : 0,
-      score: `${testData.correctAnswers || 0}/${testData.questions ? testData.questions.length : 0}`,
-      error: submitError.message
+      totalQuestions: testData.questions ? testData.questions.length : testData.totalQuestions || 0,
+      score: `${testData.correctAnswers || 0}/${testData.questions ? testData.questions.length : testData.totalQuestions || 0}`,
+      error: submitError.message,
+      success: false
     };
   }
 };

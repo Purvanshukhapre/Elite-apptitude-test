@@ -139,10 +139,10 @@ const Feedback = () => {
                       viewBox="0 0 24 24"
                     >
                       <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                        fill="currentColor"
+                        d="M10 .5L12.1 7.5H19.5L13.8 11.7L16 18.5L10 14L4 18.5L6.2 11.7L.5 7.5H7.9L10 .5Z"
+                        fillRule="evenodd"
+                        clipRule="evenodd"
                       />
                     </svg>
                   </button>

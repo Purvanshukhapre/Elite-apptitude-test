@@ -10,4 +10,28 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://eliterecruitmentbackend-production.up.railway.app',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/auth': {
+        target: 'https://eliterecruitmentbackend-production.up.railway.app',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/feedback': {
+        target: 'https://eliterecruitmentbackend-production.up.railway.app',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/result': {
+        target: 'https://eliterecruitmentbackend-production.up.railway.app',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 })

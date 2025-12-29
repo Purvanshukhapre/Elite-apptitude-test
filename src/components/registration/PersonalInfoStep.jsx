@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-const PersonalInfoStep = ({ formData, setFormData, errors, setErrors }) => {
+const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVerified }) => {
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -10,10 +16,149 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors }) => {
     }
   };
 
+  const handleSendVerification = async () => {
+    if (!formData.permanentEmail || !formData.permanentEmail.trim()) {
+      setErrors(prev => ({ ...prev, permanentEmail: 'Please enter your email address' }));
+      return;
+    }
+    
+    setIsSendingVerification(true);
+    try {
+      const response = await fetch('https://eliterecruitmentbackend-production.up.railway.app/email-verification/send-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: formData.permanentEmail }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Verification email sent:', data);
+        setShowVerificationModal(true);
+        // Reset verification state
+        setIsEmailVerified(false);
+        setVerificationCode('');
+      } else {
+        const errorData = await response.json();
+        setErrors(prev => ({ ...prev, permanentEmail: errorData.message || 'Failed to send verification email' }));
+      }
+    } catch (error) {
+      console.error('Error sending verification email:', error);
+      setErrors(prev => ({ ...prev, permanentEmail: 'Network error. Please try again.' }));
+    } finally {
+      setIsSendingVerification(false);
+    }
+  };
 
+  const handleVerifyCode = async () => {
+    if (!verificationCode.trim()) {
+      setErrors(prev => ({ ...prev, verificationCode: 'Please enter the verification code' }));
+      return;
+    }
+    
+    setIsVerifying(true);
+    try {
+      const response = await fetch('https://eliterecruitmentbackend-production.up.railway.app/email-verification/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ verificationCode }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Email verified:', data);
+        setIsEmailVerified(true);
+        if (onEmailVerified) {
+          onEmailVerified(true);
+        }
+        setShowVerificationModal(false);
+        setErrors(prev => ({ ...prev, verificationCode: '' }));
+      } else {
+        const errorData = await response.json();
+        setErrors(prev => ({ ...prev, verificationCode: errorData.message || 'Invalid verification code' }));
+      }
+    } catch (error) {
+      console.error('Error verifying code:', error);
+      setErrors(prev => ({ ...prev, verificationCode: 'Network error. Please try again.' }));
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Add verification modal
+  const VerificationModal = () => {
+    if (!showVerificationModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Email Verification</h3>
+            <button 
+              onClick={() => setShowVerificationModal(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            <p className="text-gray-600">We've sent a verification code to <span className="font-semibold">{formData.permanentEmail}</span></p>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Verification Code
+              </label>
+              <input
+                type="text"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleVerifyCode();
+                  }
+                }}
+                placeholder="Enter 6-digit code"
+                maxLength={6}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoFocus
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              />
+              {errors.verificationCode && (
+                <p className="text-red-500 text-sm mt-1">{errors.verificationCode}</p>
+              )}
+            </div>
+            
+            <div className="flex space-x-3 pt-2">
+              <button
+                onClick={() => setShowVerificationModal(false)}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleVerifyCode}
+                disabled={isVerifying}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isVerifying ? 'Verifying...' : 'Verify'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="space-y-8">
+    <div>
+      <div className="space-y-8">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">Personal Information</h2>
         <p className="text-gray-600">Please provide your personal details</p>
@@ -167,8 +312,28 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors }) => {
               value={formData.permanentEmail || ''}
               onChange={handleChange}
               placeholder="Enter your email address"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 pr-24"
+              disabled={isEmailVerified}
             />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+              {isEmailVerified ? (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Verified
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSendVerification}
+                  disabled={isSendingVerification}
+                  className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isSendingVerification ? 'Sending...' : 'Verify'}
+                </button>
+              )}
+            </div>
           </div>
           {errors.permanentEmail && (
             <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -272,6 +437,7 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors }) => {
               placeholder="Enter your pincode"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               inputMode="numeric"
+              pattern="[0-9]*"
               maxLength={6}
             />
           </div>
@@ -396,6 +562,8 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors }) => {
         </div>
       </div>
     </div>
+    <VerificationModal />
+  </div>
   );
 };
 

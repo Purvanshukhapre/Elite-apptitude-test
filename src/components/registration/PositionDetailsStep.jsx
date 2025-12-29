@@ -168,7 +168,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
                 name="academicRecords[0].examinationPassed"
                 value={formData.academicRecords[0].examinationPassed || ''}
                 onChange={handleChange}
-                placeholder="Enter examination passed"
+                placeholder="Enter Your Heighest Qualification"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
@@ -523,15 +523,16 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
         
         <div className="mt-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Primary Skills (Learned in College)
+            Primary Skills (Learned in College)<span className="text-red-500">*</span>
           </label>
-          <div className="relative rounded-lg transition-all duration-200 focus-within:ring-2 focus-within:ring-blue-500">
+          <div className={`relative rounded-lg transition-all duration-200 ${errors.primarySkills ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
             <input
               type="text"
               placeholder="Type a skill and press Enter (e.g. Data Structures)"
               value={primarySkillInput}
               onChange={(e) => setPrimarySkillInput(e.target.value)}
               onKeyDown={handlePrimarySkillAdd}
+              
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
@@ -554,13 +555,22 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               </span>
             ))}
           </div>
+          
+          {errors.primarySkills && (
+            <p className="text-red-500 text-sm mt-1 flex items-center">
+              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              {errors.primarySkills}
+            </p>
+          )}
         </div>
 
         <div className="mt-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Secondary Skills (Applied in Work Experience)
+            Secondary Skills (Applied in Work Experience)<span className="text-red-500">*</span>
           </label>
-          <div className="relative rounded-lg transition-all duration-200 focus-within:ring-2 focus-within:ring-blue-500">
+          <div className={`relative rounded-lg transition-all duration-200 ${errors.secondarySkills ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
             <input
               type="text"
               placeholder="Type a skill and press Enter (e.g. REST APIs)"
@@ -589,6 +599,15 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               </span>
             ))}
           </div>
+          
+          {errors.secondarySkills && (
+            <p className="text-red-500 text-sm mt-1 flex items-center">
+              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              {errors.secondarySkills}
+            </p>
+          )}
         </div>
       </div>
     </div>

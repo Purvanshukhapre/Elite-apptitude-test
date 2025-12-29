@@ -1,4 +1,4 @@
-const NavigationButtons = ({ step, onBack, onNext, onSubmit, isValid, isSubmitting }) => {
+const NavigationButtons = ({ step, onBack, onNext, onSubmit, isSubmitting }) => {
   return (
     <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
       {step > 1 && (
@@ -17,10 +17,9 @@ const NavigationButtons = ({ step, onBack, onNext, onSubmit, isValid, isSubmitti
         <button
           type="button"
           onClick={onNext}
-          disabled={!isValid}
           className="ml-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium 
            transform hover:-translate-y-0.5 hover:shadow-xl 
-           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+           transition-all duration-200 flex items-center"
         >
           Next
           <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,23 +1,91 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
-import { getAllFeedback, getAllTestResults } from '../../api';
+import { getApplicants, getAllFeedback, getAllTestResults } from '../../api';
 import StarRating from '../../components/StarRating';
 
 const ModernApplicantsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { applicants, loading: applicantsLoading, isAdminAuthenticated, adminLogout } = useApp();
+  const { applicants: contextApplicants, isAdminAuthenticated, adminLogout } = useApp();
   const [feedbackData, setFeedbackData] = useState([]);
-  const [testResults, setTestResults] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [positionFilter, setPositionFilter] = useState('all');
 
 
-
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+
+  // State for local applicants data
+  const [localApplicants, setLocalApplicants] = useState([]);
+  const [localApplicantsLoading, setLocalApplicantsLoading] = useState(true);
+  
+  // Function to fetch all applicants and combine with test results and feedback
+  const fetchAllApplicants = async () => {
+    if (!isAdminAuthenticated) return;
+    
+    setLocalApplicantsLoading(true);
+    try {
+      const [apiApplicants, testResults, feedbackResults] = await Promise.all([
+        getApplicants(),
+        getAllTestResults().catch(error => {
+          console.error('Failed to fetch test results:', error);
+          return [];
+        }),
+        getAllFeedback().catch(error => {
+          console.error('Failed to fetch feedback:', error);
+          return [];
+        })
+      ]);
+      
+      // Combine applicants with test results and feedback
+      const combinedApplicants = apiApplicants.map(applicant => {
+        // Find corresponding test result by fullName
+        const testResult = testResults.find(result => 
+          result.fullName === applicant.fullName || result.name === applicant.fullName
+        );
+        
+        // Find corresponding feedback by fullName or email
+        const feedback = feedbackResults.find(f => 
+          f.fullName === applicant.fullName || f.name === applicant.fullName || f.email === applicant.permanentEmail
+        );
+        
+        return {
+          ...applicant,
+          // Add test result data if available
+          ...testResult,
+          // Add feedback data if available
+          feedback,
+          // Ensure test completion status is set
+          isTestCompleted: !!testResult,
+          // Set test completed at date if available
+          testCompletedAt: testResult?.submittedAt || testResult?.createdAt || applicant.testCompletedAt,
+          // Set correct answers if available
+          correctAnswer: testResult?.correctAnswer || testResult?.correctAnswers || applicant.correctAnswer,
+          // Set score if available
+          score: testResult?.score || applicant.score,
+          // Set percentage if available
+          percentage: testResult?.percentage || testResult?.overallPercentage || applicant.percentage,
+          // Set rating from feedback if available
+          rating: feedback?.rating || applicant.rating,
+          // Set feedback submitted at date if available
+          feedbackSubmittedAt: feedback?.submittedAt || feedback?.createdAt
+        };
+      });
+      
+      setLocalApplicants(combinedApplicants);
+    } catch (error) {
+      console.error('Failed to fetch applicants:', error);
+      setLocalApplicants([]);
+      // Show user-friendly message
+      if (typeof window !== 'undefined') {
+        console.warn('Could not load applicant data. Using cached data if available.');
+      }
+    } finally {
+      setLocalApplicantsLoading(false);
+    }
+  };
 
   // Function to manually fetch feedback data
   const fetchFeedback = async () => {
@@ -30,51 +98,59 @@ const ModernApplicantsPage = () => {
     } catch (error) {
       console.error('Failed to fetch feedback:', error);
       setFeedbackData([]);
+      // Show user-friendly message
+      if (typeof window !== 'undefined') {
+        console.warn('Could not load feedback data. Using cached data if available.');
+      }
     } finally {
       setIsFeedbackLoading(false);
     }
   };
 
-  // Function to fetch all test results
-  const fetchTestResults = async () => {
-    if (!isAdminAuthenticated) return;
-    
-    try {
-      const data = await getAllTestResults();
-      setTestResults(data);
-    } catch (error) {
-      console.error('Failed to fetch test results:', error);
-      setTestResults([]);
-    }
-  };
-
-  // Fetch feedback and test results data on component mount only once
+  // Fetch all data on component mount
   useEffect(() => {
-    if (isAdminAuthenticated) {
-      fetchFeedback();
-      fetchTestResults();
+    if (!isAdminAuthenticated) {
+      return;
     }
-  }, []);
+    
+    const fetchData = async () => {
+      // Fetch all data - fetchAllApplicants now combines applicants, test results, and feedback
+      fetchAllApplicants();
+    };
+    
+    fetchData();
+    
+    // Clean up function
+    return () => {
+      // No cleanup needed
+    };
+  }, [isAdminAuthenticated]);
 
-  // Combine applicants with feedback and test result data
+  // Update local applicants when context applicants change
+  useEffect(() => {
+    if (contextApplicants && contextApplicants.length > 0 && localApplicants.length === 0) {
+      // Only update if we don't have local data yet
+      setLocalApplicants(contextApplicants);
+    }
+  }, [contextApplicants, localApplicants.length]);
+
+  // Combine applicants with feedback data (test results are already combined in fetchAllApplicants)
   const combinedApplicants = useMemo(() => {
-    return applicants.map(applicant => {
-      // Look for feedback associated with this applicant
+    // Use localApplicants if available, otherwise fallback to contextApplicants
+    const applicantsToUse = localApplicants.length > 0 ? localApplicants : contextApplicants;
+    
+    return applicantsToUse.map(applicant => {
+      // Look for feedback associated with this applicant from feedbackData state
       const applicantFeedback = feedbackData.find(feedback => 
         feedback.email === applicant.email || feedback.name === applicant.fullName
       );
       
-      // Look for test result associated with this applicant by fullName or id
-      const applicantTestResult = testResults.find(testResult => 
-        testResult.fullName === applicant.fullName || testResult.fullName === applicant.name || testResult.id === applicant.id
-      );
-      
+      // The test result and feedback data is already combined in the applicant object
       // Extract test result data from various possible locations
-      const testResult = applicant.testResult || applicant.testData || applicant.test || applicant.result || applicantTestResult || {};
+      const testResult = applicant.testResult || applicant.testData || applicant.test || applicant.result || applicant || {};
       
       // Extract correct answers from various possible locations
-      const correctAnswers = applicantTestResult?.correctAnswer || // Prioritize from test results API
-                            applicant.correctAnswer || 
+      const correctAnswers = applicant.correctAnswer || 
                             testResult.correctAnswers || 
                             testResult.correctAnswer || 
                             (applicant.testData && (applicant.testData.correctAnswers || applicant.testData.correctAnswer)) ||
@@ -104,9 +180,9 @@ const ModernApplicantsPage = () => {
                     null;
       
       // Check if test is completed based on multiple possible indicators
-      const isTestCompleted = applicant.testCompletedAt ||
+      const isTestCompleted = applicant.isTestCompleted || // Use the combined field from context
+                              applicant.testCompletedAt ||
                               applicant.testCompleted ||
-                              applicantTestResult || // If test result exists from API
                               (applicant.testData && Object.keys(applicant.testData).length > 0) ||
                               (applicant.testResult && Object.keys(applicant.testResult).length > 0) ||
                               (applicant.test && Object.keys(applicant.test).length > 0) ||
@@ -120,8 +196,7 @@ const ModernApplicantsPage = () => {
       
       return {
         ...applicant,
-        feedback: applicantFeedback || null,
-        testResultFromAPI: applicantTestResult, // Store the specific test result from API
+        feedback: applicantFeedback || applicant.feedback || null, // Use feedback from either source
         // Use existing testData, or null
         testData: applicant.testData || applicant.testResult || applicant.test || applicant.result || null,
         testResult: testResult,
@@ -130,23 +205,26 @@ const ModernApplicantsPage = () => {
         correctAnswer: correctAnswers,
         percentage: percentage,
         score: score,
-        testCompletedAt: applicant.testCompletedAt,
+        testCompletedAt: applicant.testCompletedAt || applicant.testResult?.submittedAt || applicant.testResult?.createdAt,
         isTestCompleted: isTestCompleted,
         // If feedback exists, use its rating; otherwise undefined
-        overallRating: applicantFeedback ? applicantFeedback.rating : (applicant.rating || applicant.overallRating)
+        overallRating: applicantFeedback ? applicantFeedback.rating : (applicant.rating || applicant.overallRating || applicant.feedback?.rating)
       };
     });
-  }, [applicants, feedbackData, testResults]);
+  }, [localApplicants, contextApplicants, feedbackData]);
 
   // Get unique positions for filter
   const uniquePositions = useMemo(() => {
-    const positions = [...new Set(combinedApplicants.map(applicant => applicant.postAppliedFor || applicant.position))];
+    const applicantsToUse = localApplicants.length > 0 ? localApplicants : contextApplicants;
+    const positions = [...new Set(applicantsToUse.map(applicant => applicant.postAppliedFor || applicant.position))];
     return ['all', ...positions.filter(pos => pos)];
-  }, [combinedApplicants]);
+  }, [localApplicants, contextApplicants]);
 
   // Filter applicants based on search term and filters
   const filteredApplicants = useMemo(() => {
-    let filtered = combinedApplicants;
+    // Use localApplicants if available, otherwise fallback to contextApplicants
+    const applicantsToUse = localApplicants.length > 0 ? localApplicants : combinedApplicants;
+    let filtered = applicantsToUse;
     
     // Apply search filter
     if (searchTerm) {
@@ -175,7 +253,7 @@ const ModernApplicantsPage = () => {
     }
     
     return filtered;
-  }, [combinedApplicants, searchTerm, statusFilter, positionFilter]);
+  }, [combinedApplicants, localApplicants, contextApplicants, searchTerm, statusFilter, positionFilter]);
 
   // Navigation highlighting
   const isActive = (path) => {
@@ -255,7 +333,7 @@ const ModernApplicantsPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className={`lg:ml-64 transition-all duration-300 ${sidebarOpen ? 'ml-0' : 'ml-0'} lg:ml-64`}>
+      <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-0 lg:ml-64' : 'ml-0'}`}>
         {/* Top Navigation */}
         <header className="bg-white/90 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-40">
           <div className="px-6 py-4">
@@ -264,6 +342,14 @@ const ModernApplicantsPage = () => {
                 <button
                   onClick={() => setSidebarOpen(!sidebarOpen)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors hidden lg:block"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -312,7 +398,6 @@ const ModernApplicantsPage = () => {
                     </option>
                   ))}
                 </select>
-
 
 
                 <div className="flex items-center space-x-3">
@@ -375,7 +460,16 @@ const ModernApplicantsPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredApplicants.length === 0 ? (
+                  {localApplicantsLoading ? (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                          <p className="text-gray-500">Loading applicants...</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredApplicants.length === 0 ? (
                     <tr>
                       <td colSpan="7" className="px-6 py-12 text-center">
                         <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -454,7 +548,7 @@ const ModernApplicantsPage = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(applicant.submittedAt || applicant.createdAt || new Date(0)).toLocaleDateString()}
+                          {applicant.submittedAt || applicant.testCompletedAt || applicant.feedbackSubmittedAt || applicant.createdAt ? new Date(applicant.submittedAt || applicant.testCompletedAt || applicant.feedbackSubmittedAt || applicant.createdAt).toLocaleDateString() : applicant.id ? new Date(parseInt(applicant.id.substring(0, 8), 16) * 1000).toLocaleDateString() : 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button
