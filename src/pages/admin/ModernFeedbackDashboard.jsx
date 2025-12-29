@@ -11,24 +11,7 @@ const ModernFeedbackDashboard = () => {
   const [feedbackData, setFeedbackData] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [applicantsData, setApplicantsData] = useState([]);
-  const [applicantsLoading, setApplicantsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Fetch applicant data
-  const fetchApplicants = async () => {
-    const { getApplicants } = await import('../../api');
-    try {
-      setApplicantsLoading(true);
-      const data = await getApplicants();
-      setApplicantsData(data);
-    } catch (error) {
-      console.error('Failed to fetch applicants:', error);
-      setApplicantsData([]);
-    } finally {
-      setApplicantsLoading(false);
-    }
-  };
 
   // Fetch feedback data on component mount
   useEffect(() => {
@@ -47,41 +30,21 @@ const ModernFeedbackDashboard = () => {
 
     if (isAdminAuthenticated) {
       fetchFeedback();
-      fetchApplicants(); // Fetch applicants to get email data
     } else {
       setLoading(false);
     }
   }, [isAdminAuthenticated]);
 
-  // Combine feedback with applicant data to get emails
-  const combinedFeedback = useMemo(() => {
-    return feedbackData.map(feedback => {
-      // Find matching applicant by name
-      const matchingApplicant = applicantsData.find(applicant => 
-        applicant.fullName === feedback.name || 
-        applicant.name === feedback.name ||
-        applicant.fullName === feedback.fullName ||
-        applicant.name === feedback.fullName
-      );
-      
-      return {
-        ...feedback,
-        email: feedback.email || matchingApplicant?.email || matchingApplicant?.permanentEmail || 'No email',
-        additionalComments: feedback.comments || feedback.problem5 || 'No additional comments'
-      };
-    });
-  }, [feedbackData, applicantsData]);
-
   // Filter feedback based on search term
   const filteredFeedback = useMemo(() => {
-    if (!searchTerm) return combinedFeedback;
+    if (!searchTerm) return feedbackData;
     
-    return combinedFeedback.filter(feedback => 
+    return feedbackData.filter(feedback => 
       (feedback.name || feedback.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (feedback.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (feedback.additionalComments || '').toLowerCase().includes(searchTerm.toLowerCase())
+      (feedback.comments || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [combinedFeedback, searchTerm]);
+  }, [feedbackData, searchTerm]);
 
   // Calculate feedback analytics
   const feedbackAnalytics = useMemo(() => {
@@ -375,11 +338,11 @@ const ModernFeedbackDashboard = () => {
               <span className="text-sm text-gray-500">{filteredFeedback.length} feedback entries</span>
             </div>
 
-            {loading || applicantsLoading ? (
+            {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="flex flex-col items-center">
                   <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                  <p className="text-gray-500">{loading ? 'Loading feedback...' : 'Loading data...'}</p>
+                  <p className="text-gray-500">Loading feedback...</p>
                 </div>
               </div>
             ) : (
@@ -388,16 +351,15 @@ const ModernFeedbackDashboard = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Additional Comments</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comments</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredFeedback.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="px-6 py-12 text-center">
+                        <td colSpan="4" className="px-6 py-12 text-center">
                           <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                           </svg>
@@ -417,11 +379,9 @@ const ModernFeedbackDashboard = () => {
                               </div>
                               <div className="ml-4">
                                 <div className="text-sm font-medium text-gray-900">{feedback.name || feedback.fullName || 'Unknown'}</div>
+                                <div className="text-sm text-gray-500">{feedback.email || 'No email'}</div>
                               </div>
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{feedback.email || 'No email'}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -429,7 +389,7 @@ const ModernFeedbackDashboard = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                            {feedback.additionalComments || 'No additional comments provided'}
+                            {feedback.comments || feedback.problem5 || 'No comments provided'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {new Date(feedback.submittedAt || feedback.timestamp || feedback.createdAt || new Date(0)).toLocaleDateString()}
