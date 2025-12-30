@@ -4,30 +4,33 @@ export const API_BASE_URL = ''; // Using proxy in development, so empty string f
 // API Endpoints
 export const API_ENDPOINTS = {
   // Applicants
-  APPLICANTS: '/auth/student/submit',
-  ALL_APPLICANTS: '/auth/student/all',  // Changed to match backend API
-  APPLICANTS_BY_NAME: (name) => `/auth/student/name/${name}`,  // New endpoint for getting applicants by name
-  APPLICANT_TEST_DATA: (id) => `/applicants/${id}/test-data`,
-  APPLICANT_FEEDBACK: (id) => `/applicants/${id}/feedback`,
-  APPLICANT_BY_ID: (id) => `/auth/student/id/${id}`,
-  APPLICANT_TEST_RESULT: (id) => `/test/result/${id}`,
-  APPLICANT_FEEDBACK_RESULT: (id) => `/feedback/${id}`,
-  SUBMIT_TEST: '/result/submit',
-  TEST_QUESTIONS_SUBMIT: 'https://eliterecruitmentbackend-production.up.railway.app/questions/submit',
-  TEST_QUESTIONS_ALL: 'https://eliterecruitmentbackend-production.up.railway.app/questions/all',
-  TEST_QUESTIONS_BY_EMAIL: (email) => `https://eliterecruitmentbackend-production.up.railway.app/questions/email/${email}`,
-  
+  APPLICANTS: '/auth/student/submit',  // Using proxy in development
+  ALL_APPLICANTS: '/auth/student/all',  // Using proxy in development
+  APPLICANTS_BY_NAME: (name) => `/auth/student/name/${name}`,  // Using proxy in development
+  APPLICANT_TEST_DATA: (id) => `/applicants/${id}/test-data`,  // Using proxy in development
+  APPLICANT_FEEDBACK: (id) => `/applicants/${id}/feedback`,  // Using proxy in development
+  APPLICANT_BY_ID: (id) => `/auth/student/id/${id}`,  // Using proxy in development
+  APPLICANT_TEST_RESULT: (id) => `/test/result/${id}`,  // Using proxy in development
+  APPLICANT_FEEDBACK_RESULT: (id) => `/feedback/${id}`,  // Using proxy in development
+  SUBMIT_TEST: '/result/submit',  // Using proxy in development
+  TEST_QUESTIONS_SUBMIT: '/questions/submit',
+  TEST_QUESTIONS_ALL: '/questions/all',
+  TEST_QUESTIONS_BY_EMAIL: (email) => `/questions/email/${email}`,
+
   // Analytics
-  ANALYTICS_DASHBOARD: '/analytics/dashboard',
-  ANALYTICS_PERFORMANCE: '/analytics/performance',
-  ANALYTICS_SCORES: '/analytics/scores',
-  TEST_RESULT_SUBMIT: '/result/submit',
+  ANALYTICS_DASHBOARD: '/analytics/dashboard',  // Using proxy in development
+  ANALYTICS_PERFORMANCE: '/analytics/performance',  // Using proxy in development
+  ANALYTICS_SCORES: '/analytics/scores',  // Using proxy in development
+  TEST_RESULT_SUBMIT: '/result/submit',  // Using proxy in development
   
   // Feedback
-  FEEDBACK_SUBMIT: '/feedback/submit',
-  FEEDBACK_ALL: '/feedback/all',
-  FEEDBACK: '/feedback',
-  FEEDBACK_SUMMARY: '/feedback/summary'
+  FEEDBACK_SUBMIT: '/feedback/submit',  // Using proxy in development
+  FEEDBACK_ALL: '/feedback/all',  // Using proxy in development
+  FEEDBACK: '/feedback',  // Using proxy in development
+  FEEDBACK_SUMMARY: '/feedback/summary',  // Using proxy in development
+  
+  // Test Results
+  TEST_RESULTS_ALL: '/result/all'  // Using proxy in development
 };
 
 // Utility function to build full URL
@@ -53,9 +56,22 @@ export const apiCall = async (endpoint, options = {}) => {
   
   const url = buildUrl(endpoint);
   
+  // Check if this is an admin-protected endpoint that requires authentication
+  const requiresAuth = typeof endpoint === 'string' && (
+    endpoint.includes('/result/all') || 
+    endpoint.includes('/auth/student/all') || 
+    endpoint.includes('/feedback/all') ||
+    endpoint.includes('/analytics/')
+  );
+  
+  // Get admin token from localStorage if available
+  const adminToken = localStorage.getItem('adminToken');
+  
   const defaultOptions = {
     headers: {
       'Content-Type': 'application/json',
+      // Add authorization header for admin-protected endpoints
+      ...(requiresAuth && adminToken ? { 'Authorization': `Bearer ${adminToken}` } : {}),
       ...options.headers
     },
     credentials: 'include',
@@ -201,7 +217,7 @@ export const getAllFeedback = async () => {
 };
 
 export const getAllTestResults = async () => {
-  return apiCall('/result/all'); // Use the endpoint as provided
+  return apiCall(API_ENDPOINTS.TEST_RESULTS_ALL);
 };
 
 // New API functions for test questions
@@ -225,3 +241,4 @@ export const getTestQuestionsByEmail = async (email) => {
   // Get test questions for a specific user by email
   return apiCall(API_ENDPOINTS.TEST_QUESTIONS_BY_EMAIL(email));
 };
+

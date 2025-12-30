@@ -13,7 +13,8 @@ import {
   calculateCorrectAnswers,
   submitFeedback,
   getAllFeedback,
-  getAllTestResults
+  getAllTestResults,
+  getTestQuestionsByEmail
 } from './services/apiService';
 
 // Named exports for individual functions
@@ -31,7 +32,8 @@ export {
   calculateCorrectAnswers,
   submitFeedback,
   getAllFeedback,
-  getAllTestResults
+  getAllTestResults,
+  getTestQuestionsByEmail
 };
 
 
@@ -477,6 +479,7 @@ export default {
   submitFeedback,
   getAllFeedback,
   getAllTestResults,
+  getTestQuestionsByEmail,
   mockQuestions,
   mockApplicants
 };

@@ -1,19 +1,18 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import Layout from './components/admin/Layout';
 import Welcome from './pages/user/Welcome';
 import Registration from './pages/user/Registration';
 import AptitudeTest from './pages/user/AptitudeTest';
-import Feedback from './pages/user/Feedback';
+import UserFeedback from './pages/user/Feedback';
 import AdminLogin from './pages/admin/AdminLogin';
-
-import ApplicantDetailsPage from './pages/admin/ApplicantDetailsPage';
-import ModernDashboard from './pages/admin/ModernDashboard';
-import ModernApplicantsPage from './pages/admin/ModernApplicantsPage';
-import ModernAnalyticsDashboard from './pages/admin/ModernAnalyticsDashboard';
-import ModernFeedbackDashboard from './pages/admin/ModernFeedbackDashboard';
-import ViewApplicantsPage from './pages/admin/ViewApplicantsPage';
-import EmailPage from './pages/admin/EmailPage';
+import Dashboard from './pages/admin/Dashboard';
+import Analytics from './pages/admin/Analytics';
+import Applicants from './pages/admin/Applicants';
+import FeedbackPage from './pages/admin/Feedback';
+import ApplicantDetails from './pages/admin/ApplicantDetails';
+import Email from './pages/admin/Email';
 
 function App() {
   return (
@@ -24,17 +23,15 @@ function App() {
             <Route path="/" element={<Welcome />} />
             <Route path="/register" element={<Registration />} />
             <Route path="/test" element={<AptitudeTest />} />
-            <Route path="/feedback" element={<Feedback />} />
+            <Route path="/feedback" element={<UserFeedback />} />
             <Route path="/admin" element={<AdminLogin />} />
-            <Route path="/admin/applicant/:applicantId" element={<ApplicantDetailsPage />} />
-            <Route path="/admin/applicants" element={<Navigate to="/admin/modern/applicants" replace />} />
-            <Route path="/admin/dashboard" element={<Navigate to="/admin/modern" replace />} />
-            <Route path="/admin/modern" element={<ModernDashboard />} />
-            <Route path="/admin/modern/applicants" element={<ModernApplicantsPage />} />
-            <Route path="/admin/modern/analytics" element={<ModernAnalyticsDashboard />} />
-            <Route path="/admin/modern/feedback" element={<ModernFeedbackDashboard />} />
-            <Route path="/admin/view-applicants" element={<ViewApplicantsPage />} />
-            <Route path="/admin/email" element={<EmailPage />} />
+            <Route path="/admin/modern" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/admin/modern/analytics" element={<Layout><Analytics /></Layout>} />
+            <Route path="/admin/modern/applicants" element={<Layout><Applicants /></Layout>} />
+            <Route path="/admin/modern/feedback" element={<Layout><FeedbackPage /></Layout>} />
+            <Route path="/admin/modern/email" element={<Layout><Email /></Layout>} />
+            <Route path="/admin/modern/applicants/:id" element={<Layout><ApplicantDetails /></Layout>} />
+            <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
           </Routes>
         </Router>
       </ErrorBoundary>

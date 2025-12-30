@@ -39,22 +39,22 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Logo/Header */}
-        <div className="text-center mb-8 animate-fade-in">
-          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Admin Portal</h1>
-          <p className="text-blue-100">Elite Associate Recruitment System</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Admin Portal</h1>
+          <p className="text-gray-600">Elite Associate Recruitment System</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 animate-slide-up">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Sign In</h2>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Sign In</h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
@@ -81,7 +81,7 @@ const AdminLogin = () => {
                   name="username"
                   value={credentials.username}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter your username"
                   required
                 />
@@ -103,7 +103,7 @@ const AdminLogin = () => {
                   name="password"
                   value={credentials.password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter your password"
                   required
                 />
@@ -113,7 +113,7 @@ const AdminLogin = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 gradient-primary rounded-lg text-white font-medium hover:shadow-lg transition transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
                 <span className="flex items-center justify-center">
@@ -132,9 +132,9 @@ const AdminLogin = () => {
           {/* Demo Credentials */}
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-600 text-center mb-3">Demo Credentials:</p>
-            <div className="bg-gray-50 rounded-lg p-4 text-sm font-mono">
-              <p className="text-gray-700"><span className="font-bold">Username:</span> admin</p>
-              <p className="text-gray-700"><span className="font-bold">Password:</span> admin123</p>
+            <div className="bg-gray-50 rounded-lg p-4 text-sm">
+              <p className="text-gray-700 mb-1"><span className="font-medium">Username:</span> admin</p>
+              <p className="text-gray-700"><span className="font-medium">Password:</span> admin123</p>
             </div>
           </div>
         </div>
@@ -143,7 +143,7 @@ const AdminLogin = () => {
         <div className="text-center mt-6">
           <button
             onClick={() => navigate('/')}
-            className="text-white hover:text-blue-100 transition"
+            className="text-gray-600 hover:text-gray-900 transition-colors text-sm"
           >
             ← Back to Home
           </button>

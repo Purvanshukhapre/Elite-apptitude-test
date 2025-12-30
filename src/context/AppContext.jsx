@@ -9,7 +9,9 @@ export const AppProvider = ({ children }) => {
   const [testQuestions, setTestQuestions] = useState([]);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     const saved = localStorage.getItem('adminAuth');
-    return saved === 'true';
+    // Also check if we have a valid admin token
+    const hasToken = localStorage.getItem('adminToken');
+    return saved === 'true' && !!hasToken;
   });
   const [loading, setLoading] = useState(true);
 
@@ -325,6 +327,8 @@ export const AppProvider = ({ children }) => {
     // Simple authentication - in production, use proper backend authentication
     if (username === 'admin' && password === 'admin123') {
       setIsAdminAuthenticated(true);
+      // Store a dummy token for API authentication (in production, this would come from the backend)
+      localStorage.setItem('adminToken', 'dummy-admin-token-for-development');
       return true;
     }
     return false;
@@ -332,6 +336,8 @@ export const AppProvider = ({ children }) => {
 
   const adminLogout = () => {
     setIsAdminAuthenticated(false);
+    // Clear the admin token on logout
+    localStorage.removeItem('adminToken');
   };
 
   const value = {
