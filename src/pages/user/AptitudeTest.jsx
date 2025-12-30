@@ -65,20 +65,16 @@ const AptitudeTest = () => {
     const percentage = (score / questionsToUse.length) * 100;
     const passFailStatus = percentage >= 60 ? 'Pass' : 'Fail'; // 60% to pass
     
-    // Prepare data for the new API submission
+    // Prepare data for the new API submission in the required format
     const testQuestionsData = {
-      applicantName: currentApplicant.fullName,
       email: currentApplicant.permanentEmail || currentApplicant.email,
-      questions: questionsForSubmission,
-      totalQuestions: questionsToUse.length,
-      correctAnswers: score,
-      percentage: percentage.toFixed(2),
-      passFailStatus,
-      timeSpent: 900 - timeLeft,
-      tabSwitchCount,
-      copyAttempts,
-      disqualified: isTestDisqualified,
-      submittedAt: new Date().toISOString()
+      fullName: currentApplicant.fullName,
+      questions: questionsForSubmission.map(q => ({
+        aiQuestion: q.question,
+        Options: q.options,
+        aiAnswer: q.options[q.correctAnswer],
+        userAnswer: q.userSelectedOption !== undefined ? q.options[q.userSelectedOption] : ''
+      }))
     };
     
     const testData = {

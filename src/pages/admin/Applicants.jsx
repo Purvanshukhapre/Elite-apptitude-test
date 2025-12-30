@@ -9,6 +9,7 @@ const Applicants = () => {
   const { applicants, isAdminAuthenticated } = useApp();
   const [feedbackData, setFeedbackData] = useState([]);
   const [testResults, setTestResults] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [positionFilter, setPositionFilter] = useState('all');
@@ -22,11 +23,7 @@ const Applicants = () => {
 
   // Helper function to extract numeric score from test data
   const getNumericScore = (applicant) => {
-    if (applicant.rating !== undefined && applicant.rating !== null) {
-      return (applicant.rating / 5) * 100;
-    }
-    
-    // Use test result data if available, otherwise use other data
+    // Use test result data if available, prioritize over feedback
     if (applicant.testResult && applicant.testResult.correctAnswer !== undefined) {
       // Total questions is 15 as per API
       const totalQuestions = 15;
@@ -45,25 +42,30 @@ const Applicants = () => {
     }
     
     const testData = applicant.testData;
-    if (!testData) return 0;
-    
-    if (typeof testData.score === 'string' && testData.score.includes('/')) {
-      const [correct, total] = testData.score.split('/').map(Number);
-      if (total > 0) {
-        return (correct / total) * 100;
+    if (testData) {
+      if (typeof testData.score === 'string' && testData.score.includes('/')) {
+        const [correct, total] = testData.score.split('/').map(Number);
+        if (total > 0) {
+          return (correct / total) * 100;
+        }
+      }
+      
+      if (testData.percentage) {
+        return parseFloat(testData.percentage);
+      }
+      
+      if (testData.score && typeof testData.score === 'number') {
+        return testData.score;
+      }
+      
+      if (testData.correctAnswers !== undefined && testData.totalQuestions) {
+        return (testData.correctAnswers / testData.totalQuestions) * 100;
       }
     }
     
-    if (testData.percentage) {
-      return parseFloat(testData.percentage);
-    }
-    
-    if (testData.score && typeof testData.score === 'number') {
-      return testData.score;
-    }
-    
-    if (testData.correctAnswers !== undefined && testData.totalQuestions) {
-      return (testData.correctAnswers / testData.totalQuestions) * 100;
+    // Only use feedback ratings if no test data is available
+    if (applicant.rating !== undefined && applicant.rating !== null) {
+      return (applicant.rating / 5) * 100;
     }
     
     return 0;
@@ -72,6 +74,7 @@ const Applicants = () => {
   // Fetch feedback and test results data on component mount
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       if (isAdminAuthenticated) {
         try {
           // Fetch feedback data
@@ -87,6 +90,7 @@ const Applicants = () => {
           setTestResults([]);
         }
       }
+      setLoading(false);
     };
     
     fetchData();
@@ -228,6 +232,14 @@ const Applicants = () => {
       feedbackRate
     };
   }, [combinedApplicants]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -450,7 +462,7 @@ const Applicants = () => {
                   </div>
                   {applicant.rating && (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Rating</span>
+                      <span className="text-sm text-gray-600">Feedback Rating</span>
                       <StarRating rating={applicant.rating} maxRating={5} />
                     </div>
                   )}
@@ -477,7 +489,7 @@ const Applicants = () => {
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Position</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Score</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Status</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Rating</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Feedback Rating</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Date</th>
                 </tr>
               </thead>

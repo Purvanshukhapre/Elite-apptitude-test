@@ -1,5 +1,5 @@
 // Configuration
-export const API_BASE_URL = ''; // Using proxy in development, so empty string for relative paths
+export const API_BASE_URL = 'https://eliterecruitmentbackend-production.up.railway.app'; // Using production backend
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -15,7 +15,7 @@ export const API_ENDPOINTS = {
   SUBMIT_TEST: '/result/submit',  // Using proxy in development
   TEST_QUESTIONS_SUBMIT: '/questions/submit',
   TEST_QUESTIONS_ALL: '/questions/all',
-  TEST_QUESTIONS_BY_EMAIL: (email) => `/questions/email/${email}`,
+  TEST_QUESTIONS_BY_EMAIL: (email) => `/questions/email/${encodeURIComponent(email)}`,
 
   // Analytics
   ANALYTICS_DASHBOARD: '/analytics/dashboard',  // Using proxy in development
@@ -35,15 +35,12 @@ export const API_ENDPOINTS = {
 
 // Utility function to build full URL
 export const buildUrl = (endpoint) => {
-  // If endpoint is a full URL, return it as is
-  if (endpoint.startsWith('http')) {
-    return endpoint;
-  }
-  // If endpoint already starts with /, don't add extra /
+  // If endpoint starts with /, it's a relative path
   if (endpoint.startsWith('/')) {
     return `${API_BASE_URL}${endpoint}`;
   }
-  return `${API_BASE_URL}/${endpoint}`;
+  // Otherwise, return as is (for full URLs)
+  return endpoint;
 };
 
 // Simulate API delay
@@ -74,7 +71,6 @@ export const apiCall = async (endpoint, options = {}) => {
       ...(requiresAuth && adminToken ? { 'Authorization': `Bearer ${adminToken}` } : {}),
       ...options.headers
     },
-    credentials: 'include',
     ...options
   };
 
@@ -82,11 +78,22 @@ export const apiCall = async (endpoint, options = {}) => {
     // Check if this is an applicant by name endpoint to avoid CORS issues
     const isApplicantByName = typeof endpoint === 'string' && endpoint.includes('/auth/student/name/');
     
-    const response = await fetch(url, {
-      ...defaultOptions,
+    const fetchOptions = {
+      ...defaultOptions
+    };
+    
+    // For production backend, we need to handle CORS properly
+    if (API_BASE_URL.includes('railway.app')) {
+      fetchOptions.mode = 'cors';
+      fetchOptions.credentials = 'omit'; // Use 'omit' for cross-origin requests
+    } else {
       // Don't include credentials for applicant by name to avoid CORS issues
-      ...(isApplicantByName ? {} : { credentials: 'include' })
-    });
+      if (!isApplicantByName) {
+        fetchOptions.credentials = 'include';
+      }
+    }
+    
+    const response = await fetch(url, fetchOptions);
     
     // For specific endpoints that might return 403, return empty data instead of throwing error
     if (!response.ok && response.status === 403) {
@@ -239,6 +246,14 @@ export const getAllTestQuestions = async () => {
 
 export const getTestQuestionsByEmail = async (email) => {
   // Get test questions for a specific user by email
-  return apiCall(API_ENDPOINTS.TEST_QUESTIONS_BY_EMAIL(email));
+  try {
+    // console.log('API call to:', API_ENDPOINTS.TEST_QUESTIONS_BY_EMAIL(email));
+    const result = await apiCall(API_ENDPOINTS.TEST_QUESTIONS_BY_EMAIL(email));
+    // console.log('API response:', result);
+    return result;
+  } catch (error) {
+    console.error('Error fetching questions by email:', error);
+    throw error;
+  }
 };
 

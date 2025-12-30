@@ -10,6 +10,7 @@ const ApplicantDetails = () => {
   const { applicants } = useApp();
   const [applicant, setApplicant] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
 
   useEffect(() => {
     const fetchApplicantData = async () => {
@@ -81,16 +82,23 @@ const ApplicantDetails = () => {
                 // Optionally fetch questions data if available
                 const email = updatedApplicant.permanentEmail || updatedApplicant.email;
                 if (email) {
+                  setQuestionsLoading(true);
                   try {
+                    // console.log('Fetching questions for email:', email);
                     const questionsData = await getTestQuestionsByEmail(email);
+                    // console.log('Received questions data:', questionsData);
                     setApplicant(prev => ({
                       ...prev,
                       questionsData
                     }));
                   } catch (questionsError) {
+                    console.error('Could not fetch questions data:', questionsError);
                     // Silently fail - questions data is optional
-                    console.warn('Could not fetch questions data:', questionsError);
+                  } finally {
+                    setQuestionsLoading(false);
                   }
+                } else {
+                  setQuestionsLoading(false);
                 }
               } catch (testResultsError) {
                 console.warn('Could not fetch test results:', testResultsError);
@@ -113,16 +121,23 @@ const ApplicantDetails = () => {
                 // Optionally fetch questions data if available
                 const email = updatedApplicant.permanentEmail || updatedApplicant.email;
                 if (email) {
+                  setQuestionsLoading(true);
                   try {
+                    console.log('Fetching questions for email:', email);
                     const questionsData = await getTestQuestionsByEmail(email);
+                    console.log('Received questions data:', questionsData);
                     setApplicant(prev => ({
                       ...prev,
                       questionsData
                     }));
                   } catch (questionsError) {
+                    console.error('Could not fetch questions data:', questionsError);
                     // Silently fail - questions data is optional
-                    console.warn('Could not fetch questions data:', questionsError);
+                  } finally {
+                    setQuestionsLoading(false);
                   }
+                } else {
+                  setQuestionsLoading(false);
                 }
               }
             } else {
@@ -141,6 +156,28 @@ const ApplicantDetails = () => {
               };
                           
               setApplicant(updatedApplicant);
+              
+              // Optionally fetch questions data if available
+              const email = updatedApplicant.permanentEmail || updatedApplicant.email;
+              if (email) {
+                setQuestionsLoading(true);
+                try {
+                  console.log('Fetching questions for email:', email);
+                  const questionsData = await getTestQuestionsByEmail(email);
+                  console.log('Received questions data:', questionsData);
+                  setApplicant(prev => ({
+                    ...prev,
+                    questionsData
+                  }));
+                } catch (questionsError) {
+                  console.error('Could not fetch questions data:', questionsError);
+                  // Silently fail - questions data is optional
+                } finally {
+                  setQuestionsLoading(false);
+                }
+              } else {
+                setQuestionsLoading(false);
+              }
             }
           } catch (apiError) {
             console.error('Error fetching applicant data from API:', apiError);
@@ -159,6 +196,28 @@ const ApplicantDetails = () => {
             };
             
             setApplicant(updatedApplicant);
+            
+            // Optionally fetch questions data if available
+            const email = updatedApplicant.permanentEmail || updatedApplicant.email;
+            if (email) {
+              setQuestionsLoading(true);
+              try {
+                console.log('Fetching questions for email:', email);
+                const questionsData = await getTestQuestionsByEmail(email);
+                console.log('Received questions data:', questionsData);
+                setApplicant(prev => ({
+                  ...prev,
+                  questionsData
+                }));
+              } catch (questionsError) {
+                console.error('Could not fetch questions data:', questionsError);
+                // Silently fail - questions data is optional
+              } finally {
+                setQuestionsLoading(false);
+              }
+            } else {
+              setQuestionsLoading(false);
+            }
           }
         } else if (localApplicant) {
           // If we only have local data (no fullName to query API), use it
@@ -177,14 +236,38 @@ const ApplicantDetails = () => {
           };
           
           setApplicant(updatedApplicant);
+          
+          // Optionally fetch questions data if available
+          const email = updatedApplicant.permanentEmail || updatedApplicant.email;
+          if (email) {
+            setQuestionsLoading(true);
+            try {
+              console.log('Fetching questions for email:', email);
+              const questionsData = await getTestQuestionsByEmail(email);
+              console.log('Received questions data:', questionsData);
+              setApplicant(prev => ({
+                ...prev,
+                questionsData
+              }));
+            } catch (questionsError) {
+              console.error('Could not fetch questions data:', questionsError);
+              // Silently fail - questions data is optional
+            } finally {
+              setQuestionsLoading(false);
+            }
+          } else {
+            setQuestionsLoading(false);
+          }
         } else {
           // If we couldn't find the applicant locally and the ID is not a valid name, set to null
           // This prevents unnecessary API calls with index values like "0", "1", etc.
           setApplicant(null);
+          setQuestionsLoading(false);
         }
       } catch (error) {
         console.error('Error fetching applicant data:', error);
         setApplicant(null);
+        setQuestionsLoading(false);
       } finally {
         setLoading(false);
       }
@@ -219,15 +302,7 @@ const ApplicantDetails = () => {
 
   // Helper function to extract numeric score
   const getNumericScore = (applicant) => {
-    if (applicant.overallRating !== undefined && applicant.overallRating !== null) {
-      return (applicant.overallRating / 5) * 100;
-    }
-    
-    if (applicant.rating !== undefined && applicant.rating !== null) {
-      return (applicant.rating / 5) * 100;
-    }
-    
-    // Use test result data if available (from /result/all API)
+    // Use test result data if available (from /result/all API) - prioritize test results over feedback
     if (applicant.testResult && applicant.testResult.correctAnswer !== undefined) {
       const totalQuestions = 15; // Fixed total as per API
       return (applicant.testResult.correctAnswer / totalQuestions) * 100;
@@ -239,25 +314,34 @@ const ApplicantDetails = () => {
     }
     
     const testData = applicant.testData;
-    if (!testData) return 0;
-    
-    if (typeof testData.score === 'string' && testData.score.includes('/')) {
-      const [correct, total] = testData.score.split('/').map(Number);
-      if (total > 0) {
-        return (correct / total) * 100;
+    if (testData) {
+      if (typeof testData.score === 'string' && testData.score.includes('/')) {
+        const [correct, total] = testData.score.split('/').map(Number);
+        if (total > 0) {
+          return (correct / total) * 100;
+        }
+      }
+      
+      if (testData.percentage) {
+        return parseFloat(testData.percentage);
+      }
+      
+      if (testData.score && typeof testData.score === 'number') {
+        return testData.score;
+      }
+      
+      if (testData.correctAnswers !== undefined && testData.totalQuestions) {
+        return (testData.correctAnswers / testData.totalQuestions) * 100;
       }
     }
     
-    if (testData.percentage) {
-      return parseFloat(testData.percentage);
+    // Only use feedback ratings if no test data is available
+    if (applicant.overallRating !== undefined && applicant.overallRating !== null) {
+      return (applicant.overallRating / 5) * 100;
     }
     
-    if (testData.score && typeof testData.score === 'number') {
-      return testData.score;
-    }
-    
-    if (testData.correctAnswers !== undefined && testData.totalQuestions) {
-      return (testData.correctAnswers / testData.totalQuestions) * 100;
+    if (applicant.rating !== undefined && applicant.rating !== null) {
+      return (applicant.rating / 5) * 100;
     }
     
     return 0;
@@ -356,7 +440,7 @@ const ApplicantDetails = () => {
                 </svg>
               </div>
               <div>
-                <p className="text-gray-500 text-sm">Rating</p>
+                <p className="text-gray-500 text-sm">Feedback Rating</p>
                 <p className="text-2xl font-bold text-gray-900">{applicant.overallRating !== undefined && applicant.overallRating !== null ? applicant.overallRating : (applicant.rating !== undefined && applicant.rating !== null ? applicant.rating : 'N/A')}</p>
               </div>
             </div>
@@ -655,7 +739,7 @@ const ApplicantDetails = () => {
                 </div>
                 {(applicant.overallRating || applicant.rating) && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Overall Rating</span>
+                    <span className="text-gray-600">Feedback Rating</span>
                     <div className="flex items-center">
                       <StarRating rating={applicant.overallRating || applicant.rating} maxRating={5} />
                       <span className="ml-2 text-gray-900 font-medium">({applicant.overallRating || applicant.rating}/5)</span>
@@ -668,113 +752,333 @@ const ApplicantDetails = () => {
         </div>
 
         {/* Questions Attempted */}
-        {questionsAttempted.length > 0 && (
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Questions Attempted</h3>
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+          <h3 className="text-xl font-bold text-gray-900 mb-6">Test Questions & Answers</h3>
+          {questionsLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : (questionsAttempted.length > 0 || (applicant.questionsData && typeof applicant.questionsData === 'object' && !Array.isArray(applicant.questionsData) && applicant.questionsData.questions && applicant.questionsData.questions.length > 0) || (Array.isArray(applicant.questionsData) && applicant.questionsData.length > 0 && applicant.questionsData.some(attempt => attempt.questions && attempt.questions.length > 0))) ? (
             <div className="space-y-4">
-              {questionsAttempted.map((question, index) => {
-                const userAnswer = answersProvided[index];
-                const isCorrect = question.correctAnswer === userAnswer;
-                
-                return (
-                  <div 
-                    key={index} 
-                    className={`p-4 rounded-xl border ${
-                      isCorrect 
-                        ? 'bg-green-50 border-green-200' 
-                        : 'bg-red-50 border-red-200'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                          <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3 ${
-                            isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                          }`}>
-                            {index + 1}
-                          </span>
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {isCorrect ? 'CORRECT' : 'INCORRECT'}
-                          </span>
-                        </div>
-                        <h4 className="font-medium text-gray-900 mb-3">{question.question}</h4>
-                        
-                        <div className="space-y-2 mb-3">
-                          {question.options?.map((option, optIndex) => {
-                            const isSelected = userAnswer === optIndex;
-                            const isAnswer = question.correctAnswer === optIndex;
-                            
-                            return (
-                              <div 
-                                key={optIndex}
-                                className={`p-3 rounded-lg border flex items-start ${
-                                  isSelected 
-                                    ? isCorrect 
-                                      ? 'border-green-500 bg-green-100' 
-                                      : 'border-red-500 bg-red-100'
-                                    : isAnswer
-                                      ? 'border-green-500 bg-green-50'
-                                      : 'border-gray-200 bg-gray-50'
-                                }`}
-                              >
-                                <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mr-3 mt-0.5 ${
-                                  isSelected 
-                                    ? isCorrect 
-                                      ? 'bg-green-500 text-white' 
-                                      : 'bg-red-500 text-white'
-                                    : isAnswer
-                                      ? 'bg-green-500 text-white'
-                                      : 'bg-gray-200 text-gray-700'
-                                }`}>
-                                  {String.fromCharCode(65 + optIndex)}
-                                </span>
-                                <div className="flex-1">
-                                  <span className={`${
+              {(applicant.questionsData && typeof applicant.questionsData === 'object' && !Array.isArray(applicant.questionsData) && applicant.questionsData.questions && applicant.questionsData.questions.length > 0) ? 
+                // Display questions from single API response object
+                applicant.questionsData.questions.map((question, index) => {
+                  const userAnswer = question.userAnswer;
+                  const correctAnswer = question.aiAnswer;
+                  const isCorrect = userAnswer === correctAnswer;
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className={`p-4 rounded-xl border ${
+                        isCorrect 
+                          ? 'bg-green-50 border-green-200' 
+                          : 'bg-red-50 border-red-200'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center mb-2">
+                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3 ${
+                              isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                            }`}>
+                              {index + 1}
+                            </span>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {isCorrect ? 'CORRECT' : 'INCORRECT'}
+                            </span>
+                          </div>
+                          <h4 className="font-medium text-gray-900 mb-3">{question.aiQuestion}</h4>
+                          
+                          <div className="space-y-2 mb-3">
+                            {question.Options?.map((option, optIndex) => {
+                              const isSelected = userAnswer === option;
+                              const isAnswer = correctAnswer === option;
+                              
+                              return (
+                                <div 
+                                  key={optIndex}
+                                  className={`p-3 rounded-lg border flex items-start ${
                                     isSelected 
                                       ? isCorrect 
-                                        ? 'text-green-800 font-medium' 
-                                        : 'text-red-800 font-medium'
+                                        ? 'border-green-500 bg-green-100' 
+                                        : 'border-red-500 bg-red-100'
                                       : isAnswer
-                                        ? 'text-green-800 font-medium'
-                                        : 'text-gray-700'
+                                        ? 'border-green-500 bg-green-50'
+                                        : 'border-gray-200 bg-gray-50'
+                                  }`}
+                                >
+                                  <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mr-3 mt-0.5 ${
+                                    isSelected 
+                                      ? isCorrect 
+                                        ? 'bg-green-500 text-white' 
+                                        : 'bg-red-500 text-white'
+                                      : isAnswer
+                                        ? 'bg-green-500 text-white'
+                                        : 'bg-gray-200 text-gray-700'
                                   }`}>
-                                    {option}
+                                    {String.fromCharCode(65 + optIndex)}
                                   </span>
-                                  {isSelected && (
-                                    <span className="ml-2 text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-800">
-                                      Your Answer
+                                  <div className="flex-1">
+                                    <span className={`${
+                                      isSelected 
+                                        ? isCorrect 
+                                          ? 'text-green-800 font-medium' 
+                                          : 'text-red-800 font-medium'
+                                        : isAnswer
+                                          ? 'text-green-800 font-medium'
+                                          : 'text-gray-700'
+                                    }`}>
+                                      {option}
                                     </span>
-                                  )}
-                                  {isAnswer && !isSelected && (
-                                    <span className="ml-2 text-xs font-semibold px-2 py-1 rounded bg-green-100 text-green-800">
-                                      Correct Answer
-                                    </span>
-                                  )}
-                                  {isAnswer && isSelected && (
-                                    <span className="ml-2 text-xs font-semibold px-2 py-1 rounded bg-green-200 text-green-900">
-                                      Correct Answer
-                                    </span>
-                                  )}
+                                    {isSelected && (
+                                      <span className="ml-2 text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-800">
+                                        Your Answer
+                                      </span>
+                                    )}
+                                    {isAnswer && !isSelected && (
+                                      <span className="ml-2 text-xs font-semibold px-2 py-1 rounded bg-green-100 text-green-800">
+                                        Correct Answer
+                                      </span>
+                                    )}
+                                    {isAnswer && isSelected && (
+                                      <span className="ml-2 text-xs font-semibold px-2 py-1 rounded bg-green-200 text-green-900">
+                                        Correct Answer
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        
-                        <div className="text-sm text-gray-600">
-                          <span className="font-medium">Category:</span> {question.category || 'N/A'} | 
-                          <span className="font-medium ml-1">Difficulty:</span> {question.difficulty || 'N/A'}
+                              );
+                            })}
+                          </div>
+                          
+                          <div className="text-sm text-gray-600">
+                            <span className="font-medium">Correct Answer:</span> {question.aiAnswer}
+                          </div>
                         </div>
                       </div>
                     </div>
+                  );
+                })
+                : (Array.isArray(applicant.questionsData) && applicant.questionsData.length > 0) ?
+                // Handle the case where questionsData is an array of test attempts
+                applicant.questionsData.map((attempt, attemptIndex) => (
+                  <div key={attemptIndex} className="mb-6">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4">Test Attempt #{attemptIndex + 1}</h4>
+                    {attempt.questions && attempt.questions.map((question, index) => {
+                      const userAnswer = question.userAnswer;
+                      const correctAnswer = question.aiAnswer;
+                      const isCorrect = userAnswer === correctAnswer;
+                      
+                      return (
+                        <div 
+                          key={index} 
+                          className={`p-4 rounded-xl border ${
+                            isCorrect 
+                              ? 'bg-green-50 border-green-200' 
+                              : 'bg-red-50 border-red-200'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center mb-2">
+                                <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3 ${
+                                  isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                                }`}>
+                                  {index + 1}
+                                </span>
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                  isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {isCorrect ? 'CORRECT' : 'INCORRECT'}
+                                </span>
+                              </div>
+                              <h4 className="font-medium text-gray-900 mb-3">{question.aiQuestion}</h4>
+                              
+                              <div className="space-y-2 mb-3">
+                                {question.Options?.map((option, optIndex) => {
+                                  const isSelected = userAnswer === option;
+                                  const isAnswer = correctAnswer === option;
+                                  
+                                  return (
+                                    <div 
+                                      key={optIndex}
+                                      className={`p-3 rounded-lg border flex items-start ${
+                                        isSelected 
+                                          ? isCorrect 
+                                            ? 'border-green-500 bg-green-100' 
+                                            : 'border-red-500 bg-red-100'
+                                          : isAnswer
+                                            ? 'border-green-500 bg-green-50'
+                                            : 'border-gray-200 bg-gray-50'
+                                      }`}
+                                    >
+                                      <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mr-3 mt-0.5 ${
+                                        isSelected 
+                                          ? isCorrect 
+                                            ? 'bg-green-500 text-white' 
+                                            : 'bg-red-500 text-white'
+                                          : isAnswer
+                                            ? 'bg-green-500 text-white'
+                                            : 'bg-gray-200 text-gray-700'
+                                      }`}>
+                                        {String.fromCharCode(65 + optIndex)}
+                                      </span>
+                                      <div className="flex-1">
+                                        <span className={`${
+                                          isSelected 
+                                            ? isCorrect 
+                                              ? 'text-green-800 font-medium' 
+                                              : 'text-red-800 font-medium'
+                                            : isAnswer
+                                              ? 'text-green-800 font-medium'
+                                              : 'text-gray-700'
+                                        }`}>
+                                          {option}
+                                        </span>
+                                        {isSelected && (
+                                          <span className="ml-2 text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-800">
+                                            Your Answer
+                                          </span>
+                                        )}
+                                        {isAnswer && !isSelected && (
+                                          <span className="ml-2 text-xs font-semibold px-2 py-1 rounded bg-green-100 text-green-800">
+                                            Correct Answer
+                                          </span>
+                                        )}
+                                        {isAnswer && isSelected && (
+                                          <span className="ml-2 text-xs font-semibold px-2 py-1 rounded bg-green-200 text-green-900">
+                                            Correct Answer
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              
+                              <div className="text-sm text-gray-600">
+                                <span className="font-medium">Correct Answer:</span> {question.aiAnswer}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                ))
+                : 
+                // Display questions from local data
+                questionsAttempted.map((question, index) => {
+                  const userAnswer = answersProvided[question.id] || answersProvided[index];
+                  const isCorrect = question.correctAnswer === userAnswer;
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className={`p-4 rounded-xl border ${
+                        isCorrect 
+                          ? 'bg-green-50 border-green-200' 
+                          : 'bg-red-50 border-red-200'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center mb-2">
+                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3 ${
+                              isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                            }`}>
+                              {index + 1}
+                            </span>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {isCorrect ? 'CORRECT' : 'INCORRECT'}
+                            </span>
+                          </div>
+                          <h4 className="font-medium text-gray-900 mb-3">{question.question}</h4>
+                          
+                          <div className="space-y-2 mb-3">
+                            {question.options?.map((option, optIndex) => {
+                              const isSelected = userAnswer === optIndex;
+                              const isAnswer = question.correctAnswer === optIndex;
+                              
+                              return (
+                                <div 
+                                  key={optIndex}
+                                  className={`p-3 rounded-lg border flex items-start ${
+                                    isSelected 
+                                      ? isCorrect 
+                                        ? 'border-green-500 bg-green-100' 
+                                        : 'border-red-500 bg-red-100'
+                                      : isAnswer
+                                        ? 'border-green-500 bg-green-50'
+                                        : 'border-gray-200 bg-gray-50'
+                                  }`}
+                                >
+                                  <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mr-3 mt-0.5 ${
+                                    isSelected 
+                                      ? isCorrect 
+                                        ? 'bg-green-500 text-white' 
+                                        : 'bg-red-500 text-white'
+                                      : isAnswer
+                                        ? 'bg-green-500 text-white'
+                                        : 'bg-gray-200 text-gray-700'
+                                  }`}>
+                                    {String.fromCharCode(65 + optIndex)}
+                                  </span>
+                                  <div className="flex-1">
+                                    <span className={`${
+                                      isSelected 
+                                        ? isCorrect 
+                                          ? 'text-green-800 font-medium' 
+                                          : 'text-red-800 font-medium'
+                                        : isAnswer
+                                          ? 'text-green-800 font-medium'
+                                          : 'text-gray-700'
+                                    }`}>
+                                      {option}
+                                    </span>
+                                    {isSelected && (
+                                      <span className="ml-2 text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-800">
+                                        Your Answer
+                                      </span>
+                                    )}
+                                    {isAnswer && !isSelected && (
+                                      <span className="ml-2 text-xs font-semibold px-2 py-1 rounded bg-green-100 text-green-800">
+                                        Correct Answer
+                                      </span>
+                                    )}
+                                    {isAnswer && isSelected && (
+                                      <span className="ml-2 text-xs font-semibold px-2 py-1 rounded bg-green-200 text-green-900">
+                                        Correct Answer
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          
+                          <div className="text-sm text-gray-600">
+                            <span className="font-medium">Category:</span> {question.category || 'N/A'} | 
+                            <span className="font-medium ml-1">Difficulty:</span> {question.difficulty || 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              }
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              No test questions and answers available for this applicant.
+            </div>
+          )}
+        </div>
 
         {/* Action Buttons */}
         <div className="flex justify-end space-x-4">
@@ -783,9 +1087,6 @@ const ApplicantDetails = () => {
             className="px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
           >
             Back to Applicants
-          </button>
-          <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl">
-            Download Report
           </button>
         </div>
       </div>

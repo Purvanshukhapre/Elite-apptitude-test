@@ -1,116 +1,82 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/useApp';
-import { getAllFeedback } from '../../api';
+import { getAllFeedback, getApplicants } from '../../api';
 import StarRating from '../../components/StarRating';
 
 const Feedback = () => {
-  const { applicants, isAdminAuthenticated } = useApp();
+  const { applicants: contextApplicants, isAdminAuthenticated } = useApp();
   const [feedbackData, setFeedbackData] = useState([]);
+  const [applicantsData, setApplicantsData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [ratingFilter, setRatingFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
 
-  // Helper function to extract numeric score from test data
-  const getNumericScore = (applicant) => {
-    if (applicant.rating !== undefined && applicant.rating !== null) {
-      return (applicant.rating / 5) * 100;
-    }
-    
-    if (applicant.correctAnswer !== undefined && applicant.testData?.totalQuestions) {
-      return (applicant.correctAnswer / applicant.testData.totalQuestions) * 100;
-    }
-    
-    const testData = applicant.testData;
-    if (!testData) return 0;
-    
-    if (typeof testData.score === 'string' && testData.score.includes('/')) {
-      const [correct, total] = testData.score.split('/').map(Number);
-      if (total > 0) {
-        return (correct / total) * 100;
-      }
-    }
-    
-    if (testData.percentage) {
-      return parseFloat(testData.percentage);
-    }
-    
-    if (testData.score && typeof testData.score === 'number') {
-      return testData.score;
-    }
-    
-    if (testData.correctAnswers !== undefined && testData.totalQuestions) {
-      return (testData.correctAnswers / testData.totalQuestions) * 100;
-    }
-    
-    return 0;
-  };
-
-  // Fetch feedback data on component mount
+  // Fetch feedback data and applicants data
   useEffect(() => {
-    const fetchFeedback = async () => {
-      if (isAdminAuthenticated) {
-        try {
-          const data = await getAllFeedback();
-          setFeedbackData(data);
-        } catch (error) {
-          console.error('Error fetching feedback:', error);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        if (isAdminAuthenticated) {
+          // Fetch feedback data from API
+          const feedback = await getAllFeedback();
+          
+          // Fetch all applicants from API
+          const applicants = await getApplicants();
+          
+          setFeedbackData(feedback);
+          setApplicantsData(applicants);
+        } else {
+          // Fallback to context data if not authenticated
           setFeedbackData([]);
+          setApplicantsData(contextApplicants);
         }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setFeedbackData([]);
+        setApplicantsData(contextApplicants);
+      } finally {
+        setLoading(false);
       }
     };
     
-    fetchFeedback();
-  }, [isAdminAuthenticated]);
+    fetchData();
+  }, [isAdminAuthenticated, contextApplicants]);
 
-  // Combine applicants with feedback data
-  const combinedApplicants = useMemo(() => {
-    return applicants.map(applicant => {
-      const applicantFeedback = feedbackData.find(feedback => 
-        feedback.email === applicant.email || feedback.name === applicant.fullName
+  // Combine feedback with applicant data
+  const combinedFeedback = useMemo(() => {
+    return feedbackData.map(feedback => {
+      // Find matching applicant based on name
+      const matchingApplicant = applicantsData.find(applicant => 
+        applicant.fullName === feedback.name || 
+        applicant.name === feedback.name
       );
       
+      // Combine all feedback fields into a single comment
+      const feedbackFields = [
+        feedback.problem1,
+        feedback.problem2, 
+        feedback.problem3,
+        feedback.problem4,
+        feedback.problem5
+      ].filter(field => field && field.trim() !== '');
+      
+      const combinedComment = feedbackFields.join(' | ');
+      
       return {
-        ...applicant,
-        feedback: applicantFeedback || null,
-        testData: applicant.testData || null,
-        rating: applicant.rating,
-        correctAnswer: applicant.correctAnswer !== undefined 
-          ? applicant.correctAnswer 
-          : (applicant.testData?.correctAnswers !== undefined 
-            ? applicant.testData.correctAnswers 
-            : applicant.correctAnswer),
-        overallRating: applicantFeedback ? applicantFeedback.rating : undefined
+        ...feedback,
+        comment: combinedComment || 'No detailed feedback provided.',
+        applicant: matchingApplicant || null
       };
     });
-  }, [applicants, feedbackData]);
-
-  // Get all feedback (including standalone feedback not linked to applicants)
-  const allFeedback = useMemo(() => {
-    const applicantFeedback = combinedApplicants
-      .filter(applicant => applicant.feedback)
-      .map(applicant => ({
-        ...applicant.feedback,
-        applicant: applicant,
-        score: getNumericScore(applicant)
-      }));
-    
-    // Get standalone feedback that's not linked to applicants
-    const standaloneFeedback = feedbackData.filter(feedback => 
-      !combinedApplicants.some(applicant => 
-        feedback.email === applicant.email || feedback.name === applicant.fullName
-      )
-    );
-    
-    return [...applicantFeedback, ...standaloneFeedback];
-  }, [combinedApplicants, feedbackData]);
+  }, [feedbackData, applicantsData]);
 
   // Filter and sort feedback
   const filteredFeedback = useMemo(() => {
-    let filtered = allFeedback.filter(feedback => {
+    let filtered = combinedFeedback.filter(feedback => {
       const matchesSearch = 
         feedback.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        feedback.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         feedback.comment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         feedback.rating?.toString().includes(searchTerm);
       
@@ -137,8 +103,26 @@ const Feedback = () => {
           break;
         case 'date':
         default:
-          aValue = new Date(a.createdAt || a.updatedAt || '1970-01-01');
-          bValue = new Date(b.createdAt || b.updatedAt || '1970-01-01');
+          // Try to use submittedAt if available, otherwise extract from ID
+          if (a.submittedAt) {
+            aValue = new Date(a.submittedAt);
+          } else if (a.id) {
+            // Extract timestamp from MongoDB ObjectId
+            const timestamp = parseInt(a.id.substring(0, 8), 16) * 1000;
+            aValue = new Date(timestamp);
+          } else {
+            aValue = new Date(0);
+          }
+          
+          if (b.submittedAt) {
+            bValue = new Date(b.submittedAt);
+          } else if (b.id) {
+            // Extract timestamp from MongoDB ObjectId
+            const timestamp = parseInt(b.id.substring(0, 8), 16) * 1000;
+            bValue = new Date(timestamp);
+          } else {
+            bValue = new Date(0);
+          }
           break;
       }
       
@@ -150,24 +134,24 @@ const Feedback = () => {
     });
 
     return filtered;
-  }, [allFeedback, searchTerm, ratingFilter, sortBy, sortOrder]);
+  }, [combinedFeedback, searchTerm, ratingFilter, sortBy, sortOrder]);
 
   // Analytics data
   const analytics = useMemo(() => {
-    const total = allFeedback.length;
-    const avgRating = total > 0 ? (allFeedback.reduce((sum, f) => sum + (f.rating || 0), 0) / total).toFixed(1) : 0;
+    const total = combinedFeedback.length;
+    const avgRating = total > 0 ? (combinedFeedback.reduce((sum, f) => sum + (f.rating || 0), 0) / total).toFixed(1) : 0;
     
     const ratingDistribution = {
-      5: allFeedback.filter(f => f.rating === 5).length,
-      4: allFeedback.filter(f => f.rating === 4).length,
-      3: allFeedback.filter(f => f.rating === 3).length,
-      2: allFeedback.filter(f => f.rating === 2).length,
-      1: allFeedback.filter(f => f.rating === 1).length
+      5: combinedFeedback.filter(f => f.rating === 5).length,
+      4: combinedFeedback.filter(f => f.rating === 4).length,
+      3: combinedFeedback.filter(f => f.rating === 3).length,
+      2: combinedFeedback.filter(f => f.rating === 2).length,
+      1: combinedFeedback.filter(f => f.rating === 1).length
     };
     
-    const positive = allFeedback.filter(f => f.rating >= 4).length;
-    const neutral = allFeedback.filter(f => f.rating === 3).length;
-    const negative = allFeedback.filter(f => f.rating <= 2).length;
+    const positive = combinedFeedback.filter(f => f.rating >= 4).length;
+    const neutral = combinedFeedback.filter(f => f.rating === 3).length;
+    const negative = combinedFeedback.filter(f => f.rating <= 2).length;
 
     return {
       total,
@@ -177,19 +161,28 @@ const Feedback = () => {
       neutral,
       negative
     };
-  }, [allFeedback]);
+  }, [combinedFeedback]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
       <div className="space-y-6">
         {/* Page Title */}
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Feedback</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Feedback Management</h1>
+          <p className="text-gray-600 mt-1">Manage and review all user feedback</p>
         </div>
 
         {/* Feedback Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Total Feedback Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
             <div className="flex items-center">
               <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,7 +197,7 @@ const Feedback = () => {
           </div>
 
           {/* Average Rating Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100">
             <div className="flex items-center">
               <div className="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center text-white">
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -219,7 +212,7 @@ const Feedback = () => {
           </div>
 
           {/* Positive Feedback Card */}
-          <div className="bg-green-50 rounded-xl border border-green-200 p-6">
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-100">
             <div className="flex items-center">
               <div className="w-12 h-12 rounded-xl bg-green-600 flex items-center justify-center text-white">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -234,9 +227,9 @@ const Feedback = () => {
           </div>
 
           {/* Negative Feedback Card */}
-          <div className="bg-red-50 rounded-xl border border-red-200 p-6">
+          <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-6 border border-amber-100">
             <div className="flex items-center">
-              <div className="w-12 h-12 rounded-xl bg-red-600 flex items-center justify-center text-white">
+              <div className="w-12 h-12 rounded-xl bg-amber-600 flex items-center justify-center text-white">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
                 </svg>
@@ -250,7 +243,7 @@ const Feedback = () => {
         </div>
 
         {/* Rating Distribution */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Rating Distribution</h3>
           <div className="space-y-4">
             {[5, 4, 3, 2, 1].map((stars) => (
@@ -282,7 +275,7 @@ const Feedback = () => {
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <input
@@ -329,7 +322,7 @@ const Feedback = () => {
         </div>
 
         {/* Feedback List */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Feedback List</h3>
             <p className="text-gray-600 text-sm">{filteredFeedback.length} feedback entries found</p>
@@ -344,17 +337,30 @@ const Feedback = () => {
               <p className="text-gray-500">Try adjusting your search or filter criteria</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredFeedback.map((feedback, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium">
-                        {(feedback.name || 'U').charAt(0)}
+            <div className="space-y-6">
+              {filteredFeedback.map((feedback, index) => {
+                // Extract date from submittedAt field or from MongoDB ID
+                let date;
+                if (feedback.submittedAt) {
+                  date = new Date(feedback.submittedAt);
+                } else if (feedback.id) {
+                  // Extract timestamp from MongoDB ObjectId
+                  const timestamp = parseInt(feedback.id.substring(0, 8), 16) * 1000;
+                  date = new Date(timestamp);
+                } else {
+                  date = new Date();
+                }
+                
+                return (
+                <div key={index} className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-medium">
+                        {(feedback.name || 'U').charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900 text-sm">{feedback.name || 'Anonymous'}</h4>
-                        <p className="text-xs text-gray-500">{feedback.email}</p>
+                        <h4 className="font-semibold text-gray-900 text-base">{feedback.name || 'Anonymous'}</h4>
+                        <p className="text-sm text-gray-500">Rating: {feedback.rating}/5</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -363,17 +369,49 @@ const Feedback = () => {
                         <span className="text-sm font-semibold text-gray-900">{feedback.rating}/5</span>
                       </div>
                       <p className="text-xs text-gray-500">
-                        {new Date(feedback.createdAt || feedback.updatedAt || '1970-01-01').toLocaleDateString()}
+                        {date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
                   
-                  <div className="mb-3">
-                    <p className="text-gray-700 text-sm leading-relaxed">{feedback.comment}</p>
+                  <div className="mb-4">
+                    <h5 className="font-medium text-gray-900 mb-2 text-sm">Feedback Details</h5>
+                    <div className="space-y-2">
+                      {feedback.problem1 && feedback.problem1.trim() !== '' && (
+                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                          <span className="text-xs font-medium text-gray-500">Test Difficulty: </span>
+                          <span className="text-gray-700 text-sm">{feedback.problem1}</span>
+                        </div>
+                      )}
+                      {feedback.problem2 && feedback.problem2.trim() !== '' && (
+                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                          <span className="text-xs font-medium text-gray-500">Platform Experience: </span>
+                          <span className="text-gray-700 text-sm">{feedback.problem2}</span>
+                        </div>
+                      )}
+                      {feedback.problem4 && feedback.problem4.trim() !== '' && (
+                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                          <span className="text-xs font-medium text-gray-500">Would Recommend: </span>
+                          <span className="text-gray-700 text-sm">{feedback.problem4}</span>
+                        </div>
+                      )}
+                      {feedback.problem3 && feedback.problem3.trim() !== '' && (
+                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                          <span className="text-xs font-medium text-gray-500">Improvements: </span>
+                          <span className="text-gray-700 text-sm">{feedback.problem3}</span>
+                        </div>
+                      )}
+                      {feedback.problem5 && feedback.problem5.trim() !== '' && (
+                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                          <span className="text-xs font-medium text-gray-500">Additional Comments: </span>
+                          <span className="text-gray-700 text-sm">{feedback.problem5}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   {feedback.applicant && (
-                    <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
                       <h5 className="font-medium text-gray-900 mb-2 text-sm">Related Applicant</h5>
                       <div className="flex items-center justify-between">
                         <div>
@@ -381,13 +419,15 @@ const Feedback = () => {
                           <p className="text-xs text-gray-500">{feedback.applicant.postAppliedFor || feedback.applicant.position || 'N/A'}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-bold text-blue-600">{getNumericScore(feedback.applicant).toFixed(1)}%</p>
+                          <p className="text-xs text-gray-500">
+                            {feedback.applicant.email || feedback.applicant.permanentEmail || 'Email N/A'}
+                          </p>
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
-              ))}
+                )})}
             </div>
           )}
         </div>
