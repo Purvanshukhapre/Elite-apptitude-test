@@ -6,6 +6,8 @@ import PersonalInfoStep from '../../components/registration/PersonalInfoStep';
 import PositionDetailsStep from '../../components/registration/PositionDetailsStep';
 import ReviewStep from '../../components/registration/ReviewStep';
 import NavigationButtons from '../../components/registration/NavigationButtons';
+import logo from "../../assets/elitelogo.png";
+import polyBg from "../../assets/1397.jpg";
 
 const Registration = () => {
   const navigate = useNavigate();
@@ -185,48 +187,143 @@ const Registration = () => {
     }
   };
 
-
-
   return (
-    <div className="min-h-screen bg-[#82a1d2] flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full">
-        {/* Header */}
-        <div className="text-center mb-8 animate-fade-in">
-          <div className="flex justify-center mb-4">
-            <div className="bg-white/20 backdrop-blur-sm p-4 rounded-full">
-              <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+    <div className="relative min-h-screen w-full overflow-hidden text-white">
+      {/* ===== ANIMATED LOW-POLY BACKGROUND ===== */}
+      <div
+        className="absolute inset-0 bg-cover bg-center animate-bgDrift"
+        style={{ backgroundImage: `url(${polyBg})` }}
+      />
+
+      {/* Soft global overlay (very light) */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-purple-900/20 to-blue-800/30" />
+
+      {/* Center focus overlay for readability */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.4)_0%,rgba(0,0,0,0.2)_40%,rgba(0,0,0,0)_70%)]" />
+
+      {/* ===== CONTENT ===== */}
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-between p-4 sm:p-6">
+        {/* LOGO */}
+        <header className="pt-6 sm:pt-8 w-full max-w-4xl">
+          <div className="flex justify-center">
+            <div className="bg-white rounded-2xl px-6 py-4 sm:px-8 sm:py-5 shadow-2xl border border-gray-200">
+              <img
+                src={logo}
+                alt="Elite Associate"
+                className="h-12 sm:h-16 md:h-20 w-auto mx-auto"
+              />
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">Welcome to Elite Associate</h1>
-          <p className="text-blue-100 text-lg">Complete your registration to begin the aptitude test</p>
-        </div>
+        </header>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <ProgressBar step={step} />
-        </div>
+        {/* FORM CONTENT */}
+        <main className="flex-grow flex items-center w-full max-w-4xl mx-auto">
+          <div className="w-full max-w-4xl mx-auto px-4">
+            {/* Header */}
+            <div className="text-center mb-8 animate-fade-in">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 drop-shadow-lg">
+                Complete Your Registration
+              </h1>
+              <p className="text-blue-100 text-base sm:text-lg md:text-xl opacity-90">
+                Fill in your details to begin the aptitude test
+              </p>
+            </div>
 
-        {/* Form Card */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 animate-slide-up shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] border border-white/20">
-          <form id="registration-form">
-            {renderStep()}
+            {/* Progress Bar */}
+            <div className="mb-8">
+              <ProgressBar step={step} />
+            </div>
+
+            {/* Form Card */}
+            <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 sm:p-8 animate-slide-up shadow-2xl border border-white/30">
+              {step !== 3 && (
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                    {step === 1 && 'Personal Information'}
+                    {step === 2 && 'Position & Experience Details'}
+                  </h2>
+                  <p className="text-gray-600">
+                    {step === 1 && 'Please provide your personal details'}
+                    {step === 2 && 'Tell us about your experience and qualifications'}
+                  </p>
+                </div>
+              )}
+              
+              <form id="registration-form" className="space-y-6">
+                {renderStep()}
+                
+                <NavigationButtons
+                  step={step}
+                  onBack={handleBack}
+                  onNext={handleNext}
+                  onSubmit={handleSubmit}
+                  isSubmitting={isSubmitting}
+                />
+              </form>
+            </div>
             
-            <NavigationButtons
-              step={step}
-              onBack={handleBack}
-              onNext={handleNext}
-              onSubmit={handleSubmit}
-              isSubmitting={isSubmitting}
-            />
-          </form>
-        </div>
-        
-        <div className="text-center mt-6 text-blue-100 text-sm">
-          <p>Need help? Contact our support team at support@eliteassociate.com</p>
-        </div>
+            <div className="text-center mt-6 text-blue-100/80 text-sm">
+              <p>Need help? Contact our support team at support@eliteassociate.com</p>
+            </div>
+          </div>
+        </main>
+
+        {/* FOOTER */}
+        <footer className="pb-4 text-blue-200/80 text-sm text-center">
+          © {new Date().getFullYear()} Elite Associate — Placement & Training Center
+        </footer>
       </div>
+
+      {/* ===== BACKGROUND ANIMATION ===== */}
+      <style>
+        {`
+          @keyframes bgDrift {
+            0% {
+              transform: scale(1) translate(0, 0);
+            }
+            50% {
+              transform: scale(1.05) translate(-10px, -10px);
+            }
+            100% {
+              transform: scale(1) translate(0, 0);
+            }
+          }
+
+          .animate-bgDrift {
+            animation: bgDrift 30s ease-in-out infinite;
+          }
+          
+          @keyframes fade-in {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          .animate-fade-in {
+            animation: fade-in 0.8s ease-out;
+          }
+          
+          @keyframes slide-up {
+            from {
+              opacity: 0;
+              transform: translateY(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          .animate-slide-up {
+            animation: slide-up 0.6s ease-out;
+          }
+        `}
+      </style>
     </div>
   );
 };

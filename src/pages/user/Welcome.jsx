@@ -1,8 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useRef } from "react";
 import logo from "../../assets/elitelogo.png";
-import bgImage from "../../assets/web_development.jpg";
+import polyBg from "../../assets/1397.jpg";
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -10,92 +9,112 @@ const Welcome = () => {
   const text = "Online Aptitude Test Platform";
   const [displayText, setDisplayText] = useState("");
   const [index, setIndex] = useState(0);
-  const heroRef = useRef(null);
 
-
-  // Typing Effect
   useEffect(() => {
     if (index < text.length) {
-      const timeout = setTimeout(() => {
+      const timer = setTimeout(() => {
         setDisplayText((prev) => prev + text[index]);
         setIndex(index + 1);
-      }, 80);
-      return () => clearTimeout(timeout);
+      }, 55);
+      return () => clearTimeout(timer);
     }
   }, [index, text]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden flex flex-col bg-cover bg-center" style={{ backgroundImage: `url(${bgImage})` }}>
-      <div className="absolute inset-0 bg-[#4A70A9]/20" />
+    <div className="relative min-h-screen w-full overflow-hidden text-white">
 
-      
-      {/* Optional dark overlay for better contrast */}
-      <div className="absolute inset-0 bg-[#4A70A9]/70" />
+      {/* ===== ANIMATED LOW-POLY BACKGROUND ===== */}
+      <div
+        className="absolute inset-0 bg-cover bg-center animate-bgDrift"
+        style={{ backgroundImage: `url(${polyBg})` }}
+      />
 
-      
-      {/* Logo (Static) */}
-      <nav className="pt-6 md:pt-10 px-4 z-10">
-        <div className="flex justify-center items-center">
-          <div
-            className="p-4 md:p-6 rounded-2xl 
-                       bg-white/20 backdrop-blur-lg
-                       shadow-1xl ring-1 ring-white/30 "
-                       
-          >
+      {/* Soft global overlay (very light) */}
+      <div className="absolute inset-0 bg-blue-900/20" />
+
+      {/* Center focus overlay for readability */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.35)_0%,rgba(0,0,0,0.15)_35%,rgba(0,0,0,0)_65%)]" />
+
+      {/* ===== CONTENT ===== */}
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-between">
+
+        {/* LOGO */}
+        <header className="pt-14">
+          <div className="bg-white rounded-2xl px-12 py-7 shadow-xl">
             <img
               src={logo}
-              alt="Elite Associate Logo"
-              className="h-24 sm:h-28 md:h-32 lg:h-36 w-auto"
+              alt="Elite Associate"
+              className="h-24 sm:h-28 md:h-32 w-auto"
             />
           </div>
-        </div>
-      </nav>
+        </header>
 
-      {/* Hero Section */}
-      <main className="flex-grow flex items-center justify-center px-4 relative z-10 pt-2 sm:pt-4 md:pt-0 ">
-        <div ref={heroRef} className="max-w-4xl w-full text-center -mt-1 sm:-mt-9 md:mt-0">
+        {/* HERO */}
+        <main className="flex-grow flex items-center">
+          <div className="max-w-3xl text-center px-6">
 
-          <h1
-            className="text-3xl sm:text-4xl md:text-6xl font-extrabold text-white mb-4 md:mb-6 animate-fade-in"
-          >
-            Welcome to {" "}<span className="bg-gradient-to-r from-blue-200 to-white 
-                   bg-clip-text text-transparent">
-    Elite Associate
-  </span>
-          </h1>
+            {/* Main heading */}
+            <h1 className="font-extrabold text-4xl sm:text-5xl md:text-6xl leading-tight text-white drop-shadow-lg">
+              Welcome to{" "}
+              <span className="text-sky-300">
+                Elite Associate
+              </span>
+            </h1>
 
-          <p className="text-lg sm:text-xl md:text-3xl text-blue-100 font-medium min-h-[2.5rem]">
-            {displayText}
-            <span className="animate-pulse">|</span>
-          </p>
-          
-          <p className="text-sm sm:text-base md:text-lg text-blue-200 mt-3 md:mt-4">
-            Your Journey to Success Starts Here 
-          </p>
-          
-          {/* CTA Button */}
-          <div className="mt-8 md:mt-10">
-            <button
-              onClick={() => navigate("/register")}
-              className="px-6 sm:px-8 md:px-14 
-                         py-2 sm:py-3 md:py-4
-                         bg-white text-blue-600 font-bold 
-                         text-sm sm:text-base md:text-lg 
-                         rounded-full shadow-lg hover:scale-105 active:scale-95 transition-transform"
-            >
-              Start Your Application →
-            </button>
-          
-                  
+            {/* Typing subtitle */}
+            <p className="mt-6 text-blue-100 text-xl sm:text-2xl min-h-[2.6rem] drop-shadow">
+              {displayText}
+              <span className="opacity-70">|</span>
+            </p>
+
+            {/* CTA */}
+            <div className="mt-10">
+              <button
+                onClick={() => navigate("/register")}
+                className="
+                  bg-sky-500 hover:bg-sky-600
+                  text-white font-semibold
+                  px-14 py-4
+                  rounded-xl
+                  shadow-2xl
+                  transition-all duration-300
+                  hover:-translate-y-1
+                  hover:shadow-sky-500/40
+                "
+              >
+                Start Your Application →
+              </button>
+            </div>
+
           </div>
-          
-        </div>
-      </main>
+        </main>
 
-      {/* Footer */}
-      <footer className="p-4 md:p-6 text-center text-blue-200 text-xs md:text-sm">
-         Elite Associate
-      </footer>
+        {/* FOOTER */}
+        <footer className="pb-6 text-blue-200 text-sm">
+          © Elite Associate — Placement & Training Center
+        </footer>
+      </div>
+
+      {/* ===== BACKGROUND ANIMATION ===== */}
+      <style>
+        {`
+          @keyframes bgDrift {
+            0% {
+              transform: scale(1) translate(0, 0);
+            }
+            50% {
+              transform: scale(1.05) translate(-10px, -10px);
+            }
+            100% {
+              transform: scale(1) translate(0, 0);
+            }
+          }
+
+          .animate-bgDrift {
+            animation: bgDrift 30s ease-in-out infinite;
+          }
+        `}
+      </style>
     </div>
   );
 };

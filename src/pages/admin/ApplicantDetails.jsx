@@ -26,16 +26,16 @@ const ApplicantDetails = () => {
           feedbackData = [];
         }
         
-        // First, try to find the applicant from context using the index or name
+        // First, try to find the applicant from context using the ID, name, or index
         let localApplicant = null;
         
-        // Try to parse as index first
-        const index = parseInt(decodedId, 10);
-        if (!isNaN(index) && index >= 0 && index < applicants.length) {
-          localApplicant = applicants[index];
-        }
+        // Try to find by ID first
+        localApplicant = applicants.find(app => 
+          app._id === decodedId ||
+          app.id === decodedId
+        );
         
-        // If not found by index, try to find by name
+        // If not found by ID, try to find by name
         if (!localApplicant) {
           localApplicant = applicants.find(app => 
             app.fullName === decodedId ||
@@ -43,6 +43,14 @@ const ApplicantDetails = () => {
             app.fullName?.toLowerCase() === decodedId.toLowerCase() ||
             app.name?.toLowerCase() === decodedId.toLowerCase()
           );
+        }
+        
+        // If still not found, try to parse as index as a last resort
+        if (!localApplicant) {
+          const index = parseInt(decodedId, 10);
+          if (!isNaN(index) && index >= 0 && index < applicants.length) {
+            localApplicant = applicants[index];
+          }
         }
         
         // If we found the applicant locally, try to fetch updated data from API using their name
@@ -202,9 +210,7 @@ const ApplicantDetails = () => {
             if (email) {
               setQuestionsLoading(true);
               try {
-                console.log('Fetching questions for email:', email);
                 const questionsData = await getTestQuestionsByEmail(email);
-                console.log('Received questions data:', questionsData);
                 setApplicant(prev => ({
                   ...prev,
                   questionsData
@@ -242,9 +248,7 @@ const ApplicantDetails = () => {
           if (email) {
             setQuestionsLoading(true);
             try {
-              console.log('Fetching questions for email:', email);
               const questionsData = await getTestQuestionsByEmail(email);
-              console.log('Received questions data:', questionsData);
               setApplicant(prev => ({
                 ...prev,
                 questionsData
@@ -520,17 +524,27 @@ const ApplicantDetails = () => {
                   {(applicant.testResult && applicant.testResult.correctAnswer !== undefined) ? 'Completed' : 'Pending'}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Registration Date</span>
-                <span className="text-gray-900 font-medium">
-                  {new Date(applicant.createdAt || applicant.updatedAt || new Date(0)).toLocaleDateString()}
-                </span>
-              </div>
               {applicant.testData?.submittedAt && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Test Date</span>
                   <span className="text-gray-900 font-medium">
-                    {new Date(applicant.testData.submittedAt).toLocaleDateString()}
+                    {(() => {
+                      // Try to get date from various fields
+                      const dateValue = applicant.testData?.submittedAt || applicant.submittedAt || applicant.createdAt || applicant.date || applicant.timestamp || applicant.updatedAt || applicant.testCompletedAt || applicant.feedbackSubmittedAt || applicant.created_at || applicant.updated_at || applicant.date_created || applicant.date_updated || applicant.submitted_at || applicant.created || applicant.created_date || applicant.updated || applicant.dateSubmitted || applicant.submissionDate || applicant.applicationDate;
+                      if (dateValue) {
+                        return new Date(dateValue).toLocaleDateString();
+                      }
+                      // If no date field is available, try to extract from MongoDB ObjectId
+                      if (applicant._id) {
+                        try {
+                          const timestamp = parseInt(applicant._id.substring(0, 8), 16) * 1000;
+                          return new Date(timestamp).toLocaleDateString();
+                        } catch {
+                          return 'Date not available';
+                        }
+                      }
+                      return 'Date not available';
+                    })()}
                   </span>
                 </div>
               )}

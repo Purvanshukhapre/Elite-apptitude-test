@@ -29,35 +29,36 @@ const Dashboard = () => {
 
   // Helper function to extract numeric score from test data
   const getNumericScore = (applicant) => {
-    if (applicant.rating !== undefined && applicant.rating !== null) {
-      return (applicant.rating / 5) * 100;
-    }
-    
-    if (applicant.correctAnswer !== undefined) {
-      const totalQuestions = applicant.testData?.totalQuestions || 10;
-      return totalQuestions > 0 ? (applicant.correctAnswer / totalQuestions) * 100 : 0;
+    // Use test result data if available, prioritize over feedback
+    if (applicant.correctAnswer !== undefined && applicant.testData?.totalQuestions) {
+      return (applicant.correctAnswer / applicant.testData.totalQuestions) * 100;
     }
     
     const testData = applicant.testData;
-    if (!testData) return 0;
-    
-    if (typeof testData.score === 'string' && testData.score.includes('/')) {
-      const [correct, total] = testData.score.split('/').map(Number);
-      if (total > 0) {
-        return (correct / total) * 100;
+    if (testData) {
+      if (typeof testData.score === 'string' && testData.score.includes('/')) {
+        const [correct, total] = testData.score.split('/').map(Number);
+        if (total > 0) {
+          return (correct / total) * 100;
+        }
+      }
+      
+      if (testData.percentage) {
+        return parseFloat(testData.percentage);
+      }
+      
+      if (testData.score && typeof testData.score === 'number') {
+        return testData.score;
+      }
+      
+      if (testData.correctAnswers !== undefined && testData.totalQuestions) {
+        return (testData.correctAnswers / testData.totalQuestions) * 100;
       }
     }
     
-    if (testData.percentage) {
-      return parseFloat(testData.percentage);
-    }
-    
-    if (testData.score && typeof testData.score === 'number') {
-      return testData.score;
-    }
-    
-    if (testData.correctAnswers !== undefined && testData.totalQuestions) {
-      return (testData.correctAnswers / testData.totalQuestions) * 100;
+    // Only use feedback ratings if no test data is available
+    if (applicant.rating !== undefined && applicant.rating !== null) {
+      return (applicant.rating / 5) * 100;
     }
     
     return 0;
@@ -122,10 +123,10 @@ const Dashboard = () => {
       .filter(a => a.testData || a.correctAnswer !== undefined || a.rating !== undefined)
       .map(a => getNumericScore(a));
     
-    const excellent = combinedApplicants.filter(a => getNumericScore(a) >= 80).length;
-    const good = combinedApplicants.filter(a => getNumericScore(a) >= 60 && getNumericScore(a) < 80).length;
-    const average = combinedApplicants.filter(a => getNumericScore(a) >= 40 && getNumericScore(a) < 60).length;
-    const poor = combinedApplicants.filter(a => getNumericScore(a) < 40 && getNumericScore(a) > 0).length;
+    const excellent = combinedApplicants.filter(a => getNumericScore(a) >= 90).length;
+    const good = combinedApplicants.filter(a => getNumericScore(a) >= 80 && getNumericScore(a) < 90).length;
+    const average = combinedApplicants.filter(a => getNumericScore(a) >= 70 && getNumericScore(a) < 80).length;
+    const poor = combinedApplicants.filter(a => getNumericScore(a) < 70).length;
     
     const avgScore = scores.length > 0
       ? (scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(1)
@@ -165,23 +166,100 @@ const Dashboard = () => {
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
+      
+      // Create a date string with leading zeros for consistent comparison
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const formattedDateStr = `${year}-${month}-${day}`;
       
       const dayApplicants = combinedApplicants.filter(app => {
-        const appDate = app.submittedAt || app.createdAt;
+        // Function to extract date from applicant
+        const extractDate = (applicant) => {
+          // Try to get date from various fields
+          const dateValue = applicant.submittedAt || applicant.createdAt || applicant.date || applicant.timestamp || applicant.updatedAt || applicant.testCompletedAt || applicant.feedbackSubmittedAt || applicant.created_at || applicant.updated_at || applicant.date_created || applicant.date_updated || applicant.submitted_at || applicant.created || applicant.created_date || applicant.updated || applicant.dateSubmitted || applicant.submissionDate || applicant.applicationDate;
+          if (dateValue) {
+            return dateValue;
+          }
+          // If no date field is available, try to extract from MongoDB ObjectId
+          if (applicant._id) {
+            try {
+              const timestamp = parseInt(applicant._id.substring(0, 8), 16) * 1000;
+              return new Date(timestamp);
+            } catch {
+              return null; // fallback to null
+            }
+          }
+          return null; // fallback to null
+        };
+                 
+        const appDate = extractDate(app);
         if (!appDate) return false;
-        return appDate.split('T')[0] === dateStr;
+        
+        // Handle different date formats
+        let appDateStr;
+        if (typeof appDate === 'string') {
+          try {
+            // Try to parse the date string
+            const parsedDate = new Date(appDate);
+            appDateStr = parsedDate.toISOString().split('T')[0];
+          } catch {
+            return false;
+          }
+        } else if (appDate instanceof Date) {
+          appDateStr = appDate.toISOString().split('T')[0];
+        } else {
+          return false;
+        }
+        
+        return appDateStr === formattedDateStr;
       });
       
       const dayTests = combinedApplicants.filter(app => {
-        const testDate = app.testCompletedAt || app.testData?.submittedAt;
+        // Function to extract date from applicant
+        const extractTestDate = (applicant) => {
+          // Try to get date from various fields, prioritizing testData dates
+          const dateValue = applicant.testData?.submittedAt || applicant.submittedAt || applicant.createdAt || applicant.date || applicant.timestamp || applicant.updatedAt || applicant.testCompletedAt || applicant.feedbackSubmittedAt || applicant.created_at || applicant.updated_at || applicant.date_created || applicant.date_updated || applicant.submitted_at || applicant.created || applicant.created_date || applicant.updated || applicant.dateSubmitted || applicant.submissionDate || applicant.applicationDate;
+          if (dateValue) {
+            return dateValue;
+          }
+          // If no date field is available, try to extract from MongoDB ObjectId
+          if (applicant._id) {
+            try {
+              const timestamp = parseInt(applicant._id.substring(0, 8), 16) * 1000;
+              return new Date(timestamp);
+            } catch {
+              return null; // fallback to null
+            }
+          }
+          return null; // fallback to null
+        };
+        
+        const testDate = extractTestDate(app);
         if (!testDate) return false;
-        return testDate.split('T')[0] === dateStr;
+        
+        // Handle different date formats
+        let testDateStr;
+        if (typeof testDate === 'string') {
+          try {
+            // Try to parse the date string
+            const parsedDate = new Date(testDate);
+            testDateStr = parsedDate.toISOString().split('T')[0];
+          } catch {
+            return false;
+          }
+        } else if (testDate instanceof Date) {
+          testDateStr = testDate.toISOString().split('T')[0];
+        } else {
+          return false;
+        }
+        
+        return testDateStr === formattedDateStr;
       });
       
       days.push({
         date: date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
-        fullDate: dateStr,
+        fullDate: formattedDateStr,
         applicants: dayApplicants.length,
         tests: dayTests.length,
         avgScore: dayTests.length > 0
@@ -196,11 +274,11 @@ const Dashboard = () => {
   // Score distribution data
   const scoreDistribution = useMemo(() => {
     const ranges = [
-      { name: '90-100%', min: 90, max: 100, color: '#10B981' },
-      { name: '80-89%', min: 80, max: 89, color: '#3B82F6' },
-      { name: '70-79%', min: 70, max: 79, color: '#8B5CF6' },
-      { name: '60-69%', min: 60, max: 69, color: '#F59E0B' },
-      { name: '0-59%', min: 0, max: 59, color: '#EF4444' }
+      { name: 'A+ (90-100%)', min: 90, max: 100, color: '#10B981' },
+      { name: 'A (80-89%)', min: 80, max: 89, color: '#3B82F6' },
+      { name: 'B (70-79%)', min: 70, max: 79, color: '#8B5CF6' },
+      { name: 'C (60-69%)', min: 60, max: 69, color: '#F59E0B' },
+      { name: 'Below C (<60%)', min: 0, max: 59, color: '#EF4444' }
     ];
     
     return ranges.map(range => {
@@ -257,8 +335,27 @@ const Dashboard = () => {
   const recentApplicants = useMemo(() => {
     return [...combinedApplicants]
       .sort((a, b) => {
-        const dateA = new Date(a.submittedAt || a.createdAt || 0);
-        const dateB = new Date(b.submittedAt || b.createdAt || 0);
+        // Function to extract date from applicant
+        const extractDate = (applicant) => {
+          // Try to get date from various fields
+          const dateValue = applicant.submittedAt || applicant.createdAt || applicant.date || applicant.timestamp || applicant.updatedAt || applicant.testCompletedAt || applicant.feedbackSubmittedAt || applicant.created_at || applicant.updated_at || applicant.date_created || applicant.date_updated || applicant.submitted_at || applicant.created || applicant.created_date || applicant.updated || applicant.dateSubmitted || applicant.submissionDate || applicant.applicationDate;
+          if (dateValue) {
+            return new Date(dateValue);
+          }
+          // If no date field is available, try to extract from MongoDB ObjectId
+          if (applicant._id) {
+            try {
+              const timestamp = parseInt(applicant._id.substring(0, 8), 16) * 1000;
+              return new Date(timestamp);
+            } catch {
+              return new Date(0); // fallback to epoch
+            }
+          }
+          return new Date(0); // fallback to epoch
+        };
+                 
+        const dateA = extractDate(a);
+        const dateB = extractDate(b);
         return dateB - dateA;
       })
       .slice(0, 5);
@@ -470,7 +567,7 @@ const Dashboard = () => {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">Excellent (80-100%)</p>
+                  <p className="font-semibold text-gray-900">A+ (90-100%)</p>
                   <p className="text-sm text-gray-500">{analytics.excellent} applicants</p>
                 </div>
               </div>
@@ -485,26 +582,26 @@ const Dashboard = () => {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">Good (60-79%)</p>
+                  <p className="font-semibold text-gray-900">A (80-89%)</p>
                   <p className="text-sm text-gray-500">{analytics.good} applicants</p>
                 </div>
               </div>
               <span className="text-2xl font-bold text-blue-600">{analytics.good}</span>
             </div>
             
-            <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-purple-50 rounded-xl">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">Average (40-59%)</p>
+                  <p className="font-semibold text-gray-900">B (70-79%)</p>
                   <p className="text-sm text-gray-500">{analytics.average} applicants</p>
                 </div>
               </div>
-              <span className="text-2xl font-bold text-yellow-600">{analytics.average}</span>
+              <span className="text-2xl font-bold text-purple-600">{analytics.average}</span>
             </div>
             
             <div className="flex items-center justify-between p-4 bg-red-50 rounded-xl">
@@ -515,7 +612,7 @@ const Dashboard = () => {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">Needs Improvement</p>
+                  <p className="font-semibold text-gray-900">Below B (&lt;70%)</p>
                   <p className="text-sm text-gray-500">{analytics.poor} applicants</p>
                 </div>
               </div>
@@ -586,7 +683,10 @@ const Dashboard = () => {
                   <div 
                     key={applicant._id || applicant.id || index}
                     className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer"
-                    onClick={() => navigate(`/admin/modern/applicants/${applicant._id || applicant.id || index}`)}
+                    onClick={() => {
+                      const applicantId = applicant._id || applicant.id || applicant.fullName || applicant.name || index;
+                      navigate(`/admin/modern/applicants/${encodeURIComponent(applicantId)}`);
+                    }}
                   >
                     <div className="flex items-center space-x-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
@@ -635,7 +735,7 @@ const Dashboard = () => {
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Position</th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Status</th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Score</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Date</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Rating</th>
               </tr>
             </thead>
             <tbody>
@@ -650,12 +750,15 @@ const Dashboard = () => {
                   const score = getNumericScore(applicant);
                   const hasTest = applicant.testData || applicant.correctAnswer !== undefined;
                   const status = hasTest ? 'Completed' : 'Pending';
-                  const date = new Date(applicant.submittedAt || applicant.createdAt || Date.now());
+
                   return (
                     <tr 
                       key={applicant._id || applicant.id || index}
                       className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/admin/modern/applicants/${applicant._id || applicant.id || index}`)}
+                      onClick={() => {
+                        const applicantId = applicant._id || applicant.id || applicant.fullName || applicant.name || index;
+                        navigate(`/admin/modern/applicants/${encodeURIComponent(applicantId)}`);
+                      }}
                     >
                       <td className="py-4 px-4">
                         <div className="flex items-center space-x-3">
@@ -688,9 +791,22 @@ const Dashboard = () => {
                         )}
                       </td>
                       <td className="py-4 px-4">
-                        <span className="text-sm text-gray-500">
-                          {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
+                        <div className="flex items-center">
+                          {applicant.rating ? (
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <span 
+                                  key={i} 
+                                  className={`text-lg ${i < applicant.rating ? 'text-yellow-500' : 'text-gray-300'}`}
+                                >
+                                  ★
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">No rating</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

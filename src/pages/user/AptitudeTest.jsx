@@ -430,27 +430,27 @@ const AptitudeTest = () => {
       {/* Header */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Aptitude Test</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900">Aptitude Test</h1>
               <p className="text-sm text-gray-600">Welcome, {currentApplicant.fullName}</p>
             </div>
-            <div className="flex items-center space-x-6">
+            <div className="flex flex-wrap gap-4 justify-center">
               <div className="text-center">
-                <p className="text-sm text-gray-600">Progress</p>
-                <p className="text-lg font-bold text-blue-600">{answeredCount}/{questionsToUse.length}</p>
+                <p className="text-xs md:text-sm text-gray-600">Progress</p>
+                <p className="text-sm md:text-lg font-bold text-blue-600">{answeredCount}/{questionsToUse.length}</p>
               </div>
-              <div className={`text-center px-4 py-2 rounded-lg ${
-                timeLeft < 300 ? 'bg-red-100 animate-pulse' : 'bg-blue-100'
+              <div className={`text-center px-3 py-2 rounded-lg ${
+                timeLeft < 300 ? 'bg-red-100' : 'bg-blue-100'
               }`}>
-                <p className="text-sm text-gray-600">Time Left</p>
-                <p className={`text-xl font-bold ${timeLeft < 300 ? 'text-red-600' : 'text-blue-600'}`}>
+                <p className="text-xs md:text-sm text-gray-600">Time Left</p>
+                <p className={`text-sm md:text-xl font-bold ${timeLeft < 300 ? 'text-red-600' : 'text-blue-600'}`}>
                   {formatTime(timeLeft)}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-gray-600">Tab Switches</p>
-                <p className={`text-lg font-bold ${
+                <p className="text-xs md:text-sm text-gray-600">Tab Switches</p>
+                <p className={`text-sm md:text-lg font-bold ${
                   tabSwitchCount === 0 ? 'text-green-600' : 
                   tabSwitchCount === 1 ? 'text-yellow-600' : 
                   tabSwitchCount === 2 ? 'text-orange-600' : 'text-red-600'
@@ -459,8 +459,8 @@ const AptitudeTest = () => {
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-gray-600">Copy Attempts</p>
-                <p className="text-lg font-bold text-red-600">
+                <p className="text-xs md:text-sm text-gray-600">Copy Attempts</p>
+                <p className="text-sm md:text-lg font-bold text-red-600">
                   {copyAttempts}
                 </p>
               </div>
@@ -498,10 +498,143 @@ const AptitudeTest = () => {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 gap-6">
           {/* Question Navigation */}
-          <div className="lg:col-span-1">
+          <div className="lg:hidden mb-4">
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <h3 className="font-bold text-gray-900 mb-3 text-sm">Question Navigator</h3>
+              <div className="grid grid-cols-5 gap-1">
+                {questionsToUse.map((q, idx) => (
+                  <button
+                    key={q.id}
+                    onClick={() => setCurrentQuestion(idx)}
+                    className={`w-8 h-8 rounded text-xs font-medium transition ${
+                      currentQuestion === idx
+                        ? 'bg-blue-600 text-white'
+                        : answers[q.id] !== undefined
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 space-y-1 text-xs">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-500 rounded mr-2"></div>
+                  <span className="text-gray-600">Answered</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-gray-200 rounded mr-2"></div>
+                  <span className="text-gray-600">Not Answered</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-blue-600 rounded mr-2"></div>
+                  <span className="text-gray-600">Current</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Question Display */}
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+            <div className="mb-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-2">
+                <span className="text-xs sm:text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                  {questionsToUse[currentQuestion]?.category || 'General'}
+                  {questionsToUse[currentQuestion]?.difficulty && (
+                    <span className="ml-1 px-1 py-0.5 text-xs rounded-full bg-gray-200 text-gray-700">
+                      {questionsToUse[currentQuestion].difficulty}
+                    </span>
+                  )}
+                </span>
+                <span className="text-xs sm:text-sm text-gray-600">
+                  Question {currentQuestion + 1} of {questionsToUse.length}
+                </span>
+              </div>
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                {questionsToUse[currentQuestion]?.question || 'Loading question...'}
+              </h2>
+            </div>
+
+            <div className="space-y-3">
+              {questionsToUse[currentQuestion]?.options?.map((option, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleAnswer(questionsToUse[currentQuestion].id, idx)}
+                  className={`w-full text-left p-3 rounded-lg border-2 transition ${
+                    answers[questionsToUse[currentQuestion].id] === idx
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-200 hover:border-blue-300'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <div className={`w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center ${
+                      answers[questionsToUse[currentQuestion].id] === idx
+                        ? 'border-blue-600 bg-blue-600'
+                        : 'border-gray-300'
+                    }`}>
+                      {answers[questionsToUse[currentQuestion].id] === idx && (
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className={`text-base ${
+                      answers[questionsToUse[currentQuestion].id] === idx
+                        ? 'font-semibold text-blue-900'
+                        : 'text-gray-700'
+                    }`}>
+                      {option}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6 pt-4 border-t">
+              <button
+                onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
+                disabled={currentQuestion === 0}
+                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Previous
+              </button>
+              
+              {currentQuestion < questionsToUse.length - 1 ? (
+                <button
+                  onClick={() => setCurrentQuestion(prev => Math.min(questionsToUse.length - 1, prev + 1))}
+                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 rounded-lg font-medium text-white hover:bg-blue-700 hover:shadow-lg transition"
+                >
+                  Next
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto px-6 py-2 bg-green-600 rounded-lg font-medium text-white hover:bg-green-700 hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Test'
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Question Navigation for larger screens */}
+          <div className="hidden lg:block lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm p-6 sticky top-32">
               <h3 className="font-bold text-gray-900 mb-4">Question Navigator</h3>
               <div className="grid grid-cols-5 gap-2">
@@ -538,124 +671,27 @@ const AptitudeTest = () => {
             </div>
           </div>
 
-          {/* Question Display */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-sm p-8">
-              <div className="mb-6">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                    {questionsToUse[currentQuestion]?.category || 'General'}
-                    {questionsToUse[currentQuestion]?.difficulty && (
-                      <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-200 text-gray-700">
-                        {questionsToUse[currentQuestion].difficulty}
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-sm text-gray-600">
-                    Question {currentQuestion + 1} of {questionsToUse.length}
-                  </span>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {questionsToUse[currentQuestion]?.question || 'Loading question...'}
-                </h2>
-              </div>
-
-              <div className="space-y-4">
-                {questionsToUse[currentQuestion]?.options?.map((option, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleAnswer(questionsToUse[currentQuestion].id, idx)}
-                    className={`w-full text-left p-4 rounded-lg border-2 transition transform hover:scale-102 ${
-                      answers[questionsToUse[currentQuestion].id] === idx
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
-                  >
-                    <div className="flex items-center">
-                      <div className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${
-                        answers[questionsToUse[currentQuestion].id] === idx
-                          ? 'border-blue-600 bg-blue-600'
-                          : 'border-gray-300'
-                      }`}>
-                        {answers[questionsToUse[currentQuestion].id] === idx && (
-                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                      <span className={`text-lg ${
-                        answers[questionsToUse[currentQuestion].id] === idx
-                          ? 'font-semibold text-blue-900'
-                          : 'text-gray-700'
-                      }`}>
-                        {option}
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Navigation Buttons */}
-              <div className="flex justify-between mt-8 pt-6 border-t">
-                <button
-                  onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
-                  disabled={currentQuestion === 0}
-                  className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                >
-                  Previous
-                </button>
-                
-                {currentQuestion < questionsToUse.length - 1 ? (
-                  <button
-                    onClick={() => setCurrentQuestion(prev => Math.min(questionsToUse.length - 1, prev + 1))}
-                    className="px-6 py-3 gradient-primary rounded-lg font-medium text-white hover:shadow-lg transition"
-                  >
-                    Next
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    className="px-8 py-3 bg-green-600 rounded-lg font-medium text-white hover:bg-green-700 hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Submitting...
-                      </>
-                    ) : (
-                      'Submit Test'
-                    )}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Warning Notice */}
-            <div className="mt-4 bg-red-50 border-2 border-red-200 rounded-lg p-4">
-              <div className="flex items-start">
-                <svg className="w-6 h-6 text-red-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <div>
-                  <p className="text-sm text-red-800 font-bold mb-2">
-                    🔒 IMPORTANT: Test Security Policies
-                  </p>
-                  <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
-                    <li><strong>Tab Switching:</strong> Maximum 3 violations allowed. Current: <strong className="text-red-900">{tabSwitchCount}/3</strong></li>
-                    <li><strong>Copy/Cut/Paste:</strong> Completely disabled. Copy attempts: <strong className="text-red-900">{copyAttempts}</strong></li>
-                    <li><strong>Right-Click:</strong> Context menu is blocked</li>
-                    <li><strong>Text Selection:</strong> Disabled to prevent copying</li>
-                    <li><strong>Keyboard Shortcuts:</strong> Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+A, F12 blocked</li>
-                    <li><strong>Developer Tools:</strong> Access is restricted</li>
-                  </ul>
-                  <p className="text-sm text-red-800 font-semibold mt-2">
-                    ⚠️ Violation of these rules may result in automatic disqualification!
-                  </p>
-                </div>
+          {/* Warning Notice */}
+          <div className="bg-red-50 border-2 border-red-200 rounded-lg p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row items-start gap-3">
+              <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <p className="text-xs sm:text-sm text-red-800 font-bold mb-1">
+                  🔒 IMPORTANT: Test Security Policies
+                </p>
+                <ul className="text-xs sm:text-sm text-red-700 space-y-1 list-disc list-inside">
+                  <li><strong>Tab Switching:</strong> Maximum 3 violations allowed. Current: <strong className="text-red-900">{tabSwitchCount}/3</strong></li>
+                  <li><strong>Copy/Cut/Paste:</strong> Completely disabled. Copy attempts: <strong className="text-red-900">{copyAttempts}</strong></li>
+                  <li><strong>Right-Click:</strong> Context menu is blocked</li>
+                  <li><strong>Text Selection:</strong> Disabled to prevent copying</li>
+                  <li><strong>Keyboard Shortcuts:</strong> Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+A, F12 blocked</li>
+                  <li><strong>Developer Tools:</strong> Access is restricted</li>
+                </ul>
+                <p className="text-xs sm:text-sm text-red-800 font-semibold mt-2">
+                  ⚠️ Violation of these rules may result in automatic disqualification!
+                </p>
               </div>
             </div>
           </div>

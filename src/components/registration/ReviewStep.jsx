@@ -32,10 +32,6 @@ const ReviewStep = ({ formData }) => {
             <p className="font-semibold text-gray-900">{formData.permanentPhone || 'N/A'}</p>
           </div>
           <div className="p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600">Date of Birth</p>
-            <p className="font-semibold text-gray-900">{formData.dateOfBirth || 'N/A'}</p>
-          </div>
-          <div className="p-3 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-600">Age</p>
             <p className="font-semibold text-gray-900">{formData.age || 'N/A'}</p>
           </div>

@@ -30,7 +30,10 @@ export const API_ENDPOINTS = {
   FEEDBACK_SUMMARY: '/feedback/summary',  // Using proxy in development
   
   // Test Results
-  TEST_RESULTS_ALL: '/result/all'  // Using proxy in development
+  TEST_RESULTS_ALL: '/result/all',  // Using proxy in development
+  
+  // Email
+  SEND_EMAIL: '/admin/email/send'  // Using proxy in development
 };
 
 // Utility function to build full URL
@@ -105,8 +108,22 @@ export const apiCall = async (endpoint, options = {}) => {
       throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
     }
     
-    const data = await response.json();
-    return data;
+    // Check if response is JSON or plain text
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      return data;
+    } else {
+      // If not JSON, return the text response
+      const text = await response.text();
+      try {
+        // Try to parse as JSON in case it's a JSON string
+        return JSON.parse(text);
+      } catch {
+        // If it's not valid JSON, return the text as is
+        return text;
+      }
+    }
   } catch (error) {
     // More specific error handling
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -255,5 +272,13 @@ export const getTestQuestionsByEmail = async (email) => {
     console.error('Error fetching questions by email:', error);
     throw error;
   }
+};
+
+// Email API function
+export const sendEmail = async (emailData) => {
+  return apiCall(API_ENDPOINTS.SEND_EMAIL, {
+    method: 'POST',
+    body: JSON.stringify(emailData)
+  });
 };
 

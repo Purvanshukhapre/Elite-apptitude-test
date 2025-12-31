@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
 import { getAllFeedback, getAllTestResults } from '../../api';
@@ -17,8 +17,15 @@ const Applicants = () => {
   const [sortOrder, setSortOrder] = useState('desc');
   const [viewMode, setViewMode] = useState('grid'); // grid or list
 
-  const handleRowClick = (index) => {
-    navigate(`/admin/modern/applicants/${index}`);
+  const handleRowClick = (applicant) => {
+    const applicantId = applicant._id || applicant.id || applicant.fullName || applicant.name || applicant.email || applicant.permanentEmail;
+    if (applicantId) {
+      navigate(`/admin/modern/applicants/${encodeURIComponent(applicantId)}`);
+    } else {
+      // Fallback to index if no unique identifier found
+      const index = combinedApplicants.findIndex(app => app === applicant);
+      navigate(`/admin/modern/applicants/${index}`);
+    }
   };
 
   // Helper function to extract numeric score from test data
@@ -97,141 +104,130 @@ const Applicants = () => {
   }, [isAdminAuthenticated]);
 
   // Combine applicants with feedback and test results data
-  const combinedApplicants = useMemo(() => {
-    return applicants.map(applicant => {
-      const applicantFeedback = feedbackData.find(feedback => 
-        feedback.email === applicant.email || 
-        feedback.name === applicant.fullName ||
-        feedback.fullName === applicant.fullName ||
-        feedback.email === applicant.permanentEmail
-      );
-      
-      // Find test results for this applicant by name
-      const applicantTestResult = testResults.find(result => 
-        result.fullName?.toLowerCase() === applicant.fullName?.toLowerCase() ||
-        result.fullName?.toLowerCase() === applicant.name?.toLowerCase()
-      );
-      
-      return {
-        ...applicant,
-        feedback: applicantFeedback || null,
-        testData: applicant.testData || null,
-        rating: applicant.rating,
-        correctAnswer: applicant.correctAnswer !== undefined 
-          ? applicant.correctAnswer 
-          : (applicant.testData?.correctAnswers !== undefined 
-            ? applicant.testData.correctAnswers 
-            : (applicantTestResult ? applicantTestResult.correctAnswer : applicant.correctAnswer)),
-        overallRating: applicantFeedback ? applicantFeedback.rating : undefined,
-        // Add test result data if available
-        testResult: applicantTestResult || null
-      };
-    });
-  }, [applicants, feedbackData, testResults]);
+  const combinedApplicants = applicants.map(applicant => {
+    const applicantFeedback = feedbackData.find(feedback => 
+      feedback.email === applicant.email || 
+      feedback.name === applicant.fullName ||
+      feedback.fullName === applicant.fullName ||
+      feedback.email === applicant.permanentEmail
+    );
+    
+    // Find test results for this applicant by name
+    const applicantTestResult = testResults.find(result => 
+      result.fullName?.toLowerCase() === applicant.fullName?.toLowerCase() ||
+      result.fullName?.toLowerCase() === applicant.name?.toLowerCase()
+    );
+    
+    return {
+      ...applicant,
+      feedback: applicantFeedback || null,
+      testData: applicant.testData || null,
+      rating: applicant.rating,
+      correctAnswer: applicant.correctAnswer !== undefined 
+        ? applicant.correctAnswer 
+        : (applicant.testData?.correctAnswers !== undefined 
+          ? applicant.testData.correctAnswers 
+          : (applicantTestResult ? applicantTestResult.correctAnswer : applicant.correctAnswer)),
+      overallRating: applicantFeedback ? applicantFeedback.rating : undefined,
+      // Add test result data if available
+      testResult: applicantTestResult || null
+    };
+  });
 
   // Get unique positions for filter
-  const uniquePositions = useMemo(() => {
-    const positions = [...new Set(combinedApplicants.map(applicant => applicant.postAppliedFor || applicant.position || 'Unknown'))];
-    return ['all', ...positions];
-  }, [combinedApplicants]);
+  const uniquePositions = ['all', ...new Set(combinedApplicants.map(applicant => applicant.postAppliedFor || applicant.position || 'Unknown'))];
 
   // Filter and sort applicants
-  const filteredApplicants = useMemo(() => {
-    let filtered = combinedApplicants.filter(applicant => {
-      const matchesSearch = 
-        (applicant.fullName || applicant.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (applicant.permanentEmail || applicant.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (applicant.postAppliedFor || applicant.position || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getNumericScore(applicant).toString().includes(searchTerm);
-      
-      const matchesStatus = statusFilter === 'all' || 
-        (statusFilter === 'completed' && (applicant.testData || applicant.correctAnswer !== undefined)) ||
-        (statusFilter === 'pending' && !applicant.testData && applicant.correctAnswer === undefined);
-      
-      const matchesPosition = positionFilter === 'all' || 
-        (applicant.postAppliedFor || applicant.position) === positionFilter;
-      
-      return matchesSearch && matchesStatus && matchesPosition;
-    });
+  let filteredApplicants = combinedApplicants.filter(applicant => {
+    const matchesSearch = 
+      (applicant.fullName || applicant.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (applicant.permanentEmail || applicant.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (applicant.postAppliedFor || applicant.position || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getNumericScore(applicant).toString().includes(searchTerm);
+    
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'completed' && (applicant.testData || applicant.correctAnswer !== undefined)) ||
+      (statusFilter === 'pending' && !applicant.testData && applicant.correctAnswer === undefined);
+    
+    const matchesPosition = positionFilter === 'all' || 
+      (applicant.postAppliedFor || applicant.position) === positionFilter;
+    
+    return matchesSearch && matchesStatus && matchesPosition;
+  });
 
-    // Sort applicants
-    filtered.sort((a, b) => {
-      let aValue, bValue;
-      
-      switch (sortBy) {
-        case 'name':
-          aValue = (a.fullName || a.name || '').toLowerCase();
-          bValue = (b.fullName || b.name || '').toLowerCase();
-          break;
-        case 'position':
-          aValue = (a.postAppliedFor || a.position || '').toLowerCase();
-          bValue = (b.postAppliedFor || b.position || '').toLowerCase();
-          break;
-        case 'score':
-          aValue = getNumericScore(a);
-          bValue = getNumericScore(b);
-          break;
-        case 'date':
-        default:
-          aValue = new Date(a.submittedAt || a.createdAt || new Date(0));
-          bValue = new Date(b.submittedAt || b.createdAt || new Date(0));
-          break;
-      }
-      
-      if (typeof aValue === 'string') {
-        return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-      } else {
-        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
-      }
-    });
-
-    return filtered;
-  }, [combinedApplicants, searchTerm, statusFilter, positionFilter, sortBy, sortOrder]);
+  // Sort applicants
+  filteredApplicants.sort((a, b) => {
+    let aValue, bValue;
+    
+    switch (sortBy) {
+      case 'name':
+        aValue = (a.fullName || a.name || '').toLowerCase();
+        bValue = (b.fullName || b.name || '').toLowerCase();
+        break;
+      case 'position':
+        aValue = (a.postAppliedFor || a.position || '').toLowerCase();
+        bValue = (b.postAppliedFor || b.position || '').toLowerCase();
+        break;
+      case 'score':
+        aValue = getNumericScore(a);
+        bValue = getNumericScore(b);
+        break;
+      case 'date':
+      default:
+        aValue = new Date(a.submittedAt || a.createdAt || new Date(0));
+        bValue = new Date(b.submittedAt || b.createdAt || new Date(0));
+        break;
+    }
+    
+    if (typeof aValue === 'string') {
+      return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+    } else {
+      return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+    }
+  });
 
   // Analytics data
-  const analytics = useMemo(() => {
-    const total = combinedApplicants.length;
-    const withTest = combinedApplicants.filter(a => a.testData || a.correctAnswer !== undefined).length;
-    const withFeedback = combinedApplicants.filter(a => a.feedback).length;
-    const pending = total - withTest;
+  const total = combinedApplicants.length;
+  const withTest = combinedApplicants.filter(a => a.testData || a.correctAnswer !== undefined).length;
+  const withFeedback = combinedApplicants.filter(a => a.feedback).length;
+  const pending = total - withTest;
+  
+  const scores = combinedApplicants
+    .filter(a => a.testData || a.correctAnswer !== undefined)
+    .map(a => getNumericScore(a));
+  
+  const excellent = combinedApplicants.filter(a => getNumericScore(a) >= 80).length;
+  const good = combinedApplicants.filter(a => getNumericScore(a) >= 60 && getNumericScore(a) < 80).length;
+  const average = combinedApplicants.filter(a => getNumericScore(a) >= 40 && getNumericScore(a) < 60).length;
+  const poor = combinedApplicants.filter(a => getNumericScore(a) < 40 && getNumericScore(a) > 0).length;
+  
+  const avgScore = scores.length > 0
+    ? (scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(1)
+    : 0;
     
-    const scores = combinedApplicants
-      .filter(a => a.testData || a.correctAnswer !== undefined)
-      .map(a => getNumericScore(a));
-    
-    const excellent = combinedApplicants.filter(a => getNumericScore(a) >= 80).length;
-    const good = combinedApplicants.filter(a => getNumericScore(a) >= 60 && getNumericScore(a) < 80).length;
-    const average = combinedApplicants.filter(a => getNumericScore(a) >= 40 && getNumericScore(a) < 60).length;
-    const poor = combinedApplicants.filter(a => getNumericScore(a) < 40 && getNumericScore(a) > 0).length;
-    
-    const avgScore = scores.length > 0
-      ? (scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(1)
-      : 0;
-      
-    const avgTimeSpent = withTest > 0
-      ? Math.round(combinedApplicants
-          .filter(a => a.testData?.timeSpent)
-          .reduce((sum, a) => sum + (a.testData.timeSpent || 0), 0) / withTest / 60)
-      : 0;
-    
-    const completionRate = total > 0 ? ((withTest / total) * 100).toFixed(1) : 0;
-    const feedbackRate = withTest > 0 ? ((withFeedback / withTest) * 100).toFixed(1) : 0;
+  const avgTimeSpent = withTest > 0
+    ? Math.round(combinedApplicants
+        .filter(a => a.testData?.timeSpent)
+        .reduce((sum, a) => sum + (a.testData.timeSpent || 0), 0) / withTest / 60)
+    : 0;
+  
+  const completionRate = total > 0 ? ((withTest / total) * 100).toFixed(1) : 0;
+  const feedbackRate = withTest > 0 ? ((withFeedback / withTest) * 100).toFixed(1) : 0;
 
-    return {
-      total,
-      withTest,
-      withFeedback,
-      pending,
-      excellent,
-      good,
-      average,
-      poor,
-      avgScore,
-      avgTimeSpent,
-      completionRate,
-      feedbackRate
-    };
-  }, [combinedApplicants]);
+  const analytics = {
+    total,
+    withTest,
+    withFeedback,
+    pending,
+    excellent,
+    good,
+    average,
+    poor,
+    avgScore,
+    avgTimeSpent,
+    completionRate,
+    feedbackRate
+  };
 
   if (loading) {
     return (
@@ -328,7 +324,7 @@ const Applicants = () => {
             </div>
             <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
               <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-.363 1.118l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
               </svg>
             </div>
           </div>
@@ -413,20 +409,20 @@ const Applicants = () => {
             return (
               <div
                 key={applicant._id || applicant.id || index}
-                onClick={() => handleRowClick(index)}
+                onClick={() => handleRowClick(applicant)}
                 className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 group"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-4 flex-1 min-w-0">
                     <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform">
                       {(applicant.fullName || applicant.name || 'A').charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-lg">{applicant.fullName || applicant.name || 'Unknown'}</h3>
-                      <p className="text-sm text-gray-500">{applicant.permanentEmail || applicant.email || 'N/A'}</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-bold text-gray-900 text-lg truncate">{applicant.fullName || applicant.name || 'Unknown'}</h3>
+                      <p className="text-sm text-gray-500 truncate">{applicant.permanentEmail || applicant.email || 'N/A'}</p>
                     </div>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ml-2 ${
                     hasTest ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                   }`}>
                     {hasTest ? 'Completed' : 'Pending'}
@@ -458,7 +454,7 @@ const Applicants = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Position</span>
-                    <span className="text-sm font-semibold text-gray-900">{applicant.postAppliedFor || applicant.position || 'N/A'}</span>
+                    <span className="text-sm font-semibold text-gray-900 truncate max-w-[50%]">{applicant.postAppliedFor || applicant.position || 'N/A'}</span>
                   </div>
                   {applicant.rating && (
                     <div className="flex items-center justify-between">
@@ -467,9 +463,16 @@ const Applicants = () => {
                     </div>
                   )}
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <span className="text-xs text-gray-500">
-                      {new Date(applicant.submittedAt || applicant.createdAt || new Date(0)).toLocaleDateString()}
-                    </span>
+                    <div className="text-xs text-gray-500 truncate">
+                      {applicant.rating ? (
+                        <div className="flex items-center space-x-1">
+                          <span className="text-yellow-500">★</span>
+                          <span>{applicant.rating}</span>
+                        </div>
+                      ) : (
+                        <span>No rating</span>
+                      )}
+                    </div>
                     <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
                       View Details →
                     </button>
@@ -490,7 +493,6 @@ const Applicants = () => {
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Score</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Status</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Feedback Rating</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -501,21 +503,21 @@ const Applicants = () => {
                     <tr 
                       key={applicant._id || applicant.id || index}
                       className="hover:bg-blue-50 transition-colors cursor-pointer"
-                      onClick={() => handleRowClick(index)}
+                      onClick={() => handleRowClick(applicant)}
                     >
                       <td className="py-4 px-6">
                         <div className="flex items-center space-x-3">
                           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
                             {(applicant.fullName || applicant.name || 'A').charAt(0).toUpperCase()}
                           </div>
-                          <div>
-                            <p className="font-semibold text-gray-900">{applicant.fullName || applicant.name || 'Unknown'}</p>
-                            <p className="text-sm text-gray-500">{applicant.permanentEmail || applicant.email || 'N/A'}</p>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-gray-900 truncate max-w-[200px]">{applicant.fullName || applicant.name || 'Unknown'}</p>
+                            <p className="text-sm text-gray-500 truncate max-w-[200px]">{applicant.permanentEmail || applicant.email || 'N/A'}</p>
                           </div>
                         </div>
                       </td>
                       <td className="py-4 px-6">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium">
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium max-w-[150px] truncate inline-block">
                           {applicant.postAppliedFor || applicant.position || 'N/A'}
                         </span>
                       </td>
@@ -553,11 +555,6 @@ const Applicants = () => {
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="text-sm text-gray-500">
-                          {new Date(applicant.submittedAt || applicant.createdAt || new Date(0)).toLocaleDateString()}
-                        </span>
                       </td>
                     </tr>
                   );
