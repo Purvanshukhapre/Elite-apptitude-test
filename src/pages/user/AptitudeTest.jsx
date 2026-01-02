@@ -561,6 +561,44 @@ const AptitudeTest = () => {
             </div>
           </div>
 
+          {/* Question Navigation for small screens */}
+          <div className="lg:hidden mb-6">
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <h3 className="font-bold text-gray-900 mb-3 text-sm">Question Navigator</h3>
+              <div className="grid grid-cols-5 gap-1">
+                {questionsToUse.map((q, idx) => (
+                  <button
+                    key={q.id}
+                    onClick={() => setCurrentQuestion(idx)}
+                    className={`w-8 h-8 rounded text-xs font-medium transition ${
+                      currentQuestion === idx
+                        ? 'bg-blue-600 text-white'
+                        : answers[q.id] !== undefined
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 space-y-1 text-xs">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-500 rounded mr-2"></div>
+                  <span className="text-gray-600">Answered</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-gray-200 rounded mr-2"></div>
+                  <span className="text-gray-600">Not Answered</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-blue-600 rounded mr-2"></div>
+                  <span className="text-gray-600">Current</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Question Display */}
           <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
             <div className="mb-4">
@@ -580,44 +618,6 @@ const AptitudeTest = () => {
               <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                 {questionsToUse[currentQuestion]?.question || 'Loading question...'}
               </h2>
-            </div>
-
-            {/* Question Navigation for small screens */}
-            <div className="mb-6 lg:hidden">
-              <div className="bg-white rounded-lg shadow-sm p-4">
-                <h3 className="font-bold text-gray-900 mb-3 text-sm">Question Navigator</h3>
-                <div className="grid grid-cols-5 gap-1">
-                  {questionsToUse.map((q, idx) => (
-                    <button
-                      key={q.id}
-                      onClick={() => setCurrentQuestion(idx)}
-                      className={`w-8 h-8 rounded text-xs font-medium transition ${
-                        currentQuestion === idx
-                          ? 'bg-blue-600 text-white'
-                          : answers[q.id] !== undefined
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
-                    >
-                      {idx + 1}
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-3 space-y-1 text-xs">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-green-500 rounded mr-2"></div>
-                    <span className="text-gray-600">Answered</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-gray-200 rounded mr-2"></div>
-                    <span className="text-gray-600">Not Answered</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-blue-600 rounded mr-2"></div>
-                    <span className="text-gray-600">Current</span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <div className="space-y-3">

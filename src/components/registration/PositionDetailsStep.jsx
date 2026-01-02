@@ -93,10 +93,6 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
 
   return (
     <div className="space-y-8">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Position Details</h2>
-        <p className="text-gray-600">Provide information about your desired position and experience</p>
-      </div>
       
       <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
@@ -107,6 +103,33 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+
+          
+          {/* Examination Passed */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Highest Qualification <span className="text-red-500">*</span>
+            </label>
+            <div className="relative rounded-lg transition-all duration-200">
+              <input
+                type="text"
+                name="academicRecords[0].examinationPassed"
+                value={formData.academicRecords[0].examinationPassed || ''}
+                onChange={handleChange}
+                placeholder="Enter Your Heighest Qualification"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.examinationPassed ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
+              />
+            </div>
+            {errors.examinationPassed && (
+              <p className="text-red-500 text-sm mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.examinationPassed}
+              </p>
+            )}
+          </div>
+
           {/* Institution Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -157,31 +180,6 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
             )}
           </div>
 
-          {/* Examination Passed */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Highest Qualification <span className="text-red-500">*</span>
-            </label>
-            <div className="relative rounded-lg transition-all duration-200">
-              <input
-                type="text"
-                name="academicRecords[0].examinationPassed"
-                value={formData.academicRecords[0].examinationPassed || ''}
-                onChange={handleChange}
-                placeholder="Enter Your Heighest Qualification"
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.examinationPassed ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
-              />
-            </div>
-            {errors.examinationPassed && (
-              <p className="text-red-500 text-sm mt-1 flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                {errors.examinationPassed}
-              </p>
-            )}
-          </div>
-
           {/* Year of Passing */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -210,7 +208,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
           {/* Main Subjects */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Main Subjects <span className="text-red-500">*</span>
+              Main Stream <span className="text-red-500">*</span>
             </label>
             <div className="relative rounded-lg transition-all duration-200">
               <input

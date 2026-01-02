@@ -366,9 +366,9 @@ const ApplicantDetails = () => {
     return `${mins}m ${secs}s`;
   };
 
-  // Get questions data if available
-  const questionsAttempted = applicant.testData?.questions || [];
-  const answersProvided = applicant.testData?.answers || [];
+  // Get questions data if available - check multiple possible sources
+  const questionsAttempted = applicant.testData?.questions || applicant.questions || [];
+  const answersProvided = applicant.testData?.answers || applicant.answers || [];
 
   return (
     <div className="space-y-6">
@@ -984,16 +984,68 @@ const ApplicantDetails = () => {
                   </div>
                 ))
                 : 
-                // Display questions from local data
+                // Display questions from local data - enhanced to handle multiple data structures
                 questionsAttempted.map((question, index) => {
-                  const userAnswer = answersProvided[question.id] || answersProvided[index];
-                  const isCorrect = question.correctAnswer === userAnswer;
+                  // Handle different possible data structures for answers
+                  let userAnswer;
+                  if (answersProvided && typeof answersProvided === 'object') {
+                    // If answersProvided is an object, check for the question ID
+                    userAnswer = answersProvided[question.id] !== undefined 
+                      ? answersProvided[question.id] 
+                      : answersProvided[question._id] !== undefined 
+                        ? answersProvided[question._id] 
+                        : answersProvided[question.questionId] !== undefined
+                          ? answersProvided[question.questionId]
+                          : answersProvided[index];
+                  } else if (Array.isArray(answersProvided)) {
+                    // If answersProvided is an array, use the index
+                    userAnswer = answersProvided[index];
+                  } else {
+                    userAnswer = undefined;
+                  }
+                  
+                  // Determine correct answer based on available data
+                  const correctAnswer = question.correctAnswer !== undefined 
+                    ? question.correctAnswer 
+                    : question.correctOptionText !== undefined 
+                      ? question.correctOptionText 
+                      : question.aiAnswer !== undefined
+                        ? question.aiAnswer
+                        : undefined;
+                  
+                  // Determine if the answer is correct
+                  let isCorrect;
+                  if (correctAnswer !== undefined && userAnswer !== undefined) {
+                    if (typeof correctAnswer === 'number' && typeof userAnswer === 'number') {
+                      // Both are numbers (option indices)
+                      isCorrect = correctAnswer === userAnswer;
+                    } else if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
+                      // Both are strings (option text)
+                      isCorrect = correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+                    } else if (question.options && typeof correctAnswer === 'number' && typeof userAnswer === 'string') {
+                      // Correct answer is an index but user answer is a string
+                      isCorrect = question.options[correctAnswer]?.toString().trim().toLowerCase() === userAnswer.toString().trim().toLowerCase();
+                    } else if (question.options && typeof correctAnswer === 'string' && typeof userAnswer === 'number') {
+                      // Correct answer is a string but user answer is an index
+                      isCorrect = question.options[userAnswer]?.toString().trim().toLowerCase() === correctAnswer.toString().trim().toLowerCase();
+                    } else {
+                      isCorrect = correctAnswer === userAnswer;
+                    }
+                  } else {
+                    isCorrect = false; // Default to incorrect if either answer is undefined
+                  }
+                  
+                  // Determine the question text
+                  const questionText = question.question || question.aiQuestion || question.Question || question.text || 'N/A';
+                  
+                  // Determine options
+                  const options = question.options || question.Options || question.optionsList || question.optionList || [];
                   
                   return (
                     <div 
-                      key={index} 
+                      key={question.id || question._id || question.questionId || index} 
                       className={`p-4 rounded-xl border ${
-                        isCorrect 
+                        isCorrect !== undefined && isCorrect
                           ? 'bg-green-50 border-green-200' 
                           : 'bg-red-50 border-red-200'
                       }`}
@@ -1002,29 +1054,38 @@ const ApplicantDetails = () => {
                         <div className="flex-1">
                           <div className="flex items-center mb-2">
                             <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3 ${
-                              isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                              isCorrect !== undefined && isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
                             }`}>
                               {index + 1}
                             </span>
                             <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                              isCorrect !== undefined && isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                             }`}>
-                              {isCorrect ? 'CORRECT' : 'INCORRECT'}
+                              {isCorrect !== undefined && isCorrect ? 'CORRECT' : 'INCORRECT'}
                             </span>
                           </div>
-                          <h4 className="font-medium text-gray-900 mb-3">{question.question}</h4>
+                          <h4 className="font-medium text-gray-900 mb-3">{questionText}</h4>
                           
                           <div className="space-y-2 mb-3">
-                            {question.options?.map((option, optIndex) => {
-                              const isSelected = userAnswer === optIndex;
-                              const isAnswer = question.correctAnswer === optIndex;
+                            {options.map((option, optIndex) => {
+                              const isSelected = userAnswer !== undefined && (
+                                (typeof userAnswer === 'number' && userAnswer === optIndex) ||
+                                (typeof userAnswer === 'string' && option.toString().trim().toLowerCase() === userAnswer.toString().trim().toLowerCase()) ||
+                                (typeof userAnswer === 'number' && option.toString().includes(userAnswer.toString()))
+                              );
+                              
+                              const isAnswer = correctAnswer !== undefined && (
+                                (typeof correctAnswer === 'number' && correctAnswer === optIndex) ||
+                                (typeof correctAnswer === 'string' && option.toString().trim().toLowerCase() === correctAnswer.toString().trim().toLowerCase()) ||
+                                (typeof correctAnswer === 'number' && option.toString().includes(correctAnswer.toString()))
+                              );
                               
                               return (
                                 <div 
                                   key={optIndex}
                                   className={`p-3 rounded-lg border flex items-start ${
                                     isSelected 
-                                      ? isCorrect 
+                                      ? isCorrect !== undefined && isCorrect
                                         ? 'border-green-500 bg-green-100' 
                                         : 'border-red-500 bg-red-100'
                                       : isAnswer
@@ -1034,7 +1095,7 @@ const ApplicantDetails = () => {
                                 >
                                   <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mr-3 mt-0.5 ${
                                     isSelected 
-                                      ? isCorrect 
+                                      ? isCorrect !== undefined && isCorrect
                                         ? 'bg-green-500 text-white' 
                                         : 'bg-red-500 text-white'
                                       : isAnswer
@@ -1046,7 +1107,7 @@ const ApplicantDetails = () => {
                                   <div className="flex-1">
                                     <span className={`${
                                       isSelected 
-                                        ? isCorrect 
+                                        ? isCorrect !== undefined && isCorrect
                                           ? 'text-green-800 font-medium' 
                                           : 'text-red-800 font-medium'
                                         : isAnswer
@@ -1077,8 +1138,8 @@ const ApplicantDetails = () => {
                           </div>
                           
                           <div className="text-sm text-gray-600">
-                            <span className="font-medium">Category:</span> {question.category || 'N/A'} | 
-                            <span className="font-medium ml-1">Difficulty:</span> {question.difficulty || 'N/A'}
+                            <span className="font-medium">Category:</span> {question.category || question.Category || 'N/A'} | 
+                            <span className="font-medium ml-1">Difficulty:</span> {question.difficulty || question.Difficulty || 'N/A'}
                           </div>
                         </div>
                       </div>
