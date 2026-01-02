@@ -350,6 +350,24 @@ const AptitudeTest = () => {
       navigate('/');
       return;
     }
+    
+    // If user has already submitted the test, redirect to feedback
+    if (currentApplicant.testData && currentApplicant.testData.score) {
+      navigate('/feedback');
+      return;
+    }
+
+    // Prevent user from navigating back to test after submission
+    const handlePopState = () => {
+      // Prevent back navigation during test
+      window.history.pushState(null, null, window.location.pathname);
+    };
+
+    // Add the event listener
+    window.addEventListener('popstate', handlePopState);
+    
+    // Push initial state to prevent back navigation
+    window.history.pushState(null, null, window.location.pathname);
 
     const timer = setInterval(() => {
       setTimeLeft(prev => {
@@ -365,7 +383,10 @@ const AptitudeTest = () => {
       });
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [currentApplicant, navigate, handleSubmit]);
 
   const formatTime = (seconds) => {
@@ -385,7 +406,9 @@ const AptitudeTest = () => {
   const answeredCount = Object.keys(answers).length;
   const progress = (answeredCount / questionsToUse.length) * 100;
 
-  if (!currentApplicant) return null;
+  if (!currentApplicant || (currentApplicant.testData && currentApplicant.testData.score)) {
+    return null;
+  }
 
   // Show loading state while fetching questions
   if (loading) {
@@ -499,17 +522,17 @@ const AptitudeTest = () => {
       )}
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 gap-6">
-          {/* Question Navigation */}
-          <div className="lg:hidden mb-4">
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <h3 className="font-bold text-gray-900 mb-3 text-sm">Question Navigator</h3>
-              <div className="grid grid-cols-5 gap-1">
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 lg:gap-8">
+          {/* Question Navigation for larger screens */}
+          <div className="hidden lg:block">
+            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-32">
+              <h3 className="font-bold text-gray-900 mb-4">Question Navigator</h3>
+              <div className="grid grid-cols-5 gap-2">
                 {questionsToUse.map((q, idx) => (
                   <button
                     key={q.id}
                     onClick={() => setCurrentQuestion(idx)}
-                    className={`w-8 h-8 rounded text-xs font-medium transition ${
+                    className={`w-10 h-10 rounded-lg font-medium transition ${
                       currentQuestion === idx
                         ? 'bg-blue-600 text-white'
                         : answers[q.id] !== undefined
@@ -521,17 +544,17 @@ const AptitudeTest = () => {
                   </button>
                 ))}
               </div>
-              <div className="mt-3 space-y-1 text-xs">
+              <div className="mt-6 space-y-2 text-sm">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-500 rounded mr-2"></div>
+                  <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
                   <span className="text-gray-600">Answered</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-gray-200 rounded mr-2"></div>
+                  <div className="w-4 h-4 bg-gray-200 rounded mr-2"></div>
                   <span className="text-gray-600">Not Answered</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-blue-600 rounded mr-2"></div>
+                  <div className="w-4 h-4 bg-blue-600 rounded mr-2"></div>
                   <span className="text-gray-600">Current</span>
                 </div>
               </div>
@@ -557,6 +580,44 @@ const AptitudeTest = () => {
               <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                 {questionsToUse[currentQuestion]?.question || 'Loading question...'}
               </h2>
+            </div>
+
+            {/* Question Navigation for small screens */}
+            <div className="mb-6 lg:hidden">
+              <div className="bg-white rounded-lg shadow-sm p-4">
+                <h3 className="font-bold text-gray-900 mb-3 text-sm">Question Navigator</h3>
+                <div className="grid grid-cols-5 gap-1">
+                  {questionsToUse.map((q, idx) => (
+                    <button
+                      key={q.id}
+                      onClick={() => setCurrentQuestion(idx)}
+                      className={`w-8 h-8 rounded text-xs font-medium transition ${
+                        currentQuestion === idx
+                          ? 'bg-blue-600 text-white'
+                          : answers[q.id] !== undefined
+                          ? 'bg-green-500 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {idx + 1}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 space-y-1 text-xs">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-green-500 rounded mr-2"></div>
+                    <span className="text-gray-600">Answered</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-gray-200 rounded mr-2"></div>
+                    <span className="text-gray-600">Not Answered</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-blue-600 rounded mr-2"></div>
+                    <span className="text-gray-600">Current</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -630,44 +691,6 @@ const AptitudeTest = () => {
                   )}
                 </button>
               )}
-            </div>
-          </div>
-
-          {/* Question Navigation for larger screens */}
-          <div className="hidden lg:block lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-32">
-              <h3 className="font-bold text-gray-900 mb-4">Question Navigator</h3>
-              <div className="grid grid-cols-5 gap-2">
-                {questionsToUse.map((q, idx) => (
-                  <button
-                    key={q.id}
-                    onClick={() => setCurrentQuestion(idx)}
-                    className={`w-10 h-10 rounded-lg font-medium transition ${
-                      currentQuestion === idx
-                        ? 'bg-blue-600 text-white'
-                        : answers[q.id] !== undefined
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    {idx + 1}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-6 space-y-2 text-sm">
-                <div className="flex items-center">
-                  <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
-                  <span className="text-gray-600">Answered</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-4 h-4 bg-gray-200 rounded mr-2"></div>
-                  <span className="text-gray-600">Not Answered</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-4 h-4 bg-blue-600 rounded mr-2"></div>
-                  <span className="text-gray-600">Current</span>
-                </div>
-              </div>
             </div>
           </div>
 

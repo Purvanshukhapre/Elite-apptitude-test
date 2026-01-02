@@ -210,7 +210,7 @@ const ReviewStep = ({ formData }) => {
             <h4 className="font-semibold text-blue-900 mb-1">Next Step</h4>
             <p className="text-blue-800">
               After confirming your details, you'll proceed to the aptitude test. 
-              The test consists of 10 questions and you'll have 30 minutes to complete it.
+              The test consists of 15 questions and you'll have 15 minutes to complete it.
             </p>
           </div>
         </div>

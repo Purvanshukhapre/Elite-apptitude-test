@@ -112,14 +112,14 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               School / College Name <span className="text-red-500">*</span>
             </label>
-            <div className={`relative rounded-lg transition-all duration-200 ${errors.schoolOrCollege ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+            <div className="relative rounded-lg transition-all duration-200">
               <input
                 type="text"
                 name="academicRecords[0].schoolOrCollege"
                 value={formData.academicRecords[0].schoolOrCollege || ''}
                 onChange={handleChange}
                 placeholder="Enter school or college name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.schoolOrCollege ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               />
             </div>
             {errors.schoolOrCollege && (
@@ -137,14 +137,14 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Board / University <span className="text-red-500">*</span>
             </label>
-            <div className={`relative rounded-lg transition-all duration-200 ${errors.boardOrUniversity ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+            <div className="relative rounded-lg transition-all duration-200">
               <input
                 type="text"
                 name="academicRecords[0].boardOrUniversity"
                 value={formData.academicRecords[0].boardOrUniversity || ''}
                 onChange={handleChange}
                 placeholder="Enter board or university name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.boardOrUniversity ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               />
             </div>
             {errors.boardOrUniversity && (
@@ -162,14 +162,14 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Highest Qualification <span className="text-red-500">*</span>
             </label>
-            <div className={`relative rounded-lg transition-all duration-200 ${errors.examinationPassed ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+            <div className="relative rounded-lg transition-all duration-200">
               <input
                 type="text"
                 name="academicRecords[0].examinationPassed"
                 value={formData.academicRecords[0].examinationPassed || ''}
                 onChange={handleChange}
                 placeholder="Enter Your Heighest Qualification"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.examinationPassed ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               />
             </div>
             {errors.examinationPassed && (
@@ -187,14 +187,14 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Year of Passing <span className="text-red-500">*</span>
             </label>
-            <div className={`relative rounded-lg transition-all duration-200 ${errors.yearOfPassing ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+            <div className="relative rounded-lg transition-all duration-200">
               <input
                 type="text"
                 name="academicRecords[0].yearOfPassing"
                 value={formData.academicRecords[0].yearOfPassing || ''}
                 onChange={handleChange}
                 placeholder="Enter year (e.g. 2024)"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.yearOfPassing ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               />
             </div>
             {errors.yearOfPassing && (
@@ -212,14 +212,14 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Main Subjects <span className="text-red-500">*</span>
             </label>
-            <div className={`relative rounded-lg transition-all duration-200 ${errors.mainSubjects ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+            <div className="relative rounded-lg transition-all duration-200">
               <input
                 type="text"
                 name="academicRecords[0].mainSubjects"
                 value={formData.academicRecords[0].mainSubjects || ''}
                 onChange={handleChange}
                 placeholder="Enter main subjects"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.mainSubjects ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               />
             </div>
             {errors.mainSubjects && (
@@ -237,14 +237,14 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Percentage / CGPA <span className="text-red-500">*</span>
             </label>
-            <div className={`relative rounded-lg transition-all duration-200 ${errors.percentage ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+            <div className="relative rounded-lg transition-all duration-200">
               <input
                 type="number"
                 name="academicRecords[0].percentage"
                 value={formData.academicRecords[0].percentage || ''}
                 onChange={handleChange}
                 placeholder="Enter percentage or CGPA"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.percentage ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
                 step="0.01"
               />
             </div>
@@ -273,14 +273,14 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Position Applied For <span className="text-red-500">*</span>
             </label>
-            <div className={`relative rounded-lg transition-all duration-200 ${errors.postAppliedFor ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+            <div className="relative rounded-lg transition-all duration-200">
               <input
                 type="text"
                 name="postAppliedFor"
                 value={formData.postAppliedFor || ''}
                 onChange={handleChange}
                 placeholder="Enter position you're applying for"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.postAppliedFor ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               />
             </div>
             {errors.postAppliedFor && (
@@ -302,7 +302,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
                 name="experienceLevel"
                 value={formData.experienceLevel || ''}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900"
               >
                 <option value="">Select experience level</option>
                 <option value="beginner">Entry Level</option>
@@ -332,7 +332,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
                 name="experience"
                 value={formData.experience || ''}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900"
               >
                 <option value="">Select experience</option>
                 <option value="fresher">Fresher (0 years)</option>
@@ -357,14 +357,14 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               LinkedIn Profile
             </label>
-            <div className={`relative rounded-lg transition-all duration-200 ${errors.linkedInProfile ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+            <div className="relative rounded-lg transition-all duration-200">
               <input
                 type="url"
                 name="linkedInProfile"
                 value={formData.linkedInProfile || ''}
                 onChange={handleChange}
                 placeholder="https://linkedin.com/in/yourprofile"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.linkedInProfile ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               />
             </div>
             {errors.linkedInProfile && (
@@ -394,14 +394,14 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Employer Name <span className="text-red-500">*</span>
               </label>
-              <div className={`relative rounded-lg transition-all duration-200 ${errors.employerName ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+              <div className="relative rounded-lg transition-all duration-200">
                 <input
                   type="text"
                   name="workExperiences[0].employerName"
                   value={formData.workExperiences[0].employerName || ''}
                   onChange={handleChange}
                   placeholder="Enter employer name"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.employerName ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
                 />
               </div>
               {errors.employerName && (
@@ -418,14 +418,14 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Designation <span className="text-red-500">*</span>
               </label>
-              <div className={`relative rounded-lg transition-all duration-200 ${errors.designation ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+              <div className="relative rounded-lg transition-all duration-200">
                 <input
                   type="text"
                   name="workExperiences[0].designation"
                   value={formData.workExperiences[0].designation || ''}
                   onChange={handleChange}
                   placeholder="Enter your designation"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.designation ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
                 />
               </div>
               {errors.designation && (
@@ -444,13 +444,13 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Duration From <span className="text-red-500">*</span>
               </label>
-              <div className={`relative rounded-lg transition-all duration-200 ${errors.durationFrom ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+              <div className="relative rounded-lg transition-all duration-200">
                 <input
                   type="date"
                   name="workExperiences[0].durationFrom"
                   value={formData.workExperiences[0].durationFrom || ''}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.durationFrom ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
                 />
               </div>
               {errors.durationFrom && (
@@ -467,13 +467,13 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Duration To <span className="text-red-500">*</span>
               </label>
-              <div className={`relative rounded-lg transition-all duration-200 ${errors.durationTo ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+              <div className="relative rounded-lg transition-all duration-200">
                 <input
                   type="date"
                   name="workExperiences[0].durationTo"
                   value={formData.workExperiences[0].durationTo || ''}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.durationTo ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
                 />
               </div>
               {errors.durationTo && (
@@ -491,14 +491,14 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Brief Job Profile <span className="text-red-500">*</span>
             </label>
-            <div className={`relative rounded-lg transition-all duration-200 ${errors.briefJobProfile ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+            <div className="relative rounded-lg transition-all duration-200">
               <textarea
                 name="workExperiences[0].briefJobProfile"
                 value={formData.workExperiences[0].briefJobProfile || ''}
                 onChange={handleChange}
                 rows={3}
                 placeholder="Describe your job responsibilities and achievements"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 resize-none text-gray-900 ${errors.briefJobProfile ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               />
             </div>
             {errors.briefJobProfile && (
@@ -525,7 +525,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Primary Skills (Learned in College)<span className="text-red-500">*</span>
           </label>
-          <div className={`relative rounded-lg transition-all duration-200 ${errors.primarySkills ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+          <div className="relative rounded-lg transition-all duration-200">
             <input
               type="text"
               placeholder="Type a skill and press Enter (e.g. Data Structures)"
@@ -533,7 +533,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               onChange={(e) => setPrimarySkillInput(e.target.value)}
               onKeyDown={handlePrimarySkillAdd}
               
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.primarySkills ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
           </div>
           
@@ -570,14 +570,14 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Secondary Skills (Applied in Work Experience)<span className="text-red-500">*</span>
           </label>
-          <div className={`relative rounded-lg transition-all duration-200 ${errors.secondarySkills ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+          <div className="relative rounded-lg transition-all duration-200">
             <input
               type="text"
               placeholder="Type a skill and press Enter (e.g. REST APIs)"
               value={secondarySkillInput}
               onChange={(e) => setSecondarySkillInput(e.target.value)}
               onKeyDown={handleSecondarySkillAdd}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.secondarySkills ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
           </div>
           

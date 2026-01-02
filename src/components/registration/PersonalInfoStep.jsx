@@ -128,7 +128,7 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
                 inputMode="numeric"
                 pattern="[0-9]*"
                 autoFocus
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900"
               />
               {errors.verificationCode && (
                 <p className="text-red-500 text-sm mt-1">{errors.verificationCode}</p>
@@ -165,14 +165,14 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Full Name <span className="text-red-500">*</span>
           </label>
-          <div className={`relative rounded-lg transition-all duration-200 ${errors.fullName ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+          <div className="relative rounded-lg transition-all duration-200">
             <input
               type="text"
               name="fullName"
               value={formData.fullName || ''}
               onChange={handleChange}
               placeholder="Enter your full name"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.fullName ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
           </div>
           {errors.fullName && (
@@ -189,14 +189,14 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Father's Name <span className="text-red-500">*</span>
           </label>
-          <div className={`relative rounded-lg transition-all duration-200 ${errors.fatherName ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+          <div className="relative rounded-lg transition-all duration-200">
             <input
               type="text"
               name="fatherName"
               value={formData.fatherName || ''}
               onChange={handleChange}
               placeholder="Enter father's name"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.fatherName ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
           </div>
           {errors.fatherName && (
@@ -215,7 +215,7 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Age <span className="text-red-500">*</span>
           </label>
-          <div className={`relative rounded-lg transition-all duration-200 ${errors.age ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+          <div className="relative rounded-lg transition-all duration-200">
             <input
               type="number"
               name="age"
@@ -224,7 +224,7 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
               placeholder="Enter your age"
               min="1"
               max="120"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.age ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
           </div>
           {errors.age && (
@@ -301,14 +301,14 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Email Address <span className="text-red-500">*</span>
           </label>
-          <div className={`relative rounded-lg transition-all duration-200 ${errors.permanentEmail ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+          <div className="relative rounded-lg transition-all duration-200">
             <input
               type="email"
               name="permanentEmail"
               value={formData.permanentEmail || ''}
               onChange={handleChange}
               placeholder="Enter your email address"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 pr-24"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 pr-24 text-gray-900 ${errors.permanentEmail ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               disabled={isEmailVerified}
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -345,14 +345,22 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Phone Number <span className="text-red-500">*</span>
           </label>
-          <div className={`relative rounded-lg transition-all duration-200 ${errors.permanentPhone ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+          <div className="relative rounded-lg transition-all duration-200">
             <input
               type="tel"
               name="permanentPhone"
               value={formData.permanentPhone || ''}
-              onChange={handleChange}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (/^\d*$/.test(value) && value.length <= 10) {
+                  handleChange({target: {name: 'permanentPhone', value}});
+                }
+              }}
               placeholder="Enter your phone number"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={10}
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.permanentPhone ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
           </div>
           {errors.permanentPhone && (
@@ -370,14 +378,14 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Languages Known <span className="text-red-500">*</span>
         </label>
-        <div className={`relative rounded-lg transition-all duration-200 ${errors.language ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+        <div className="relative rounded-lg transition-all duration-200">
           <input
             type="text"
             name="language"
             placeholder="Enter languages you know (e.g. English, Hindi, Tamil)"
             value={formData.language || ''}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.language ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
           />
         </div>
         {errors.language && (
@@ -394,14 +402,14 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Address <span className="text-red-500">*</span>
         </label>
-        <div className={`relative rounded-lg transition-all duration-200 ${errors.permanentAddressLine ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+        <div className="relative rounded-lg transition-all duration-200">
           <textarea
             name="permanentAddressLine"
             rows={2}
             value={formData.permanentAddressLine || ''}
             onChange={handleChange}
             placeholder="Enter your complete address"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:ring-offset-0 transition-all duration-200 resize-none"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none transition-all duration-200 resize-none text-gray-900 ${errors.permanentAddressLine ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
           />
         </div>
         {errors.permanentAddressLine && (
@@ -419,7 +427,7 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Pincode <span className="text-red-500">*</span>
           </label>
-          <div className={`relative rounded-lg transition-all duration-200 ${errors.permanentPin ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+          <div className="relative rounded-lg transition-all duration-200">
             <input
               type="text"
               name="permanentPin"
@@ -431,7 +439,7 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
                 }
               }}
               placeholder="Enter your pincode"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.permanentPin ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               inputMode="numeric"
               pattern="[0-9]*"
               maxLength={6}
@@ -461,14 +469,14 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
             <label className="block text-sm font-medium text-gray-700 mb-2">
               First Reference Name
             </label>
-            <div className={`relative rounded-lg transition-all duration-200 ${errors.reference1Name ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+            <div className="relative rounded-lg transition-all duration-200">
               <input
                 type="text"
                 name="reference1Name"
                 value={formData.reference1Name || ''}
                 onChange={handleChange}
                 placeholder="Enter reference name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.reference1Name ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               />
             </div>
             {errors.reference1Name && (
@@ -485,14 +493,22 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
             <label className="block text-sm font-medium text-gray-700 mb-2">
               First Reference Phone
             </label>
-            <div className={`relative rounded-lg transition-all duration-200 ${errors.reference1Mobile ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+            <div className="relative rounded-lg transition-all duration-200">
               <input
                 type="tel"
                 name="reference1Mobile"
                 value={formData.reference1Mobile || ''}
-                onChange={handleChange}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d*$/.test(value) && value.length <= 10) {
+                    handleChange({target: {name: 'reference1Mobile', value}});
+                  }
+                }}
                 placeholder="Enter contact number"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={10}
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.reference1Mobile ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               />
             </div>
             {errors.reference1Mobile && (
@@ -511,14 +527,14 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Second Reference Name
             </label>
-            <div className={`relative rounded-lg transition-all duration-200 ${errors.reference2Name ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+            <div className="relative rounded-lg transition-all duration-200">
               <input
                 type="text"
                 name="reference2Name"
                 value={formData.reference2Name || ''}
                 onChange={handleChange}
                 placeholder="Enter reference name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.reference2Name ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               />
             </div>
             {errors.reference2Name && (
@@ -535,15 +551,22 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Second Reference Phone
             </label>
-            <div className={`relative rounded-lg transition-all duration-200 ${errors.reference2Mobile ? 'ring-2 ring-red-500' : 'focus-within:ring-2 focus-within:ring-blue-500'}`}>
+            <div className="relative rounded-lg transition-all duration-200">
               <input
                 type="tel"
                 name="reference2Mobile"
                 value={formData.reference2Mobile || ''}
-                onChange={handleChange}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d*$/.test(value) && value.length <= 10) {
+                    handleChange({target: {name: 'reference2Mobile', value}});
+                  }
+                }}
                 placeholder="Enter contact number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 maxLength={10}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 ${errors.reference2Mobile ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
               />
             </div>
             {errors.reference2Mobile && (

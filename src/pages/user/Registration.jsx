@@ -202,7 +202,7 @@ const Registration = () => {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.4)_0%,rgba(0,0,0,0.2)_40%,rgba(0,0,0,0)_70%)]" />
 
       {/* ===== CONTENT ===== */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-between p-4 sm:p-6">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-between p-0 sm:p-6">
         {/* LOGO */}
         <header className="pt-6 sm:pt-8 w-full max-w-4xl">
           <div className="flex justify-center">
@@ -218,7 +218,7 @@ const Registration = () => {
 
         {/* FORM CONTENT */}
         <main className="flex-grow flex items-center w-full max-w-4xl mx-auto">
-          <div className="w-full max-w-4xl mx-auto px-4">
+          <div className="w-full max-w-4xl mx-auto px-0 sm:px-4">
             {/* Header */}
             <div className="text-center mb-8 animate-fade-in">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 drop-shadow-lg">
