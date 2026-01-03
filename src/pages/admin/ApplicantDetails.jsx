@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
 import { getTestQuestionsByEmail, getApplicantsByName, getAllTestResults, getAllFeedback } from '../../api';
 import StarRating from '../../components/StarRating';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const ApplicantDetails = () => {
   const { id } = useParams();
@@ -57,10 +59,10 @@ const ApplicantDetails = () => {
         if (localApplicant && localApplicant.fullName) {
           try {
             const data = await getApplicantsByName(localApplicant.fullName);
-            
+                    
             // If the API returns an array, take the first applicant
             const applicantData = Array.isArray(data) ? data[0] : data;
-            
+                    
             if (applicantData) {
               // Fetch test results to get correct answer count
               try {
@@ -68,7 +70,7 @@ const ApplicantDetails = () => {
                 const applicantTestResult = testResults.find(result => 
                   result.fullName?.toLowerCase() === applicantData.fullName?.toLowerCase()
                 );
-                
+                        
                 // Find feedback for this applicant
                 const applicantFeedback = feedbackData.find(feedback => 
                   feedback.email === applicantData.permanentEmail || 
@@ -76,7 +78,7 @@ const ApplicantDetails = () => {
                   feedback.name === applicantData.fullName ||
                   feedback.fullName === applicantData.fullName
                 );
-                
+                        
                 // Add test result and feedback data to the applicant
                 const updatedApplicant = {
                   ...applicantData,
@@ -84,9 +86,9 @@ const ApplicantDetails = () => {
                   correctAnswer: applicantTestResult?.correctAnswer || applicantData.correctAnswer,
                   overallRating: applicantFeedback ? applicantFeedback.rating : undefined
                 };
-                
+                        
                 setApplicant(updatedApplicant);
-                
+                        
                 // Optionally fetch questions data if available
                 const email = updatedApplicant.permanentEmail || updatedApplicant.email;
                 if (email) {
@@ -117,15 +119,15 @@ const ApplicantDetails = () => {
                   feedback.name === applicantData.fullName ||
                   feedback.fullName === applicantData.fullName
                 );
-                
+                        
                 // Set the applicant without test results but with feedback
                 const updatedApplicant = {
                   ...applicantData,
                   overallRating: applicantFeedback ? applicantFeedback.rating : undefined
                 };
-                
+                        
                 setApplicant(updatedApplicant);
-                
+                        
                 // Optionally fetch questions data if available
                 const email = updatedApplicant.permanentEmail || updatedApplicant.email;
                 if (email) {
@@ -156,15 +158,15 @@ const ApplicantDetails = () => {
                 feedback.name === localApplicant.fullName ||
                 feedback.fullName === localApplicant.fullName
               );
-                          
+                                  
               // Set the applicant with feedback data
               const updatedApplicant = {
                 ...localApplicant,
                 overallRating: applicantFeedback ? applicantFeedback.rating : undefined
               };
-                          
+                      
               setApplicant(updatedApplicant);
-              
+                      
               // Optionally fetch questions data if available
               const email = updatedApplicant.permanentEmail || updatedApplicant.email;
               if (email) {
@@ -189,6 +191,7 @@ const ApplicantDetails = () => {
             }
           } catch (apiError) {
             console.error('Error fetching applicant data from API:', apiError);
+            // If API call fails, use the local applicant data with fallback values
             // Find feedback for this applicant
             const applicantFeedback = feedbackData.find(feedback => 
               feedback.email === localApplicant.permanentEmail || 
@@ -196,15 +199,18 @@ const ApplicantDetails = () => {
               feedback.name === localApplicant.fullName ||
               feedback.fullName === localApplicant.fullName
             );
-            
-            // Set the applicant with feedback data
+                    
+            // Set the applicant with local data and feedback, and mark test status as pending
             const updatedApplicant = {
               ...localApplicant,
-              overallRating: applicantFeedback ? applicantFeedback.rating : undefined
+              overallRating: applicantFeedback ? applicantFeedback.rating : undefined,
+              // Ensure test result data is available even if API failed
+              testResult: null,
+              correctAnswer: localApplicant.correctAnswer || null
             };
-            
+                    
             setApplicant(updatedApplicant);
-            
+                    
             // Optionally fetch questions data if available
             const email = updatedApplicant.permanentEmail || updatedApplicant.email;
             if (email) {
@@ -312,7 +318,7 @@ const ApplicantDetails = () => {
       return (applicant.testResult.correctAnswer / totalQuestions) * 100;
     }
     
-    if (applicant.correctAnswer !== undefined) {
+    if (applicant.correctAnswer !== undefined && applicant.correctAnswer !== null) {
       const totalQuestions = 15; // Fixed total as per API
       return (applicant.correctAnswer / totalQuestions) * 100;
     }
@@ -356,7 +362,8 @@ const ApplicantDetails = () => {
   const totalQuestions = 15; // Fixed total as per API
   const correctAnswers = (applicant.testResult && applicant.testResult.correctAnswer !== undefined) 
     ? applicant.testResult.correctAnswer 
-    : (applicant.testData?.correctAnswers || applicant.correctAnswer || 0);
+    : (applicant.testData?.correctAnswers !== undefined ? applicant.testData.correctAnswers : 
+       (applicant.correctAnswer !== undefined && applicant.correctAnswer !== null ? applicant.correctAnswer : 0));
   const timeSpent = applicant.testData?.timeSpent || 0; // in seconds
 
   // Format time spent
@@ -364,6 +371,187 @@ const ApplicantDetails = () => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}m ${secs}s`;
+  };
+
+  // Function to handle PDF download
+  const handleDownloadPDF = () => {
+    if (!applicant) return;
+    
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.text('Applicant Details Report', 20, 20);
+    
+    // Add applicant info
+    doc.setFontSize(14);
+    doc.text('Applicant Information', 20, 40);
+    
+    // Draw a line
+    doc.line(20, 45, 190, 45);
+    
+    // Add applicant details in a table format
+    const applicantDetails = [
+      ['Full Name', applicant.fullName || 'N/A'],
+      ['Email', applicant.permanentEmail || applicant.email || 'N/A'],
+      ['Phone', applicant.permanentPhone || applicant.phone || 'N/A'],
+      ['Date of Birth', applicant.dateOfBirth ? new Date(applicant.dateOfBirth).toLocaleDateString() : 'N/A'],
+      ['Age', applicant.age || 'N/A'],
+      ['Gender', applicant.sex || 'N/A'],
+      ['Marital Status', applicant.maritalStatus || 'N/A'],
+      ['Applied Position', applicant.postAppliedFor || applicant.position || 'N/A'],
+      ['Address', applicant.permanentAddressLine || 'N/A'],
+      ['Pin Code', applicant.permanentPin || 'N/A'],
+      ['Test Status', (applicant.testResult && applicant.testResult.correctAnswer !== undefined) || 
+                   (applicant.testData && applicant.testData.score) || 
+                   (applicant.correctAnswer !== undefined && applicant.correctAnswer !== null) ? 'Completed' : 'Pending'],
+      ['Overall Score', `${score.toFixed(1)}%`],
+      ['Correct Answers', `${correctAnswers}/15`],
+      ['Pass/Fail Status', score >= 60 ? 'PASS' : 'FAIL'],
+      ['Time Spent', formatTime(timeSpent)],
+      ['Feedback Rating', applicant.overallRating !== undefined && applicant.overallRating !== null ? applicant.overallRating : 'N/A']
+    ];
+    
+    autoTable(doc, {
+      startY: 50,
+      head: [['Field', 'Value']],
+      body: applicantDetails,
+      theme: 'grid',
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [59, 130, 246] } // blue-500
+    });
+    
+    // Add academic records if available
+    if (applicant.academicRecords && applicant.academicRecords.length > 0) {
+      let lastY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(14);
+      doc.text('Academic Records', 20, lastY);
+      
+      const academicData = applicant.academicRecords.flatMap((record, index) => [
+        ['Record ' + (index + 1), ''],
+        ['Board/University', record.boardOrUniversity || 'N/A'],
+        ['Examination', record.examinationPassed || 'N/A'],
+        ['Main Subjects', record.mainSubjects || 'N/A'],
+        ['Percentage', record.percentage || 'N/A'],
+        ['Institution', record.schoolOrCollege || 'N/A'],
+        ['Year of Passing', record.yearOfPassing || 'N/A'],
+        ['', ''] // Empty row as separator
+      ]);
+      
+      autoTable(doc, {
+        startY: lastY + 5,
+        head: [['Field', 'Value']],
+        body: academicData,
+        theme: 'grid',
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [59, 130, 246] }
+      });
+    }
+    
+    // Add work experience if available
+    if (applicant.workExperiences && applicant.workExperiences.length > 0) {
+      let lastY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(14);
+      doc.text('Work Experience', 20, lastY);
+      
+      const workData = applicant.workExperiences.flatMap((exp, index) => [
+        ['Experience ' + (index + 1), ''],
+        ['Employer', exp.employerName || 'N/A'],
+        ['Designation', exp.designation || 'N/A'],
+        ['Duration', `${exp.durationFrom || 'N/A'} to ${exp.durationTo || 'N/A'}`],
+        ['Joining Date', exp.joiningDate || 'N/A'],
+        ['Last Date', exp.lastDate || 'N/A'],
+        ['Salary', exp.totalSalary || 'N/A'],
+        ['Job Profile', exp.briefJobProfile || 'N/A'],
+        ['', ''] // Empty row as separator
+      ]);
+      
+      autoTable(doc, {
+        startY: lastY + 5,
+        head: [['Field', 'Value']],
+        body: workData,
+        theme: 'grid',
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [59, 130, 246] }
+      });
+    }
+    
+    // Add test questions and answers if available
+    if (questionsAttempted.length > 0) {
+      let lastY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(14);
+      doc.text('Test Questions & Answers', 20, lastY);
+      
+      const questionData = questionsAttempted.map((question, index) => {
+        let userAnswer;
+        if (answersProvided && typeof answersProvided === 'object') {
+          userAnswer = answersProvided[question.id] !== undefined 
+            ? answersProvided[question.id] 
+            : answersProvided[question._id] !== undefined 
+              ? answersProvided[question._id] 
+              : answersProvided[question.questionId] !== undefined
+                ? answersProvided[question.questionId]
+                : answersProvided[index];
+        } else if (Array.isArray(answersProvided)) {
+          userAnswer = answersProvided[index];
+        } else {
+          userAnswer = undefined;
+        }
+        
+        const correctAnswer = question.correctAnswer !== undefined 
+          ? question.correctAnswer 
+          : question.correctOptionText !== undefined 
+            ? question.correctOptionText 
+            : question.aiAnswer !== undefined
+              ? question.aiAnswer
+              : undefined;
+        
+        let isCorrect;
+        if (correctAnswer !== undefined && userAnswer !== undefined) {
+          if (typeof correctAnswer === 'number' && typeof userAnswer === 'number') {
+            isCorrect = correctAnswer === userAnswer;
+          } else if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
+            isCorrect = correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+          } else if (question.options && typeof correctAnswer === 'number' && typeof userAnswer === 'string') {
+            isCorrect = question.options[correctAnswer]?.toString().trim().toLowerCase() === userAnswer.toString().trim().toLowerCase();
+          } else if (question.options && typeof correctAnswer === 'string' && typeof userAnswer === 'number') {
+            isCorrect = question.options[userAnswer]?.toString().trim().toLowerCase() === correctAnswer.toString().trim().toLowerCase();
+          } else {
+            isCorrect = correctAnswer === userAnswer;
+          }
+        } else {
+          isCorrect = false;
+        }
+        
+        const questionText = question.question || question.aiQuestion || question.Question || question.text || 'N/A';
+        const options = question.options || question.Options || question.OptionsList || [];
+        
+        return [
+          `Q${index + 1}: ${questionText.substring(0, 50)}${questionText.length > 50 ? '...' : ''}`,
+          `Your Answer: ${userAnswer !== undefined ? (typeof userAnswer === 'number' ? options[userAnswer] || userAnswer : userAnswer) : 'Not answered'}`,
+          `Correct Answer: ${correctAnswer !== undefined ? (typeof correctAnswer === 'number' ? options[correctAnswer] || correctAnswer : correctAnswer) : 'N/A'}`,
+          `Status: ${isCorrect ? 'Correct' : 'Incorrect'}`
+        ];
+      });
+      
+      autoTable(doc, {
+        startY: lastY + 5,
+        head: [['Question', 'Your Answer', 'Correct Answer', 'Status']],
+        body: questionData,
+        theme: 'grid',
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [59, 130, 246] },
+        columnStyles: {
+          0: { cellWidth: 40 },
+          1: { cellWidth: 30 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 20 }
+        }
+      });
+    }
+    
+    // Save the PDF
+    doc.save(`applicant-details-${applicant.fullName || applicant.name || 'applicant'}.pdf`);
   };
 
   // Get questions data if available - check multiple possible sources
@@ -519,9 +707,15 @@ const ApplicantDetails = () => {
               <div className="flex justify-between">
                 <span className="text-gray-600">Test Status</span>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  (applicant.testResult && applicant.testResult.correctAnswer !== undefined) ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                  (applicant.testResult && applicant.testResult.correctAnswer !== undefined) || 
+                  (applicant.testData && applicant.testData.score) || 
+                  (applicant.correctAnswer !== undefined && applicant.correctAnswer !== null) ? 
+                  'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
                 }`}>
-                  {(applicant.testResult && applicant.testResult.correctAnswer !== undefined) ? 'Completed' : 'Pending'}
+                  {(applicant.testResult && applicant.testResult.correctAnswer !== undefined) || 
+                   (applicant.testData && applicant.testData.score) || 
+                   (applicant.correctAnswer !== undefined && applicant.correctAnswer !== null) ? 
+                   'Completed' : 'Pending'}
                 </span>
               </div>
               {applicant.testData?.submittedAt && (
@@ -1157,6 +1351,15 @@ const ApplicantDetails = () => {
 
         {/* Action Buttons */}
         <div className="flex justify-end space-x-4">
+          <button
+            onClick={handleDownloadPDF}
+            className="px-6 py-3 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors flex items-center space-x-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+            </svg>
+            <span>Download PDF</span>
+          </button>
           <button
             onClick={() => navigate('/admin/modern/applicants')}
             className="px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"

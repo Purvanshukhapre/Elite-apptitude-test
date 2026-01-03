@@ -6,7 +6,7 @@ export const API_ENDPOINTS = {
   // Applicants
   APPLICANTS: '/auth/student/submit',  // Using proxy in development
   ALL_APPLICANTS: '/auth/student/all',  // Using proxy in development
-  APPLICANTS_BY_NAME: (name) => `/auth/student/name/${name}`,  // Using proxy in development
+  APPLICANTS_BY_NAME: (name) => `/auth/student/name/${encodeURIComponent(name)}`,  // Using proxy in development
   APPLICANT_TEST_DATA: (id) => `/applicants/${id}/test-data`,  // Using proxy in development
   APPLICANT_FEEDBACK: (id) => `/applicants/${id}/feedback`,  // Using proxy in development
   APPLICANT_BY_ID: (id) => `/auth/student/id/${id}`,  // Using proxy in development
