@@ -51,32 +51,48 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
 
   const handlePrimarySkillAdd = (e) => {
     if (e.key === 'Enter') {
-      const skill = primarySkillInput.trim();
-      if (skill) { // If there's text in the input, add the skill
-        e.preventDefault(); // Always prevent default when there's text to add
-        if (!formData.primarySkills.includes(skill)) { // Only add if it doesn't already exist
-          setFormData((prev) => ({
-            ...prev,
-            primarySkills: [...prev.primarySkills, skill],
-          }));
-          setPrimarySkillInput('');
-        }
+      e.preventDefault(); // Always prevent default to handle the input
+      const input = primarySkillInput.trim();
+      
+      if (input) {
+        // Split by comma to allow multiple skills at once
+        const skillsToAdd = input.split(',').map(skill => skill.trim()).filter(skill => skill);
+        
+        setFormData(prev => {
+          const updatedSkills = [...prev.primarySkills];
+          skillsToAdd.forEach(skill => {
+            if (!updatedSkills.includes(skill)) {
+              updatedSkills.push(skill);
+            }
+          });
+          return { ...prev, primarySkills: updatedSkills };
+        });
+        
+        setPrimarySkillInput(''); // Clear the input field
       }
     }
   };
 
   const handleSecondarySkillAdd = (e) => {
     if (e.key === 'Enter') {
-      const skill = secondarySkillInput.trim();
-      if (skill) { // If there's text in the input, add the skill
-        e.preventDefault(); // Always prevent default when there's text to add
-        if (!formData.secondarySkills.includes(skill)) { // Only add if it doesn't already exist
-          setFormData((prev) => ({
-            ...prev,
-            secondarySkills: [...prev.secondarySkills, skill],
-          }));
-          setSecondarySkillInput('');
-        }
+      e.preventDefault(); // Always prevent default to handle the input
+      const input = secondarySkillInput.trim();
+      
+      if (input) {
+        // Split by comma to allow multiple skills at once
+        const skillsToAdd = input.split(',').map(skill => skill.trim()).filter(skill => skill);
+        
+        setFormData(prev => {
+          const updatedSkills = [...prev.secondarySkills];
+          skillsToAdd.forEach(skill => {
+            if (!updatedSkills.includes(skill)) {
+              updatedSkills.push(skill);
+            }
+          });
+          return { ...prev, secondarySkills: updatedSkills };
+        });
+        
+        setSecondarySkillInput(''); // Clear the input field
       }
     }
   };
@@ -530,7 +546,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
           <div className="relative rounded-lg transition-all duration-200">
             <input
               type="text"
-              placeholder="Type a skill and press Enter (e.g. Data Structures)"
+              placeholder="Enter skills (comma-separated) and press Enter (e.g. JavaScript, React, Node)"
               value={primarySkillInput}
               onChange={(e) => setPrimarySkillInput(e.target.value)}
               onKeyDown={handlePrimarySkillAdd}
@@ -580,7 +596,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
           <div className="relative rounded-lg transition-all duration-200">
             <input
               type="text"
-              placeholder="Type a skill and press Enter (e.g. REST APIs)"
+              placeholder="Enter skills (comma-separated) and press Enter (e.g. JavaScript, React, Node)"
               value={secondarySkillInput}
               onChange={(e) => setSecondarySkillInput(e.target.value)}
               onKeyDown={handleSecondarySkillAdd}
