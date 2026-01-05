@@ -52,30 +52,34 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
   const handlePrimarySkillAdd = (e) => {
     if (e.key === 'Enter') {
       const skill = primarySkillInput.trim();
-      if (skill && !formData.primarySkills.includes(skill)) {
-        e.preventDefault(); // Only prevent default when adding a skill
-        setFormData((prev) => ({
-          ...prev,
-          primarySkills: [...prev.primarySkills, skill],
-        }));
-        setPrimarySkillInput('');
+      if (skill) { // If there's text in the input, add the skill
+        e.preventDefault(); // Prevent default to stop moving to next field
+        if (!formData.primarySkills.includes(skill)) { // Only add if it doesn't already exist
+          setFormData((prev) => ({
+            ...prev,
+            primarySkills: [...prev.primarySkills, skill],
+          }));
+          setPrimarySkillInput('');
+        }
       }
-      // If input is empty or skill already exists, allow default Enter behavior (move to next field)
+      // If input is empty, allow default Enter behavior (move to next field)
     }
   };
 
   const handleSecondarySkillAdd = (e) => {
     if (e.key === 'Enter') {
       const skill = secondarySkillInput.trim();
-      if (skill && !formData.secondarySkills.includes(skill)) {
-        e.preventDefault(); // Only prevent default when adding a skill
-        setFormData((prev) => ({
-          ...prev,
-          secondarySkills: [...prev.secondarySkills, skill],
-        }));
-        setSecondarySkillInput('');
+      if (skill) { // If there's text in the input, add the skill
+        e.preventDefault(); // Prevent default to stop moving to next field
+        if (!formData.secondarySkills.includes(skill)) { // Only add if it doesn't already exist
+          setFormData((prev) => ({
+            ...prev,
+            secondarySkills: [...prev.secondarySkills, skill],
+          }));
+          setSecondarySkillInput('');
+        }
       }
-      // If input is empty or skill already exists, allow default Enter behavior (move to next field)
+      // If input is empty, allow default Enter behavior (move to next field)
     }
   };
 
