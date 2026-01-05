@@ -51,29 +51,31 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
 
   const handlePrimarySkillAdd = (e) => {
     if (e.key === 'Enter') {
-      e.preventDefault();
       const skill = primarySkillInput.trim();
       if (skill && !formData.primarySkills.includes(skill)) {
+        e.preventDefault(); // Only prevent default when adding a skill
         setFormData((prev) => ({
           ...prev,
           primarySkills: [...prev.primarySkills, skill],
         }));
         setPrimarySkillInput('');
       }
+      // If input is empty or skill already exists, allow default Enter behavior (move to next field)
     }
   };
 
   const handleSecondarySkillAdd = (e) => {
     if (e.key === 'Enter') {
-      e.preventDefault();
       const skill = secondarySkillInput.trim();
       if (skill && !formData.secondarySkills.includes(skill)) {
+        e.preventDefault(); // Only prevent default when adding a skill
         setFormData((prev) => ({
           ...prev,
           secondarySkills: [...prev.secondarySkills, skill],
         }));
         setSecondarySkillInput('');
       }
+      // If input is empty or skill already exists, allow default Enter behavior (move to next field)
     }
   };
 
