@@ -50,49 +50,33 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
   };
 
   const handlePrimarySkillAdd = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault(); // Always prevent default to handle the input
-      const input = primarySkillInput.trim();
-      
-      if (input) {
-        // Split by comma to allow multiple skills at once
-        const skillsToAdd = input.split(',').map(skill => skill.trim()).filter(skill => skill);
-        
-        setFormData(prev => {
-          const updatedSkills = [...prev.primarySkills];
-          skillsToAdd.forEach(skill => {
-            if (!updatedSkills.includes(skill)) {
-              updatedSkills.push(skill);
-            }
-          });
-          return { ...prev, primarySkills: updatedSkills };
-        });
-        
-        setPrimarySkillInput(''); // Clear the input field
+    const skill = primarySkillInput.trim();
+    if (skill) { // If there's text in the input, add the skill
+      if (e.key === 'Enter') {
+        e.preventDefault(); // Always prevent default when there's text to add
+        if (!formData.primarySkills.includes(skill)) { // Only add if it doesn't already exist
+          setFormData((prev) => ({
+            ...prev,
+            primarySkills: [...prev.primarySkills, skill],
+          }));
+          setPrimarySkillInput('');
+        }
       }
     }
   };
 
   const handleSecondarySkillAdd = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault(); // Always prevent default to handle the input
-      const input = secondarySkillInput.trim();
-      
-      if (input) {
-        // Split by comma to allow multiple skills at once
-        const skillsToAdd = input.split(',').map(skill => skill.trim()).filter(skill => skill);
-        
-        setFormData(prev => {
-          const updatedSkills = [...prev.secondarySkills];
-          skillsToAdd.forEach(skill => {
-            if (!updatedSkills.includes(skill)) {
-              updatedSkills.push(skill);
-            }
-          });
-          return { ...prev, secondarySkills: updatedSkills };
-        });
-        
-        setSecondarySkillInput(''); // Clear the input field
+    const skill = secondarySkillInput.trim();
+    if (skill) { // If there's text in the input, add the skill
+      if (e.key === 'Enter') {
+        e.preventDefault(); // Always prevent default when there's text to add
+        if (!formData.secondarySkills.includes(skill)) { // Only add if it doesn't already exist
+          setFormData((prev) => ({
+            ...prev,
+            secondarySkills: [...prev.secondarySkills, skill],
+          }));
+          setSecondarySkillInput('');
+        }
       }
     }
   };
@@ -543,10 +527,10 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Primary Skills (Learned in College)<span className="text-red-500">*</span>
           </label>
-          <div className="relative rounded-lg transition-all duration-200">
+          <div className="rounded-lg transition-all duration-200">
             <input
               type="text"
-              placeholder="Enter skills (comma-separated) and press Enter (e.g. JavaScript, React, Node)"
+              placeholder="Type a skill and press Enter (e.g. Data Structures)"
               value={primarySkillInput}
               onChange={(e) => setPrimarySkillInput(e.target.value)}
               onKeyDown={handlePrimarySkillAdd}
@@ -558,32 +542,34 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               }}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.primarySkills ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
-            <button
-              type="button"
-              onClick={() => {
-                // Add skills when button is clicked
-                const input = primarySkillInput.trim();
-                if (input) {
-                  // Split by comma to allow multiple skills at once
-                  const skillsToAdd = input.split(',').map(skill => skill.trim()).filter(skill => skill);
-                  
-                  setFormData(prev => {
-                    const updatedSkills = [...prev.primarySkills];
-                    skillsToAdd.forEach(skill => {
-                      if (!updatedSkills.includes(skill)) {
-                        updatedSkills.push(skill);
-                      }
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  // Add skills when button is clicked
+                  const input = primarySkillInput.trim();
+                  if (input) {
+                    // Split by comma to allow multiple skills at once
+                    const skillsToAdd = input.split(',').map(skill => skill.trim()).filter(skill => skill);
+                    
+                    setFormData(prev => {
+                      const updatedSkills = [...prev.primarySkills];
+                      skillsToAdd.forEach(skill => {
+                        if (!updatedSkills.includes(skill)) {
+                          updatedSkills.push(skill);
+                        }
+                      });
+                      return { ...prev, primarySkills: updatedSkills };
                     });
-                    return { ...prev, primarySkills: updatedSkills };
-                  });
-                  
-                  setPrimarySkillInput(''); // Clear the input field
-                }
-              }}
-              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            >
-              Add Skill{primarySkillInput.split(',').filter(skill => skill.trim()).length > 1 ? 's' : ''}
-            </button>
+                    
+                    setPrimarySkillInput(''); // Clear the input field
+                  }
+                }}
+                className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              >
+                Add Skill{primarySkillInput.split(',').filter(skill => skill.trim()).length > 1 ? 's' : ''}
+              </button>
+            </div>
           </div>
           
           {/* Skill tags */}
@@ -619,10 +605,10 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Secondary Skills (Applied in Work Experience)<span className="text-red-500">*</span>
           </label>
-          <div className="relative rounded-lg transition-all duration-200">
+          <div className="rounded-lg transition-all duration-200">
             <input
               type="text"
-              placeholder="Enter skills (comma-separated) and press Enter (e.g. JavaScript, React, Node)"
+              placeholder="Type a skill and press Enter (e.g. REST APIs)"
               value={secondarySkillInput}
               onChange={(e) => setSecondarySkillInput(e.target.value)}
               onKeyDown={handleSecondarySkillAdd}
@@ -634,32 +620,34 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               }}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.secondarySkills ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
-            <button
-              type="button"
-              onClick={() => {
-                // Add skills when button is clicked
-                const input = secondarySkillInput.trim();
-                if (input) {
-                  // Split by comma to allow multiple skills at once
-                  const skillsToAdd = input.split(',').map(skill => skill.trim()).filter(skill => skill);
-                  
-                  setFormData(prev => {
-                    const updatedSkills = [...prev.secondarySkills];
-                    skillsToAdd.forEach(skill => {
-                      if (!updatedSkills.includes(skill)) {
-                        updatedSkills.push(skill);
-                      }
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  // Add skills when button is clicked
+                  const input = secondarySkillInput.trim();
+                  if (input) {
+                    // Split by comma to allow multiple skills at once
+                    const skillsToAdd = input.split(',').map(skill => skill.trim()).filter(skill => skill);
+                    
+                    setFormData(prev => {
+                      const updatedSkills = [...prev.secondarySkills];
+                      skillsToAdd.forEach(skill => {
+                        if (!updatedSkills.includes(skill)) {
+                          updatedSkills.push(skill);
+                        }
+                      });
+                      return { ...prev, secondarySkills: updatedSkills };
                     });
-                    return { ...prev, secondarySkills: updatedSkills };
-                  });
-                  
-                  setSecondarySkillInput(''); // Clear the input field
-                }
-              }}
-              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            >
-              Add Skill{secondarySkillInput.split(',').filter(skill => skill.trim()).length > 1 ? 's' : ''}
-            </button>
+                    
+                    setSecondarySkillInput(''); // Clear the input field
+                  }
+                }}
+                className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              >
+                Add Skill{secondarySkillInput.split(',').filter(skill => skill.trim()).length > 1 ? 's' : ''}
+              </button>
+            </div>
           </div>
           
           {/* Skill tags */}
