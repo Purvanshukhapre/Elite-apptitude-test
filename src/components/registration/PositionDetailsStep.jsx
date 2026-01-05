@@ -558,6 +558,32 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               }}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.primarySkills ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
+            <button
+              type="button"
+              onClick={() => {
+                // Add skills when button is clicked
+                const input = primarySkillInput.trim();
+                if (input) {
+                  // Split by comma to allow multiple skills at once
+                  const skillsToAdd = input.split(',').map(skill => skill.trim()).filter(skill => skill);
+                  
+                  setFormData(prev => {
+                    const updatedSkills = [...prev.primarySkills];
+                    skillsToAdd.forEach(skill => {
+                      if (!updatedSkills.includes(skill)) {
+                        updatedSkills.push(skill);
+                      }
+                    });
+                    return { ...prev, primarySkills: updatedSkills };
+                  });
+                  
+                  setPrimarySkillInput(''); // Clear the input field
+                }
+              }}
+              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            >
+              Add Skill{primarySkillInput.split(',').filter(skill => skill.trim()).length > 1 ? 's' : ''}
+            </button>
           </div>
           
           {/* Skill tags */}
@@ -608,6 +634,32 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               }}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.secondarySkills ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
+            <button
+              type="button"
+              onClick={() => {
+                // Add skills when button is clicked
+                const input = secondarySkillInput.trim();
+                if (input) {
+                  // Split by comma to allow multiple skills at once
+                  const skillsToAdd = input.split(',').map(skill => skill.trim()).filter(skill => skill);
+                  
+                  setFormData(prev => {
+                    const updatedSkills = [...prev.secondarySkills];
+                    skillsToAdd.forEach(skill => {
+                      if (!updatedSkills.includes(skill)) {
+                        updatedSkills.push(skill);
+                      }
+                    });
+                    return { ...prev, secondarySkills: updatedSkills };
+                  });
+                  
+                  setSecondarySkillInput(''); // Clear the input field
+                }
+              }}
+              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            >
+              Add Skill{secondarySkillInput.split(',').filter(skill => skill.trim()).length > 1 ? 's' : ''}
+            </button>
           </div>
           
           {/* Skill tags */}
