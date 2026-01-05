@@ -534,7 +534,12 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               value={primarySkillInput}
               onChange={(e) => setPrimarySkillInput(e.target.value)}
               onKeyDown={handlePrimarySkillAdd}
-              
+              onInput={(e) => {
+                // Handle Android Enter key (IME action) - this catches the Enter key on Android virtual keyboards
+                if (e.nativeEvent.inputType === 'insertLineBreak') {
+                  handlePrimarySkillAdd(e);
+                }
+              }}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.primarySkills ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
           </div>
@@ -579,6 +584,12 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               value={secondarySkillInput}
               onChange={(e) => setSecondarySkillInput(e.target.value)}
               onKeyDown={handleSecondarySkillAdd}
+              onInput={(e) => {
+                // Handle Android Enter key (IME action) - this catches the Enter key on Android virtual keyboards
+                if (e.nativeEvent.inputType === 'insertLineBreak') {
+                  handleSecondarySkillAdd(e);
+                }
+              }}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.secondarySkills ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
           </div>
