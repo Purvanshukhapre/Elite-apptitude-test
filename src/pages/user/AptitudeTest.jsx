@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
 import { sampleQuestions } from '../../data/questions';
-import { submitTest } from '../../api';
+import { submitTest, sendTestSubmissionEmail } from '../../api';
 import { submitTestQuestions } from '../../services/apiService';
 
 const AptitudeTest = () => {
@@ -115,6 +115,19 @@ const AptitudeTest = () => {
         correctAnswers: result.correctAnswers
       });
       
+      // Send email notification about test submission
+      try {
+        const emailData = {
+          email: currentApplicant.permanentEmail || currentApplicant.email,
+          name: currentApplicant.fullName
+        };
+        await sendTestSubmissionEmail(emailData);
+        // console.log('Email notification sent successfully');
+      } catch (emailError) {
+        console.error('Failed to send email notification:', emailError);
+        // Don't fail the entire submission if email fails
+      }
+      
       // Only navigate to feedback if submission was successful
       navigate('/feedback');
     } catch (error) {
@@ -128,6 +141,19 @@ const AptitudeTest = () => {
         correctAnswers: testData.correctAnswers,
         email: currentApplicant.permanentEmail || currentApplicant.email
       });
+      
+      // Send email notification about test submission even if API submission failed
+      try {
+        const emailData = {
+          email: currentApplicant.permanentEmail || currentApplicant.email,
+          name: currentApplicant.fullName
+        };
+        await sendTestSubmissionEmail(emailData);
+        // console.log('Email notification sent successfully even after API error');
+      } catch (emailError) {
+        console.error('Failed to send email notification:', emailError);
+        // Don't fail the submission flow if email fails
+      }
       
       // Show error message to user
       if (window.confirm('Test submission failed due to a network error. Your test has been saved locally. Would you like to continue to the feedback page?')) {

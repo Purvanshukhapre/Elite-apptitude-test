@@ -33,7 +33,8 @@ export const API_ENDPOINTS = {
   TEST_RESULTS_ALL: '/result/all',  // Using proxy in development
   
   // Email
-  SEND_EMAIL: '/admin/email/send'  // Using proxy in development
+  SEND_EMAIL: '/admin/email/send',  // Using proxy in development
+  SUBMIT_EMAIL_NOTIFICATION: '/email-verification/submit'  // Using proxy in development
 };
 
 // Utility function to build full URL
@@ -277,6 +278,14 @@ export const getTestQuestionsByEmail = async (email) => {
 // Email API function
 export const sendEmail = async (emailData) => {
   return apiCall(API_ENDPOINTS.SEND_EMAIL, {
+    method: 'POST',
+    body: JSON.stringify(emailData)
+  });
+};
+
+// Email notification API function for test submission
+export const sendTestSubmissionEmail = async (emailData) => {
+  return apiCall(API_ENDPOINTS.SUBMIT_EMAIL_NOTIFICATION, {
     method: 'POST',
     body: JSON.stringify(emailData)
   });

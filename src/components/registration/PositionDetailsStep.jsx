@@ -542,7 +542,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               }}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.primarySkills ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
-            <div className="mt-2">
+            <div className="mt-2 flex justify-start sm:justify-start">
               <button
                 type="button"
                 onClick={() => {
@@ -565,7 +565,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
                     setPrimarySkillInput(''); // Clear the input field
                   }
                 }}
-                className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-auto px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm whitespace-nowrap"
               >
                 Add Skill{primarySkillInput.split(',').filter(skill => skill.trim()).length > 1 ? 's' : ''}
               </button>
@@ -620,7 +620,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
               }}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all text-gray-900 ${errors.secondarySkills ? 'border-red-500 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500'}`}
             />
-            <div className="mt-2">
+            <div className="mt-2 flex justify-start sm:justify-start">
               <button
                 type="button"
                 onClick={() => {
@@ -643,7 +643,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
                     setSecondarySkillInput(''); // Clear the input field
                   }
                 }}
-                className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-auto px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm whitespace-nowrap"
               >
                 Add Skill{secondarySkillInput.split(',').filter(skill => skill.trim()).length > 1 ? 's' : ''}
               </button>

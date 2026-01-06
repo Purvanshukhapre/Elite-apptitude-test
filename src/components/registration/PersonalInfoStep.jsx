@@ -32,16 +32,30 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
         body: JSON.stringify({ email: formData.permanentEmail }),
       });
       
+      // Try to parse the response as JSON, even for error responses
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        // If JSON parsing fails, create a default error message
+        console.warn('Failed to parse response as JSON:', parseError);
+      }
+      
       if (response.ok) {
-        const data = await response.json();
         console.log('Verification email sent:', data);
         setShowVerificationModal(true);
         // Reset verification state
         setIsEmailVerified(false);
         setVerificationCode('');
       } else {
-        const errorData = await response.json();
-        setErrors(prev => ({ ...prev, permanentEmail: errorData.message || 'Failed to send verification email' }));
+        // Handle different error responses from the backend
+        if (data.message && data.message.toLowerCase().includes('already')) {
+          setErrors(prev => ({ ...prev, permanentEmail: data.message || 'This email is already registered' }));
+        } else if (data.error && data.error.toLowerCase().includes('already')) {
+          setErrors(prev => ({ ...prev, permanentEmail: data.error || 'This email is already registered' }));
+        } else {
+          setErrors(prev => ({ ...prev, permanentEmail: data.message || data.error || 'Failed to send verification email' }));
+        }
       }
     } catch (error) {
       console.error('Error sending verification email:', error);
@@ -67,8 +81,16 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
         body: JSON.stringify({ verificationCode }),
       });
       
+      // Try to parse the response as JSON, even for error responses
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        // If JSON parsing fails, create a default error message
+        console.warn('Failed to parse response as JSON:', parseError);
+      }
+      
       if (response.ok) {
-        const data = await response.json();
         console.log('Email verified:', data);
         setIsEmailVerified(true);
         if (onEmailVerified) {
@@ -77,8 +99,18 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
         setShowVerificationModal(false);
         setErrors(prev => ({ ...prev, verificationCode: '' }));
       } else {
-        const errorData = await response.json();
-        setErrors(prev => ({ ...prev, verificationCode: errorData.message || 'Invalid verification code' }));
+        // Handle different error responses from the backend
+        if (data.message && data.message.toLowerCase().includes('already')) {
+          setErrors(prev => ({ ...prev, verificationCode: data.message || 'This email is already registered' }));
+          // Also set the email error since the email is already registered
+          setErrors(prev => ({ ...prev, permanentEmail: data.message || 'This email is already registered' }));
+        } else if (data.error && data.error.toLowerCase().includes('already')) {
+          setErrors(prev => ({ ...prev, verificationCode: data.error || 'This email is already registered' }));
+          // Also set the email error since the email is already registered
+          setErrors(prev => ({ ...prev, permanentEmail: data.error || 'This email is already registered' }));
+        } else {
+          setErrors(prev => ({ ...prev, verificationCode: data.message || data.error || 'Invalid verification code' }));
+        }
       }
     } catch (error) {
       console.error('Error verifying code:', error);

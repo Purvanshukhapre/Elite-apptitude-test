@@ -127,14 +127,10 @@ const Registration = () => {
     if (step === 1) {
       if (validateStep1()) {
         setStep(2);
-        // Scroll to top when moving to next step
-        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } else if (step === 2) {
       if (validateStep2()) {
         setStep(3);
-        // Scroll to top when moving to next step
-        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
   };
@@ -192,7 +188,7 @@ const Registration = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden text-white">
+    <div className="relative min-h-screen w-full overflow-hidden text-white">
       {/* ===== ANIMATED LOW-POLY BACKGROUND ===== */}
       <div
         className="absolute inset-0 bg-cover bg-center animate-bgDrift"
@@ -206,54 +202,54 @@ const Registration = () => {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.4)_0%,rgba(0,0,0,0.2)_40%,rgba(0,0,0,0)_70%)]" />
 
       {/* ===== CONTENT ===== */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-between p-0 sm:p-4 md:p-6">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-between p-0 sm:p-6">
         {/* LOGO */}
-        <header className="pt-4 sm:pt-6 w-full max-w-4xl px-4">
+        <header className="pt-6 sm:pt-8 w-full max-w-4xl">
           <div className="flex justify-center">
-            <div className="bg-white rounded-2xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 shadow-2xl border border-gray-200">
+            <div className="bg-white rounded-2xl px-6 py-4 sm:px-8 sm:py-5 shadow-2xl border border-gray-200">
               <img
                 src={logo}
                 alt="Elite Associate"
-                className="h-10 sm:h-12 md:h-16 lg:h-20 w-auto mx-auto object-contain max-w-full"
+                className="h-12 sm:h-16 md:h-20 w-auto mx-auto"
               />
             </div>
           </div>
         </header>
 
         {/* FORM CONTENT */}
-        <main className="flex-grow flex items-center w-full max-w-4xl mx-auto px-4">
-          <div className="w-full max-w-4xl mx-auto">
+        <main className="flex-grow flex items-center w-full max-w-4xl mx-auto">
+          <div className="w-full max-w-4xl mx-auto px-0 sm:px-4">
             {/* Header */}
-            <div className="text-center mb-6 sm:mb-8 animate-fade-in">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 drop-shadow-lg">
+            <div className="text-center mb-8 animate-fade-in">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 drop-shadow-lg">
                 Complete Your Registration
               </h1>
-              <p className="text-blue-100 text-sm sm:text-base md:text-lg lg:text-xl opacity-90">
+              <p className="text-blue-100 text-base sm:text-lg md:text-xl opacity-90">
                 Fill in your details to begin the aptitude test
               </p>
             </div>
 
             {/* Progress Bar */}
-            <div className="mb-6 sm:mb-8">
+            <div className="mb-8">
               <ProgressBar step={step} />
             </div>
 
             {/* Form Card */}
-            <div className="bg-white/95 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 animate-slide-up shadow-2xl border border-white/30 max-w-full overflow-x-auto">
+            <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 sm:p-8 animate-slide-up shadow-2xl border border-white/30">
               {step !== 3 && (
-                <div className="mb-4 sm:mb-6">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1 sm:mb-2">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
                     {step === 1 && 'Personal Information'}
                     {step === 2 && 'Position & Experience Details'}
                   </h2>
-                  <p className="text-gray-600 text-sm sm:text-base">
+                  <p className="text-gray-600">
                     {step === 1 && 'Please provide your personal details'}
                     {step === 2 && 'Tell us about your experience and qualifications'}
                   </p>
                 </div>
               )}
               
-              <form id="registration-form" className="space-y-4 sm:space-y-6">
+              <form id="registration-form" className="space-y-6">
                 {renderStep()}
                 
                 <NavigationButtons
@@ -266,14 +262,14 @@ const Registration = () => {
               </form>
             </div>
             
-            <div className="text-center mt-4 sm:mt-6 text-blue-100/80 text-xs sm:text-sm">
+            <div className="text-center mt-6 text-blue-100/80 text-sm">
               <p>Need help? Contact our support team at support@eliteassociate.com</p>
             </div>
           </div>
         </main>
 
         {/* FOOTER */}
-        <footer className="pb-4 text-blue-200/80 text-xs sm:text-sm text-center px-4">
+        <footer className="pb-4 text-blue-200/80 text-sm text-center">
           © {new Date().getFullYear()} Elite Associate — Placement & Training Center
         </footer>
       </div>
