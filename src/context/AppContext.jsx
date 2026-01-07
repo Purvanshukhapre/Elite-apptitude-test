@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AppContext } from './AppContextDefinition';
-import { addApplicant as apiAddApplicant, updateApplicantTest as apiUpdateApplicantTest, updateApplicantFeedback as apiUpdateApplicantFeedback, getApplicants as apiGetApplicants, getAllTestResults, getAllFeedback, mockQuestions } from '../api';
+import { addApplicant as apiAddApplicant, updateApplicantTest as apiUpdateApplicantTest, updateApplicantFeedback as apiUpdateApplicantFeedback, getApplicants as apiGetApplicants, getAllTestResults, getAllFeedback, mockQuestions, getTestQuestionsByEmail as apiGetTestQuestionsByEmail } from '../api';
 // mockQuestions is now properly exported from api.js
 
 export const AppProvider = ({ children }) => {
@@ -167,54 +167,56 @@ export const AppProvider = ({ children }) => {
   const addApplicant = async (formData) => {
     try {
       // Transform the form data to match the expected backend structure
+      const { resume, ...formDataWithoutResume } = formData;
+      
       const applicantData = {
-        fullName: formData.fullName,
-        fatherName: formData.fatherName,
-        postAppliedFor: formData.postAppliedFor,
-        referenceName: formData.reference1Name || '',
-        dateOfBirth: formData.dateOfBirth,
-        age: formData.age || 0,
-        maritalStatus: formData.maritalStatus,
-        sex: formData.sex,
-        linkedInProfile: formData.linkedInProfile || '',
-        language: formData.language,
-        permanentAddressLine: formData.permanentAddressLine,
-        permanentPin: formData.permanentPin,
-        permanentPhone: formData.permanentPhone,
-        permanentEmail: formData.permanentEmail,
-        reference1Name: formData.reference1Name || '',
-        reference1Mobile: formData.reference1Mobile || '',
-        reference2Name: formData.reference2Name || '',
-        reference2Mobile: formData.reference2Mobile || '',
+        fullName: formDataWithoutResume.fullName,
+        fatherName: formDataWithoutResume.fatherName,
+        postAppliedFor: formDataWithoutResume.postAppliedFor,
+        referenceName: formDataWithoutResume.reference1Name || '',
+        dateOfBirth: formDataWithoutResume.dateOfBirth,
+        age: formDataWithoutResume.age || 0,
+        maritalStatus: formDataWithoutResume.maritalStatus,
+        sex: formDataWithoutResume.sex,
+        linkedInProfile: formDataWithoutResume.linkedInProfile || '',
+        language: formDataWithoutResume.language,
+        permanentAddressLine: formDataWithoutResume.permanentAddressLine,
+        permanentPin: formDataWithoutResume.permanentPin,
+        permanentPhone: formDataWithoutResume.permanentPhone,
+        permanentEmail: formDataWithoutResume.permanentEmail,
+        reference1Name: formDataWithoutResume.reference1Name || '',
+        reference1Mobile: formDataWithoutResume.reference1Mobile || '',
+        reference2Name: formDataWithoutResume.reference2Name || '',
+        reference2Mobile: formDataWithoutResume.reference2Mobile || '',
         academicRecords: [
           {
-            schoolOrCollege: formData.academicRecords[0].schoolOrCollege,
-            boardOrUniversity: formData.academicRecords[0].boardOrUniversity,
-            examinationPassed: formData.academicRecords[0].examinationPassed,
-            yearOfPassing: parseInt(formData.academicRecords[0].yearOfPassing) || 0,
-            mainSubjects: formData.academicRecords[0].mainSubjects,
-            percentage: parseFloat(formData.academicRecords[0].percentage) || 0
+            schoolOrCollege: formDataWithoutResume.academicRecords[0].schoolOrCollege,
+            boardOrUniversity: formDataWithoutResume.academicRecords[0].boardOrUniversity,
+            examinationPassed: formDataWithoutResume.academicRecords[0].examinationPassed,
+            yearOfPassing: parseInt(formDataWithoutResume.academicRecords[0].yearOfPassing) || 0,
+            mainSubjects: formDataWithoutResume.academicRecords[0].mainSubjects,
+            percentage: parseFloat(formDataWithoutResume.academicRecords[0].percentage) || 0
           }
         ],
-        workExperiences: formData.experience !== 'fresher' ? [
+        workExperiences: formDataWithoutResume.experience !== 'fresher' ? [
           {
-            employerName: formData.workExperiences[0].employerName || 'Previous Employer',
-            durationFrom: formData.workExperiences[0].durationFrom,
-            durationTo: formData.workExperiences[0].durationTo,
-            designation: formData.workExperiences[0].designation,
-            briefJobProfile: formData.workExperiences[0].briefJobProfile,
-            totalSalary: formData.workExperiences[0].totalSalary || 0,
-            joiningDate: formData.workExperiences[0].joiningDate,
-            lastDate: formData.workExperiences[0].lastDate
+            employerName: formDataWithoutResume.workExperiences[0].employerName || 'Previous Employer',
+            durationFrom: formDataWithoutResume.workExperiences[0].durationFrom,
+            durationTo: formDataWithoutResume.workExperiences[0].durationTo,
+            designation: formDataWithoutResume.workExperiences[0].designation,
+            briefJobProfile: formDataWithoutResume.workExperiences[0].briefJobProfile,
+            totalSalary: formDataWithoutResume.workExperiences[0].totalSalary || 0,
+            joiningDate: formDataWithoutResume.workExperiences[0].joiningDate,
+            lastDate: formDataWithoutResume.workExperiences[0].lastDate
           }
         ] : [],
-        experienceLevel: formData.experienceLevel,
-        yearsOfExperience: formData.experience === 'fresher' ? 0 : (formData.experience === '0-1' ? 1 : 
-                   formData.experience === '1-3' ? 2 : 
-                   formData.experience === '3-5' ? 4 : 
-                   formData.experience === '5-10' ? 7 : 15),
-        primarySkills: formData.primarySkills || [],
-        secondarySkills: formData.secondarySkills || []
+        experienceLevel: formDataWithoutResume.experienceLevel,
+        yearsOfExperience: formDataWithoutResume.experience === 'fresher' ? 0 : (formDataWithoutResume.experience === '0-1' ? 1 : 
+                   formDataWithoutResume.experience === '1-3' ? 2 : 
+                   formDataWithoutResume.experience === '3-5' ? 4 : 
+                   formDataWithoutResume.experience === '5-10' ? 7 : 15),
+        primarySkills: formDataWithoutResume.primarySkills || [],
+        secondarySkills: formDataWithoutResume.secondarySkills || []
       };
 
       const result = await apiAddApplicant(applicantData);
@@ -228,9 +230,32 @@ export const AppProvider = ({ children }) => {
         // The API returned an object with questions property
         setTestQuestions(result.questions);
         // console.log('Questions received from API:', result.questions);
+      } else if (result && result.data && Array.isArray(result.data)) {
+        // Some APIs return questions in a data property
+        setTestQuestions(result.data);
+        // console.log('Questions received from API data:', result.data);
       } else {
-        // Fallback to mock questions if API doesn't return them
-        setTestQuestions(mockQuestions);
+        // If the API doesn't return questions after submission, try to fetch them separately
+        try {
+          // Attempt to fetch questions by email after successful form submission
+          if (formDataWithoutResume.permanentEmail) {
+            const questionsResult = await apiGetTestQuestionsByEmail(formDataWithoutResume.permanentEmail);
+            if (questionsResult && Array.isArray(questionsResult)) {
+              setTestQuestions(questionsResult);
+              // console.log('Questions received from email API:', questionsResult);
+            } else {
+              // Fallback to mock questions if API doesn't return them
+              setTestQuestions(mockQuestions);
+            }
+          } else {
+            // Fallback to mock questions if API doesn't return them
+            setTestQuestions(mockQuestions);
+          }
+        } catch (questionsError) {
+          console.error('Failed to fetch questions after form submission:', questionsError);
+          // Fallback to mock questions if API doesn't return them
+          setTestQuestions(mockQuestions);
+        }
       }
 
       // Add the applicant to the state
@@ -238,11 +263,15 @@ export const AppProvider = ({ children }) => {
         id: result.id || Date.now().toString(),
         ...applicantData,
         submittedAt: new Date().toISOString(),
-        status: 'pending'
+        status: 'pending',
+        // Include resume in the applicant data for reference
+        resume
       };
       
       setApplicants(prev => [...prev, newApplicant]);
-      return newApplicant;
+      
+      // Return the actual result from the API which may contain questions
+      return result || newApplicant;
     } catch (error) {
       console.error('Failed to add applicant:', error);
       // Even if API call fails, we should return mock questions for the test

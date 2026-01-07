@@ -152,10 +152,16 @@ export const getApplicantsByName = async (name) => {
 };
 
 export const addApplicant = async (applicantData) => {
-  return apiCall(API_ENDPOINTS.APPLICANTS, {
+  // For this endpoint, we only send JSON data (resume is handled separately)
+  const options = {
     method: 'POST',
-    body: JSON.stringify(applicantData)
-  });
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(applicantData),
+  };
+  
+  return apiCall(API_ENDPOINTS.APPLICANTS, options);
 };
 
 export const updateApplicantTest = async (applicantId, testData) => {
