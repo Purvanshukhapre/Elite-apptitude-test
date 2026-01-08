@@ -179,6 +179,22 @@ const Registration = () => {
       
       setCurrentApplicant(applicant);
       
+      // Store user identity information in sessionStorage as requested by the user
+      // This ensures email and full name are available when submitting test questions
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        const userIdentity = {
+          email: formData.permanentEmail || formData.email,
+          fullName: formData.fullName
+        };
+        
+        try {
+          window.sessionStorage.setItem('userIdentity', JSON.stringify(userIdentity));
+          console.log('User identity stored in sessionStorage:', userIdentity);
+        } catch (storageError) {
+          console.error('Failed to store user identity in sessionStorage:', storageError);
+        }
+      }
+      
       // Note: Questions are already set in the AppContext after form submission
       // No need to set them again here as they're available in the context
       

@@ -292,7 +292,10 @@ export const AppProvider = ({ children }) => {
     try {
       await apiUpdateApplicantTest(applicantId, testData);
       setApplicants(prev => prev.map(app => 
-        (app.id === applicantId || app.email === testData.applicantId || app.fullName === testData.applicantName || app.name === testData.applicantName) // Also match by email, name, or fullName if ID doesn't match
+        (app.id === applicantId || 
+         (testData.email && app.permanentEmail === testData.email) || 
+         (testData.applicantId && app.id === testData.applicantId) ||
+         (testData.applicantName && app.fullName === testData.applicantName)) // More specific matching to prevent incorrect updates
           ? { 
               ...app, 
               testData, 
@@ -313,7 +316,10 @@ export const AppProvider = ({ children }) => {
       console.error('Failed to update applicant test:', error);
       // Fallback to local storage
       setApplicants(prev => prev.map(app => 
-        (app.id === applicantId || app.email === testData.applicantId || app.fullName === testData.applicantName || app.name === testData.applicantName) // Also match by email, name, or fullName if ID doesn't match
+        (app.id === applicantId || 
+         (testData.email && app.permanentEmail === testData.email) || 
+         (testData.applicantId && app.id === testData.applicantId) ||
+         (testData.applicantName && app.fullName === testData.applicantName)) // More specific matching to prevent incorrect updates
           ? { 
               ...app, 
               testData, 

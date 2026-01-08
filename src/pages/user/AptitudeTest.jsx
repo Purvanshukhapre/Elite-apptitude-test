@@ -24,13 +24,118 @@ const AptitudeTest = () => {
     // Set submitting state to prevent multiple clicks
     setIsSubmitting(true);
     
-    // Validate that currentApplicant exists and has required properties
-    if (!currentApplicant || !currentApplicant.fullName) {
-      console.error('Current applicant data is missing:', { currentApplicant });
-      alert('Error: Unable to submit test. Missing user information. Please restart the test or contact support.');
+    // Get user identity information (email and fullName) from multiple sources
+    // This follows the approach requested by the user to store and retrieve identity info
+    let userEmail = null;
+    let userFullName = null;
+    
+    // First, try to get from sessionStorage (where it should be stored after registration)
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const storedIdentity = sessionStorage.getItem('userIdentity');
+      if (storedIdentity) {
+        try {
+          const identity = JSON.parse(storedIdentity);
+          userEmail = identity.email;
+          userFullName = identity.fullName;
+        } catch (e) {
+          console.error('Failed to parse stored user identity:', e);
+        }
+      }
+    }
+    
+    // If not found in sessionStorage, try to get from localStorage
+    if (!userEmail && !userFullName && typeof window !== 'undefined' && window.localStorage) {
+      const storedIdentity = localStorage.getItem('userIdentity');
+      if (storedIdentity) {
+        try {
+          const identity = JSON.parse(storedIdentity);
+          userEmail = identity.email;
+          userFullName = identity.fullName;
+        } catch (e) {
+          console.error('Failed to parse stored user identity from localStorage:', e);
+        }
+      }
+    }
+    
+    // If still not found, try to get from the currentApplicant context as fallback
+    if (!userEmail && !userFullName) {
+      let applicantToUse = currentApplicant;
+      
+      if (Array.isArray(currentApplicant)) {
+        // Check if the array contains question objects instead of applicant objects
+        const firstElement = currentApplicant[0];
+        if (firstElement && firstElement.question !== undefined && firstElement.options !== undefined) {
+          // This array contains question objects, not applicant objects
+          // This indicates a bug where questions were mistakenly assigned to currentApplicant
+          console.error('BUG DETECTED: currentApplicant contains question objects instead of applicant objects');
+          
+          // Try to get the correct applicant from localStorage or sessionStorage
+          if (typeof window !== 'undefined' && window.sessionStorage) {
+            const storedApplicant = sessionStorage.getItem('currentApplicant');
+            if (storedApplicant) {
+              try {
+                applicantToUse = JSON.parse(storedApplicant);
+              } catch (e) {
+                console.error('Failed to parse stored applicant data:', e);
+              }
+            }
+          }
+          
+          // If we still don't have a valid applicant, try to find in the array
+          // by looking for objects that have applicant-like properties
+          if (!applicantToUse || (applicantToUse.email === undefined && applicantToUse.fullName === undefined)) {
+            const actualApplicant = currentApplicant.find(item => 
+              item && (item.email !== undefined || item.fullName !== undefined || item.personalEmail !== undefined)
+            );
+            if (actualApplicant) {
+              applicantToUse = actualApplicant;
+            }
+          }
+        } else {
+          // If the array contains applicant objects, find the most recently registered applicant
+          const recentApplicant = currentApplicant.find(applicant => {
+            return !applicant.testData || !applicant.testData.score;
+          });
+          
+          if (recentApplicant) {
+            applicantToUse = recentApplicant;
+          } else {
+            applicantToUse = currentApplicant[currentApplicant.length - 1];
+          }
+        }
+      }
+      
+      // Extract email and fullName from the applicant object
+      if (applicantToUse && applicantToUse.email) {
+        userEmail = applicantToUse.email;
+      } else if (applicantToUse && applicantToUse.permanentEmail) {
+        userEmail = applicantToUse.permanentEmail;
+      }
+      
+      if (applicantToUse && applicantToUse.fullName) {
+        userFullName = applicantToUse.fullName;
+      }
+    }
+    
+    // Validate that we have the required identity information
+    if (!userEmail || !userFullName) {
+      console.error('Missing required user identity information (email or fullName):', { 
+        userEmail, 
+        userFullName,
+        currentApplicant
+      });
+      alert('Error: Unable to submit test. Missing required user information. Please restart the test or contact support.');
       setIsSubmitting(false);
       return;
     }
+    
+    // Create applicantToUse object with the identity information
+    const applicantToUse = {
+      id: 'current_user', // Placeholder ID
+      email: userEmail,
+      fullName: userFullName,
+      permanentEmail: userEmail
+    };
     
     let score = 0;
     const questionsToUse = questions.length > 0 ? questions : sampleQuestions;
@@ -87,15 +192,15 @@ const AptitudeTest = () => {
       tabSwitchCount,
       copyAttempts,
       disqualified: isTestDisqualified,
-      applicantId: currentApplicant.id || 'unknown',
-      applicantName: currentApplicant.fullName || 'Unknown Applicant',
-      email: currentApplicant.permanentEmail || currentApplicant.email || 'unknown@example.com'
+      applicantId: applicantToUse.id || 'unknown',
+      applicantName: applicantToUse.fullName || 'Unknown Applicant',
+      email: applicantToUse.permanentEmail || applicantToUse.email || 'unknown@example.com'
     };
     
     // Prepare data for the new API submission in the required format
     // Ensure we have fallbacks to prevent undefined values
-    const email = currentApplicant.permanentEmail || currentApplicant.email || testData.email || 'unknown@example.com';
-    const fullName = currentApplicant.fullName || testData.applicantName || 'Unknown Applicant';
+    const email = applicantToUse.permanentEmail || applicantToUse.email || testData.email || 'unknown@example.com';
+    const fullName = applicantToUse.fullName || testData.applicantName || 'Unknown Applicant';
     
     // Validate that email and fullName are present before submission
     if (!email || !fullName || email === 'unknown@example.com' || fullName === 'Unknown Applicant') {
@@ -145,7 +250,7 @@ const AptitudeTest = () => {
       // console.log('Test submission result:', result);
       
       // Update applicant with test data
-      updateApplicantTest(currentApplicant.id, {
+      updateApplicantTest(applicantToUse.id, {
         ...testData,
         score: result.score || `${score}/${questionsToUse.length}`,
         result: result,
@@ -155,8 +260,8 @@ const AptitudeTest = () => {
       
       // Send email notification about test submission
       try {
-        const emailForNotification = currentApplicant.permanentEmail || currentApplicant.email || testData.email;
-        const nameForNotification = currentApplicant.fullName || testData.applicantName;
+        const emailForNotification = applicantToUse.permanentEmail || applicantToUse.email || testData.email;
+        const nameForNotification = applicantToUse.fullName || testData.applicantName;
         
         // Validate that we have required data for email notification
         if (!emailForNotification || !nameForNotification) {
@@ -184,17 +289,17 @@ const AptitudeTest = () => {
       
       // Update applicant with local test data including the calculated correct answers
       // The testData object already contains correctAnswers: score from line 51
-      updateApplicantTest(currentApplicant.id, {
+      updateApplicantTest(applicantToUse.id, {
         ...testData,
         // Use the correctAnswers that was already calculated in the testData object
         correctAnswers: testData.correctAnswers,
-        email: currentApplicant.permanentEmail || currentApplicant.email
+        email: applicantToUse.permanentEmail || applicantToUse.email
       });
       
       // Send email notification about test submission even if API submission failed
       try {
-        const emailForNotification = currentApplicant.permanentEmail || currentApplicant.email || testData.email;
-        const nameForNotification = currentApplicant.fullName || testData.applicantName;
+        const emailForNotification = applicantToUse.permanentEmail || applicantToUse.email || testData.email;
+        const nameForNotification = applicantToUse.fullName || testData.applicantName;
         
         // Validate that we have required data for email notification
         if (!emailForNotification || !nameForNotification) {
@@ -432,13 +537,76 @@ const AptitudeTest = () => {
   }, [testQuestions]);
 
   useEffect(() => {
-    if (!currentApplicant) {
-      navigate('/');
-      return;
+    // Check if user identity information is available
+    // First check sessionStorage
+    let hasIdentity = false;
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const storedIdentity = sessionStorage.getItem('userIdentity');
+      if (storedIdentity) {
+        try {
+          const identity = JSON.parse(storedIdentity);
+          if (identity.email && identity.fullName) {
+            hasIdentity = true;
+          }
+        } catch (e) {
+          console.error('Failed to parse stored user identity:', e);
+        }
+      }
+    }
+    
+    // If not in sessionStorage, check localStorage
+    if (!hasIdentity && typeof window !== 'undefined' && window.localStorage) {
+      const storedIdentity = localStorage.getItem('userIdentity');
+      if (storedIdentity) {
+        try {
+          const identity = JSON.parse(storedIdentity);
+          if (identity.email && identity.fullName) {
+            hasIdentity = true;
+          }
+        } catch (e) {
+          console.error('Failed to parse stored user identity from localStorage:', e);
+        }
+      }
+    }
+    
+    // If we don't have identity info, check currentApplicant as fallback
+    if (!hasIdentity) {
+      if (!currentApplicant) {
+        navigate('/');
+        return;
+      }
+      
+      // Check if currentApplicant has the required identity information
+      if (Array.isArray(currentApplicant)) {
+        // If it's an array, check if it contains applicant objects
+        const firstElement = currentApplicant[0];
+        if (firstElement && firstElement.question === undefined) {
+          // Likely applicant objects, check for identity
+          const validApplicant = currentApplicant.find(app => app.email && app.fullName);
+          if (!validApplicant) {
+            console.error('No valid applicant with identity found in currentApplicant array');
+            navigate('/');
+            return;
+          }
+        } else if (firstElement && firstElement.question !== undefined) {
+          // This is question data, not applicant data
+          console.error('currentApplicant contains question data instead of applicant data');
+          navigate('/');
+          return;
+        }
+      } else {
+        // Single applicant object
+        if (!(currentApplicant.email && currentApplicant.fullName) && 
+            !(currentApplicant.permanentEmail && currentApplicant.fullName)) {
+          console.error('currentApplicant does not contain required identity information');
+          navigate('/');
+          return;
+        }
+      }
     }
     
     // If user has already submitted the test, redirect to feedback
-    if (currentApplicant.testData && currentApplicant.testData.score) {
+    if (currentApplicant && currentApplicant.testData && currentApplicant.testData.score) {
       navigate('/feedback');
       return;
     }
@@ -492,7 +660,65 @@ const AptitudeTest = () => {
   const answeredCount = Object.keys(answers).length;
   const progress = (answeredCount / questionsToUse.length) * 100;
 
-  if (!currentApplicant || (currentApplicant.testData && currentApplicant.testData.score)) {
+  // Check if user identity information is available before rendering
+  let hasIdentity = false;
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    const storedIdentity = sessionStorage.getItem('userIdentity');
+    if (storedIdentity) {
+      try {
+        const identity = JSON.parse(storedIdentity);
+        if (identity.email && identity.fullName) {
+          hasIdentity = true;
+        }
+      } catch (e) {
+        console.error('Failed to parse stored user identity:', e);
+      }
+    }
+  }
+  
+  // If not in sessionStorage, check localStorage
+  if (!hasIdentity && typeof window !== 'undefined' && window.localStorage) {
+    const storedIdentity = localStorage.getItem('userIdentity');
+    if (storedIdentity) {
+      try {
+        const identity = JSON.parse(storedIdentity);
+        if (identity.email && identity.fullName) {
+          hasIdentity = true;
+        }
+      } catch (e) {
+        console.error('Failed to parse stored user identity from localStorage:', e);
+      }
+    }
+  }
+  
+  // If we still don't have identity info, check currentApplicant as fallback
+  if (!hasIdentity) {
+    if (!currentApplicant) {
+      return null; // This will cause a redirect handled by the useEffect
+    }
+    
+    if (Array.isArray(currentApplicant)) {
+      // Check if it contains applicant objects with identity
+      const firstElement = currentApplicant[0];
+      if (firstElement && firstElement.question !== undefined) {
+        // This is question data, not applicant data
+        return null; // This will cause a redirect handled by the useEffect
+      }
+      
+      const validApplicant = currentApplicant.some(app => app.email && app.fullName);
+      if (!validApplicant) {
+        return null; // This will cause a redirect handled by the useEffect
+      }
+    } else {
+      // Single applicant object
+      if (!(currentApplicant.email && currentApplicant.fullName) && 
+          !(currentApplicant.permanentEmail && currentApplicant.fullName)) {
+        return null; // This will cause a redirect handled by the useEffect
+      }
+    }
+  }
+  
+  if (currentApplicant && (currentApplicant.testData && currentApplicant.testData.score)) {
     return null;
   }
 

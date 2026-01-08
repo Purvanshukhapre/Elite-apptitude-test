@@ -30,26 +30,17 @@ const Applicants = () => {
 
   // Helper function to extract numeric score from test data
   const getNumericScore = (applicant) => {
-    // Use test result data if available, prioritize over feedback
+    // Prioritize test result data if available
     if (applicant.testResult && applicant.testResult.correctAnswer !== undefined) {
-      // Total questions is 15 as per API
-      const totalQuestions = 15;
+      // Use test result's total questions if available, otherwise default to 15
+      const totalQuestions = applicant.testResult.totalQuestions || applicant.testResult.questions?.length || 15;
       return totalQuestions > 0 ? (applicant.testResult.correctAnswer / totalQuestions) * 100 : 0;
     }
     
-    // If we have correctAnswer but no totalQuestions, assume total is 15
-    if (applicant.correctAnswer !== undefined) {
-      const totalQuestions = 15; // Fixed total as per API
-      return totalQuestions > 0 ? (applicant.correctAnswer / totalQuestions) * 100 : 0;
-    }
-    
-    if (applicant.correctAnswer !== undefined) {
-      const totalQuestions = applicant.testData?.totalQuestions || 15; // Changed from 10 to 15
-      return totalQuestions > 0 ? (applicant.correctAnswer / totalQuestions) * 100 : 0;
-    }
-    
+    // Check test data for correct answers
     const testData = applicant.testData;
     if (testData) {
+      // Check for score in fraction format (e.g., "8/15")
       if (typeof testData.score === 'string' && testData.score.includes('/')) {
         const [correct, total] = testData.score.split('/').map(Number);
         if (total > 0) {
@@ -57,17 +48,32 @@ const Applicants = () => {
         }
       }
       
-      if (testData.percentage) {
-        return parseFloat(testData.percentage);
+      // Check for percentage directly
+      if (testData.percentage !== undefined) {
+        // Ensure it's a number, if it's a string, parse it
+        if (typeof testData.percentage === 'string') {
+          return parseFloat(testData.percentage);
+        } else {
+          return testData.percentage;
+        }
       }
       
-      if (testData.score && typeof testData.score === 'number') {
+      // Check for numeric score
+      if (typeof testData.score === 'number') {
         return testData.score;
       }
       
-      if (testData.correctAnswers !== undefined && testData.totalQuestions) {
-        return (testData.correctAnswers / testData.totalQuestions) * 100;
+      // Check for correct answers and total questions
+      if (testData.correctAnswers !== undefined) {
+        const totalQuestions = testData.totalQuestions || 15;
+        return (testData.correctAnswers / totalQuestions) * 100;
       }
+    }
+    
+    // Use the applicant's direct correctAnswer field as fallback
+    if (applicant.correctAnswer !== undefined) {
+      const totalQuestions = testData?.totalQuestions || 15;
+      return (applicant.correctAnswer / totalQuestions) * 100;
     }
     
     // Only use feedback ratings if no test data is available
@@ -112,10 +118,14 @@ const Applicants = () => {
       feedback.email === applicant.permanentEmail
     );
     
-    // Find test results for this applicant by name
+    // Find test results for this applicant - prioritize by email if available, then by name
     const applicantTestResult = testResults.find(result => 
-      result.fullName?.toLowerCase() === applicant.fullName?.toLowerCase() ||
-      result.fullName?.toLowerCase() === applicant.name?.toLowerCase()
+      // First try to match by email
+      (result.email && applicant.permanentEmail && result.email.toLowerCase() === applicant.permanentEmail.toLowerCase()) ||
+      (result.email && applicant.email && result.email.toLowerCase() === applicant.email.toLowerCase()) ||
+      // Then by full name
+      (result.fullName && applicant.fullName && result.fullName.toLowerCase() === applicant.fullName.toLowerCase()) ||
+      (result.name && applicant.fullName && result.name.toLowerCase() === applicant.fullName.toLowerCase())
     );
     
     return {
