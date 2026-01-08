@@ -24,6 +24,14 @@ const AptitudeTest = () => {
     // Set submitting state to prevent multiple clicks
     setIsSubmitting(true);
     
+    // Validate that currentApplicant exists and has required properties
+    if (!currentApplicant || !currentApplicant.fullName) {
+      console.error('Current applicant data is missing:', { currentApplicant });
+      alert('Error: Unable to submit test. Missing user information. Please restart the test or contact support.');
+      setIsSubmitting(false);
+      return;
+    }
+    
     let score = 0;
     const questionsToUse = questions.length > 0 ? questions : sampleQuestions;
     const detailedAnswers = {};
@@ -65,35 +73,7 @@ const AptitudeTest = () => {
     const percentage = (score / questionsToUse.length) * 100;
     const passFailStatus = percentage >= 60 ? 'Pass' : 'Fail'; // 60% to pass
     
-    // Prepare data for the new API submission in the required format
-    const email = currentApplicant.permanentEmail || currentApplicant.email || testData.email;
-    const fullName = currentApplicant.fullName || testData.applicantName;
-    
-    // Validate that email and fullName are present before submission
-    if (!email || !fullName) {
-      console.error('Missing required email or fullName for test submission:', { email, fullName });
-      alert('Error: Unable to submit test. Missing required user information. Please contact support.');
-      return; // Prevent submission if critical data is missing
-    }
-    
-    const testQuestionsData = {
-      email: email,
-      fullName: fullName,
-      questions: questionsForSubmission.map(q => ({
-        aiQuestion: q.question,
-        Options: q.options,
-        aiAnswer: q.options[q.correctAnswer],
-        userAnswer: q.userSelectedOption !== undefined ? q.options[q.userSelectedOption] : ''
-      }))
-    };
-    
-    // Debug logging to verify the data being sent
-    console.log('Submitting test questions with data:', {
-      email,
-      fullName,
-      questionCount: testQuestionsData.questions.length
-    });
-    
+    // Prepare the base test data first
     const testData = {
       answers,
       questions: questionsToUse,
@@ -107,10 +87,51 @@ const AptitudeTest = () => {
       tabSwitchCount,
       copyAttempts,
       disqualified: isTestDisqualified,
-      applicantId: currentApplicant.id,
-      applicantName: currentApplicant.fullName,
-      email: currentApplicant.permanentEmail || currentApplicant.email
+      applicantId: currentApplicant.id || 'unknown',
+      applicantName: currentApplicant.fullName || 'Unknown Applicant',
+      email: currentApplicant.permanentEmail || currentApplicant.email || 'unknown@example.com'
     };
+    
+    // Prepare data for the new API submission in the required format
+    // Ensure we have fallbacks to prevent undefined values
+    const email = currentApplicant.permanentEmail || currentApplicant.email || testData.email || 'unknown@example.com';
+    const fullName = currentApplicant.fullName || testData.applicantName || 'Unknown Applicant';
+    
+    // Validate that email and fullName are present before submission
+    if (!email || !fullName || email === 'unknown@example.com' || fullName === 'Unknown Applicant') {
+      console.error('Missing required email or fullName for test submission:', { 
+        email, 
+        fullName, 
+        currentApplicant, 
+        testData 
+      });
+      alert('Error: Unable to submit test. Missing required user information. Please contact support.');
+      return; // Prevent submission if critical data is missing
+    }
+    
+    const testQuestionsData = {
+      email: email,
+      fullName: fullName,
+      questions: questionsForSubmission.map(q => ({
+        aiQuestion: q.question,
+        Options: q.options,
+        aiAnswer: q.options[q.correctAnswer],
+        userAnswer: q.userSelectedOption !== undefined ? q.options[q.userSelectedOption] : '',
+        // Include additional information about the question
+        questionId: q.questionId || q.id,
+        correctOptionIndex: q.correctAnswer,
+        userSelectedOptionIndex: q.userSelectedOption,
+        isCorrect: q.correctAnswer === q.userSelectedOption
+      }))
+    };
+    
+    // Debug logging to verify the data being sent
+    console.log('Submitting test questions with data:', {
+      email,
+      fullName,
+      questionCount: testQuestionsData.questions.length,
+      sampleQuestion: testQuestionsData.questions[0] // Log first question as sample
+    });
     
     // console.log('Test Results:', testData);
 

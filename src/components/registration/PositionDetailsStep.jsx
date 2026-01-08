@@ -1,17 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import ResumeUpload from './ResumeUpload';
 
-const PositionDetailsStep = ({ formData, setFormData, errors, setErrors, onResumeChange }) => {
+const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
   const [primarySkillInput, setPrimarySkillInput] = useState('');
   const [secondarySkillInput, setSecondarySkillInput] = useState('');
-  const [resume, setResume] = useState(null);
+
   
-  // Update parent component when resume changes
-  useEffect(() => {
-    if (onResumeChange) {
-      onResumeChange(resume);
-    }
-  }, [resume, onResumeChange]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -698,7 +693,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors, onResum
           Resume
         </h3>
         
-        <ResumeUpload resume={resume} setResume={setResume} errors={errors} setErrors={setErrors} email={formData.permanentEmail} />
+        <ResumeUpload resume={formData.resume} setResume={(file) => setFormData(prev => ({ ...prev, resume: file }))} errors={errors} setErrors={setErrors} email={formData.permanentEmail} />
       </div>
     </div>
   );

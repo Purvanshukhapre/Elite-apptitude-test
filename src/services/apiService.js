@@ -253,6 +253,14 @@ export const getAllTestResults = async () => {
 
 // New API functions for test questions
 export const submitTestQuestions = async (testData) => {
+  // Validate that email and fullName are present before submission
+  if (!testData.email || !testData.fullName) {
+    console.error('Missing required email or fullName in test data:', testData);
+    throw new Error('Email and fullName are required for test submission');
+  }
+  
+  console.log('Sending test questions with email:', testData.email, 'and fullName:', testData.fullName);
+  
   // Submit all questions with user answers to the backend
   // The API expects email and fullName in the request body
   return apiCall(API_ENDPOINTS.TEST_QUESTIONS_SUBMIT, {
@@ -312,7 +320,14 @@ export const sendResumeWithEmail = async (email, resumeFile) => {
     throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
   }
   
-  return response.json();
+  // Check if response is JSON or plain text
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return response.json();
+  } else {
+    // If not JSON, return the text response
+    return response.text();
+  }
 };
 
 // Function to get resume by email - Using email in URL path as per backend requirement
@@ -329,7 +344,14 @@ export const getResumeByEmail = async (email) => {
     throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
   }
   
-  return response.json();
+  // Check if response is JSON or plain text
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return response.json();
+  } else {
+    // If not JSON, return the text response
+    return response.text();
+  }
 };
 
 // Email notification API function for test submission
