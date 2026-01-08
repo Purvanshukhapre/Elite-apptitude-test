@@ -11,7 +11,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors, onResum
     if (onResumeChange) {
       onResumeChange(resume);
     }
-  }, [resume]);
+  }, [resume, onResumeChange]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

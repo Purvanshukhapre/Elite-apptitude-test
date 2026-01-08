@@ -98,7 +98,9 @@ const ApplicantDetails = () => {
                   setResumeLoading(true);
                   try {
                     // Fetch questions data
+                    console.log('Fetching questions for email:', email);
                     const questionsData = await getTestQuestionsByEmail(email);
+                    console.log('Questions data received:', questionsData);
                     setApplicant(prev => ({
                       ...prev,
                       questionsData
@@ -109,7 +111,7 @@ const ApplicantDetails = () => {
                   } finally {
                     setQuestionsLoading(false);
                   }
-                                
+                                  
                   try {
                     // Fetch resume data
                     const resumeInfo = await getResumeByEmail(email);
@@ -491,12 +493,12 @@ const ApplicantDetails = () => {
     }
     
     // Add test questions and answers if available
-    if (allQuestions.length > 0) {
+    if (finalQuestions.length > 0) {
       let lastY = doc.lastAutoTable.finalY + 10;
       doc.setFontSize(14);
       doc.text('Test Questions & Answers', 20, lastY);
       
-      const questionData = allQuestions.map((question, index) => {
+      const questionData = finalQuestions.map((question, index) => {
         let userAnswer;
         if (answersProvided && typeof answersProvided === 'object') {
           userAnswer = answersProvided[question.id] !== undefined 
@@ -596,16 +598,48 @@ const ApplicantDetails = () => {
   const questionsAttempted = applicant.testData?.questions || applicant.questions || [];
   const answersProvided = applicant.testData?.answers || applicant.answers || [];
   
-  // Extract questions from questionsData if available
+  // Extract questions from questionsData if available (object format)
   const questionsFromData = applicant.questionsData && typeof applicant.questionsData === 'object' && !Array.isArray(applicant.questionsData) && applicant.questionsData.questions ? 
     applicant.questionsData.questions : [];
   
-  // Extract questions from array format
+  // Extract questions from array format (multiple attempts)
   const questionsFromArray = Array.isArray(applicant.questionsData) && applicant.questionsData.length > 0 ? 
     applicant.questionsData.flatMap(attempt => attempt.questions || []) : [];
   
-  // Combine all available questions
-  const allQuestions = [...questionsFromData, ...questionsFromArray, ...questionsAttempted];
+  // Extract questions from other possible formats
+  const questionsFromTestData = applicant.testData?.questions || [];
+  const questionsFromApplicant = applicant.questions || [];
+  
+  // Handle questionsData that might be directly an array of questions
+  const questionsDirectArray = Array.isArray(applicant.questionsData) && applicant.questionsData.length > 0 && 
+    !applicant.questionsData.some(item => item.questions) ? applicant.questionsData : [];
+  
+  // Combine all available questions from different sources
+  const allQuestions = [
+    ...questionsFromData,
+    ...questionsFromArray,
+    ...questionsDirectArray,
+    ...questionsFromTestData,
+    ...questionsFromApplicant,
+    ...questionsAttempted
+  ];
+  
+  // Remove duplicates based on question ID if available, otherwise use all questions
+  const uniqueQuestions = allQuestions.filter((question, index, self) =>
+    question.id ? self.findIndex(q => q.id === question.id) === index : true
+  );
+  
+  // Use unique questions if available, otherwise fall back to all questions
+  const finalQuestions = uniqueQuestions.length > 0 ? uniqueQuestions : allQuestions;
+  
+  // Debug: Log the questions to understand what we have
+  console.log('Final questions count:', finalQuestions.length);
+  console.log('Questions from data:', questionsFromData.length);
+  console.log('Questions from array:', questionsFromArray.length);
+  console.log('Questions direct array:', questionsDirectArray.length);
+  console.log('Questions from test data:', questionsFromTestData.length);
+  console.log('Questions from applicant:', questionsFromApplicant.length);
+  console.log('Questions attempted:', questionsAttempted.length);
 
   return (
     <div className="space-y-6">
@@ -1113,7 +1147,7 @@ const ApplicantDetails = () => {
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
             </div>
-          ) : (questionsAttempted.length > 0 || (applicant.questionsData && typeof applicant.questionsData === 'object' && !Array.isArray(applicant.questionsData) && applicant.questionsData.questions && applicant.questionsData.questions.length > 0) || (Array.isArray(applicant.questionsData) && applicant.questionsData.length > 0 && applicant.questionsData.some(attempt => attempt.questions && attempt.questions.length > 0))) ? (
+          ) : (finalQuestions.length > 0) ? (
             <div className="space-y-4">
               {(applicant.questionsData && typeof applicant.questionsData === 'object' && !Array.isArray(applicant.questionsData) && applicant.questionsData.questions && applicant.questionsData.questions.length > 0) ? 
                 // Display questions from single API response object
@@ -1325,8 +1359,8 @@ const ApplicantDetails = () => {
                   </div>
                 ))
                 : 
-                // Display questions from local data - enhanced to handle multiple data structures
-                questionsAttempted.map((question, index) => {
+                // Display questions from all available sources - using the combined finalQuestions array
+                finalQuestions.map((question, index) => {
                   // Handle different possible data structures for answers
                   let userAnswer;
                   if (answersProvided && typeof answersProvided === 'object') {

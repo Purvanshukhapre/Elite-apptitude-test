@@ -254,7 +254,8 @@ export const getAllTestResults = async () => {
 // New API functions for test questions
 export const submitTestQuestions = async (testData) => {
   // Submit all questions with user answers to the backend
-  return apiCall(API_ENDPOINTS.TEST_QUESTIONS_SUBMIT, {
+  // The API expects email and fullName in the request body
+  return apiCall('/questions/submit', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
