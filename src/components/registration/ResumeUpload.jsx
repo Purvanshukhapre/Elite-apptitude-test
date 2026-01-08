@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const ResumeUpload = ({ resume, setResume, errors, setErrors }) => {
+const ResumeUpload = ({ resume, setResume, errors, setErrors, email }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(''); // 'idle', 'uploading', 'success', 'error'
 
@@ -68,19 +68,20 @@ const ResumeUpload = ({ resume, setResume, errors, setErrors }) => {
   
   const handleTestUpload = async () => {
     if (!resume) return;
-    
+      
     setUploadStatus('uploading');
-    
+      
     try {
-      // Use the correct endpoint format as specified
-      const resumeUploadUrl = 'https://eliterecruitmentbackend-production.up.railway.app/resume/upload/1';
-      
+      // Use the correct endpoint format as specified - this endpoint accepts email and resume in form data
+      const resumeUploadUrl = `https://eliterecruitmentbackend-production.up.railway.app/resume/upload/${encodeURIComponent(email)}`;
+        
       const resumeData = new FormData();
-      // Using 'file' as the field name as specified in the API requirement
+      // Using 'file' as the field name as per Postman test requirement
       resumeData.append('file', resume, resume.name);
-      
-      console.log('Testing resume upload to:', resumeUploadUrl);
-      
+        
+      console.log('Testing resume upload with email to:', resumeUploadUrl);
+            
+      // Use cors mode to match other working APIs
       const resumeResponse = await fetch(resumeUploadUrl, {
         method: 'POST',
         body: resumeData,
@@ -88,13 +89,13 @@ const ResumeUpload = ({ resume, setResume, errors, setErrors }) => {
         mode: 'cors',
         credentials: 'omit', // Don't send cookies/credentials that might cause issues
       });
-      
+            
       console.log('Resume upload test response status:', resumeResponse.status);
-      
+            
       if (!resumeResponse.ok) {
         const errorText = await resumeResponse.text();
         console.error('Resume upload test failed with status:', resumeResponse.status, 'Error:', errorText);
-        
+              
         // Check if this is the specific authorization issue
         if (resumeResponse.status === 403) {
           console.warn('Resume upload test failed with 403 error - this endpoint requires proper authentication/authorization.');
@@ -102,7 +103,7 @@ const ResumeUpload = ({ resume, setResume, errors, setErrors }) => {
         } else if (resumeResponse.status === 0) {
           console.warn('CORS error detected during resume upload test');
         }
-        
+              
         setUploadStatus('error');
         alert(`Resume upload failed with status: ${resumeResponse.status}. Check console for details.`);
       } else {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
-import { getTestQuestionsByEmail, getApplicantsByName, getAllTestResults, getAllFeedback } from '../../api';
+import { getTestQuestionsByEmail, getApplicantsByName, getAllTestResults, getAllFeedback, getResumeByEmail } from '../../api';
 import StarRating from '../../components/StarRating';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -13,6 +13,8 @@ const ApplicantDetails = () => {
   const [applicant, setApplicant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [resumeData, setResumeData] = useState(null);
+  const [resumeLoading, setResumeLoading] = useState(false);
 
   useEffect(() => {
     const fetchApplicantData = async () => {
@@ -88,15 +90,15 @@ const ApplicantDetails = () => {
                 };
                         
                 setApplicant(updatedApplicant);
-                        
-                // Optionally fetch questions data if available
+                              
+                // Fetch questions data if available
                 const email = updatedApplicant.permanentEmail || updatedApplicant.email;
                 if (email) {
                   setQuestionsLoading(true);
+                  setResumeLoading(true);
                   try {
-                    // console.log('Fetching questions for email:', email);
+                    // Fetch questions data
                     const questionsData = await getTestQuestionsByEmail(email);
-                    // console.log('Received questions data:', questionsData);
                     setApplicant(prev => ({
                       ...prev,
                       questionsData
@@ -107,8 +109,20 @@ const ApplicantDetails = () => {
                   } finally {
                     setQuestionsLoading(false);
                   }
+                                
+                  try {
+                    // Fetch resume data
+                    const resumeInfo = await getResumeByEmail(email);
+                    setResumeData(resumeInfo);
+                  } catch (resumeError) {
+                    console.error('Could not fetch resume data:', resumeError);
+                    // Silently fail - resume data is optional
+                  } finally {
+                    setResumeLoading(false);
+                  }
                 } else {
                   setQuestionsLoading(false);
+                  setResumeLoading(false);
                 }
               } catch (testResultsError) {
                 console.warn('Could not fetch test results:', testResultsError);
@@ -477,12 +491,12 @@ const ApplicantDetails = () => {
     }
     
     // Add test questions and answers if available
-    if (questionsAttempted.length > 0) {
+    if (allQuestions.length > 0) {
       let lastY = doc.lastAutoTable.finalY + 10;
       doc.setFontSize(14);
       doc.text('Test Questions & Answers', 20, lastY);
       
-      const questionData = questionsAttempted.map((question, index) => {
+      const questionData = allQuestions.map((question, index) => {
         let userAnswer;
         if (answersProvided && typeof answersProvided === 'object') {
           userAnswer = answersProvided[question.id] !== undefined 
@@ -550,6 +564,30 @@ const ApplicantDetails = () => {
       });
     }
     
+    // Add resume information if available
+    if (resumeData) {
+      let lastY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(14);
+      doc.text('Resume Information', 20, lastY);
+      
+      const resumeInfo = [
+        ['Resume File Name', resumeData.s3Key.split('/').pop() || 'N/A'],
+        ['S3 Key', resumeData.s3Key || 'N/A'],
+        ['Resume URL', resumeData.resumeUrl || 'N/A'],
+        ['Uploaded At', resumeData.uploadedAt ? new Date(resumeData.uploadedAt).toLocaleDateString() : 'N/A'],
+        ['Email', resumeData.email || 'N/A']
+      ];
+      
+      autoTable(doc, {
+        startY: lastY + 5,
+        head: [['Field', 'Value']],
+        body: resumeInfo,
+        theme: 'grid',
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [59, 130, 246] }
+      });
+    }
+    
     // Save the PDF
     doc.save(`applicant-details-${applicant.fullName || applicant.name || 'applicant'}.pdf`);
   };
@@ -557,6 +595,17 @@ const ApplicantDetails = () => {
   // Get questions data if available - check multiple possible sources
   const questionsAttempted = applicant.testData?.questions || applicant.questions || [];
   const answersProvided = applicant.testData?.answers || applicant.answers || [];
+  
+  // Extract questions from questionsData if available
+  const questionsFromData = applicant.questionsData && typeof applicant.questionsData === 'object' && !Array.isArray(applicant.questionsData) && applicant.questionsData.questions ? 
+    applicant.questionsData.questions : [];
+  
+  // Extract questions from array format
+  const questionsFromArray = Array.isArray(applicant.questionsData) && applicant.questionsData.length > 0 ? 
+    applicant.questionsData.flatMap(attempt => attempt.questions || []) : [];
+  
+  // Combine all available questions
+  const allQuestions = [...questionsFromData, ...questionsFromArray, ...questionsAttempted];
 
   return (
     <div className="space-y-6">
@@ -954,6 +1003,40 @@ const ApplicantDetails = () => {
             </div>
           </div>
         )}
+        
+        {/* Resume Section */}
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+          <h3 className="text-xl font-bold text-gray-900 mb-6">Resume</h3>
+          {resumeLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : resumeData ? (
+            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50">
+              <div className="flex items-center">
+                <svg className="w-8 h-8 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <div>
+                  <p className="font-medium text-gray-900">{resumeData.s3Key.split('/').pop()}</p>
+                  <p className="text-sm text-gray-500">Uploaded: {resumeData.uploadedAt ? new Date(resumeData.uploadedAt).toLocaleDateString() : 'N/A'}</p>
+                </div>
+              </div>
+              <a 
+                href={resumeData.resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                View Resume
+              </a>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              No resume available for this applicant.
+            </div>
+          )}
+        </div>
         
         {/* Performance Breakdown */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">

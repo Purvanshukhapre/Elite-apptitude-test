@@ -289,6 +289,48 @@ export const sendEmail = async (emailData) => {
   });
 };
 
+// Function to send resume with email - Using email in URL path as per backend requirement
+export const sendResumeWithEmail = async (email, resumeFile) => {
+  const formData = new FormData();
+  // Append the file to form data as 'file' field as per Postman test requirement
+  formData.append('file', resumeFile, resumeFile.name);
+  
+  // Direct fetch call with email in the URL path
+  // Using regular cors mode to match other working APIs
+  const response = await fetch(`${API_BASE_URL}/resume/upload/${encodeURIComponent(email)}`, {
+    method: 'POST',
+    body: formData,
+    // Don't set Content-Type header - let the browser set it with the proper boundary
+    mode: 'cors',
+    credentials: 'omit'
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text(); // Get error details
+    console.error('Resume upload with email failed:', response.status, errorText);
+    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+  }
+  
+  return response.json();
+};
+
+// Function to get resume by email - Using email in URL path as per backend requirement
+export const getResumeByEmail = async (email) => {
+  const response = await fetch(`${API_BASE_URL}/resume/email/${encodeURIComponent(email)}`, {
+    method: 'GET',
+    mode: 'cors',
+    credentials: 'omit'
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text(); // Get error details
+    console.error('Resume fetch by email failed:', response.status, errorText);
+    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+  }
+  
+  return response.json();
+};
+
 // Email notification API function for test submission
 export const sendTestSubmissionEmail = async (emailData) => {
   return apiCall(API_ENDPOINTS.SUBMIT_EMAIL_NOTIFICATION, {

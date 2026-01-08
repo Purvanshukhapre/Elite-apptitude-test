@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
+import { sendResumeWithEmail } from '../../api';
 import ProgressBar from '../../components/registration/ProgressBar';
 import PersonalInfoStep from '../../components/registration/PersonalInfoStep';
 import PositionDetailsStep from '../../components/registration/PositionDetailsStep';
@@ -160,71 +161,20 @@ const Registration = () => {
     }
   };
 
-  const uploadResume = async (applicantId, resumeFile) => {
-    if (!resumeFile) return;
-    
-    try {
-      console.log('Attempting to upload resume:', resumeFile.name, 'Size:', resumeFile.size, 'Type:', resumeFile.type);
-      
-      // Use the correct endpoint format as specified
-      const resumeUploadUrl = 'https://eliterecruitmentbackend-production.up.railway.app/resume/upload/1';
-      
-      console.log('Resume upload URL:', resumeUploadUrl);
-      
-      const resumeData = new FormData();
-      resumeData.append('file', resumeFile, resumeFile.name);
-      
-      // Log FormData contents for debugging
-      for (let [key, value] of resumeData.entries()) {
-        console.log(key, value);
-      }
-      
-      const resumeResponse = await fetch(resumeUploadUrl, {
-        method: 'POST',
-        body: resumeData,
-        // Handle CORS for cross-origin requests
-        mode: 'cors',
-        credentials: 'omit',
-      });
-      
-      console.log('Resume upload response status:', resumeResponse.status);
-      
-      if (!resumeResponse.ok) {
-        const errorText = await resumeResponse.text();
-        console.error('Resume upload failed with status:', resumeResponse.status, 'Error:', errorText);
-        
-        // Check if this is the specific CORS/authorization issue mentioned in project info
-        if (resumeResponse.status === 403) {
-          console.warn('Resume upload failed with 403 error - this is likely due to backend CORS restrictions in development. The resume will be associated with the applicant record but not uploaded to the backend server.');
-        } else if (resumeResponse.status === 0) {
-          console.warn('CORS error detected - this is likely due to backend CORS restrictions in development');
-        }
-        
-        // Don't throw error here to allow form submission to continue
-        console.warn('Resume upload failed with status:', resumeResponse.status, ', but continuing with form submission');
-      } else {
-        const responseText = await resumeResponse.text();
-        console.log('Resume uploaded successfully:', responseText);
-      }
-    } catch (resumeError) {
-      console.error('Error uploading resume:', resumeError);
-      // Check if this is a CORS-related error
-      if (resumeError.message.includes('CORS') || resumeError.message.includes('cross-origin')) {
-        console.warn('CORS error detected during resume upload - this is likely due to backend CORS restrictions in development');
-      }
-      // Don't throw error here to allow form submission to continue
-      console.warn('Resume upload failed due to network error, but continuing with form submission');
-    }
-  };
-
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
       const applicant = await addApplicant(formData);
       
-      // Upload resume if it exists
+      // Send resume with email if it exists
       if (formData.resume) {
-        await uploadResume(applicant.id, formData.resume);
+        try {
+          await sendResumeWithEmail(formData.permanentEmail, formData.resume);
+          console.log('Resume sent with email successfully');
+        } catch (resumeError) {
+          console.error('Failed to send resume with email:', resumeError);
+          // Continue with form submission even if resume email fails
+        }
       }
       
       setCurrentApplicant(applicant);

@@ -16,7 +16,9 @@ import {
   getAllTestResults,
   getTestQuestionsByEmail,
   sendEmail,
-  sendTestSubmissionEmail
+  sendTestSubmissionEmail,
+  sendResumeWithEmail,
+  getResumeByEmail
 } from './services/apiService';
 
 // Named exports for individual functions
@@ -37,7 +39,9 @@ export {
   getAllTestResults,
   getTestQuestionsByEmail,
   sendEmail,
-  sendTestSubmissionEmail
+  sendTestSubmissionEmail,
+  sendResumeWithEmail,
+  getResumeByEmail
 };
 
 

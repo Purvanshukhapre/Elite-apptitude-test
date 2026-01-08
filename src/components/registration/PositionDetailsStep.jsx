@@ -698,7 +698,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors, onResum
           Resume
         </h3>
         
-        <ResumeUpload resume={resume} setResume={setResume} errors={errors} setErrors={setErrors} />
+        <ResumeUpload resume={resume} setResume={setResume} errors={errors} setErrors={setErrors} email={formData.permanentEmail} />
       </div>
     </div>
   );
