@@ -66,9 +66,19 @@ const AptitudeTest = () => {
     const passFailStatus = percentage >= 60 ? 'Pass' : 'Fail'; // 60% to pass
     
     // Prepare data for the new API submission in the required format
+    const email = currentApplicant.permanentEmail || currentApplicant.email || testData.email;
+    const fullName = currentApplicant.fullName || testData.applicantName;
+    
+    // Validate that email and fullName are present before submission
+    if (!email || !fullName) {
+      console.error('Missing required email or fullName for test submission:', { email, fullName });
+      alert('Error: Unable to submit test. Missing required user information. Please contact support.');
+      return; // Prevent submission if critical data is missing
+    }
+    
     const testQuestionsData = {
-      email: currentApplicant.permanentEmail || currentApplicant.email,
-      fullName: currentApplicant.fullName,
+      email: email,
+      fullName: fullName,
       questions: questionsForSubmission.map(q => ({
         aiQuestion: q.question,
         Options: q.options,
@@ -76,6 +86,13 @@ const AptitudeTest = () => {
         userAnswer: q.userSelectedOption !== undefined ? q.options[q.userSelectedOption] : ''
       }))
     };
+    
+    // Debug logging to verify the data being sent
+    console.log('Submitting test questions with data:', {
+      email,
+      fullName,
+      questionCount: testQuestionsData.questions.length
+    });
     
     const testData = {
       answers,
@@ -117,12 +134,23 @@ const AptitudeTest = () => {
       
       // Send email notification about test submission
       try {
-        const emailData = {
-          email: currentApplicant.permanentEmail || currentApplicant.email,
-          name: currentApplicant.fullName
-        };
-        await sendTestSubmissionEmail(emailData);
-        // console.log('Email notification sent successfully');
+        const emailForNotification = currentApplicant.permanentEmail || currentApplicant.email || testData.email;
+        const nameForNotification = currentApplicant.fullName || testData.applicantName;
+        
+        // Validate that we have required data for email notification
+        if (!emailForNotification || !nameForNotification) {
+          console.error('Missing required data for email notification:', { 
+            email: emailForNotification, 
+            name: nameForNotification 
+          });
+        } else {
+          const emailData = {
+            email: emailForNotification,
+            name: nameForNotification
+          };
+          await sendTestSubmissionEmail(emailData);
+          console.log('Email notification sent successfully to:', emailForNotification);
+        }
       } catch (emailError) {
         console.error('Failed to send email notification:', emailError);
         // Don't fail the entire submission if email fails
@@ -144,12 +172,23 @@ const AptitudeTest = () => {
       
       // Send email notification about test submission even if API submission failed
       try {
-        const emailData = {
-          email: currentApplicant.permanentEmail || currentApplicant.email,
-          name: currentApplicant.fullName
-        };
-        await sendTestSubmissionEmail(emailData);
-        // console.log('Email notification sent successfully even after API error');
+        const emailForNotification = currentApplicant.permanentEmail || currentApplicant.email || testData.email;
+        const nameForNotification = currentApplicant.fullName || testData.applicantName;
+        
+        // Validate that we have required data for email notification
+        if (!emailForNotification || !nameForNotification) {
+          console.error('Missing required data for email notification (in error flow):', { 
+            email: emailForNotification, 
+            name: nameForNotification 
+          });
+        } else {
+          const emailData = {
+            email: emailForNotification,
+            name: nameForNotification
+          };
+          await sendTestSubmissionEmail(emailData);
+          console.log('Email notification sent successfully (in error flow) to:', emailForNotification);
+        }
       } catch (emailError) {
         console.error('Failed to send email notification:', emailError);
         // Don't fail the submission flow if email fails
