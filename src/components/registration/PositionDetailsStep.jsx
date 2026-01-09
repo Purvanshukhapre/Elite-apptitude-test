@@ -529,7 +529,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
         
         <div className="mt-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Primary Skills (Learned in College)<span className="text-red-500">*</span>
+            Primary Skills <span className="text-red-500">*</span>
           </label>
           <div className="rounded-lg transition-all duration-200">
             <input
@@ -607,7 +607,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
 
         <div className="mt-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Secondary Skills (Applied in Work Experience)<span className="text-red-500">*</span>
+            Secondary Skills <span className="text-red-500">*</span>
           </label>
           <div className="rounded-lg transition-all duration-200">
             <input
