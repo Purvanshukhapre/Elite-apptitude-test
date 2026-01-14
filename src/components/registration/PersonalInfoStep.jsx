@@ -36,13 +36,13 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
       let data = {};
       try {
         data = await response.json();
-      } catch (parseError) {
+      } catch (parseError) { // eslint-disable-line no-unused-vars
         // If JSON parsing fails, create a default error message
-        console.warn('Failed to parse response as JSON:', parseError);
+        // console.warn('Failed to parse response as JSON:', parseError); // Removed as per requirements
       }
       
       if (response.ok) {
-        console.log('Verification email sent:', data);
+        // console.log('Verification email sent:', data); // Removed as per requirements
         setShowVerificationModal(true);
         // Reset verification state
         setIsEmailVerified(false);
@@ -57,8 +57,8 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
           setErrors(prev => ({ ...prev, permanentEmail: data.message || data.error || 'Failed to send verification email' }));
         }
       }
-    } catch (error) {
-      console.error('Error sending verification email:', error);
+    } catch (_error) {
+      console.error('Error sending verification email:', _error);
       setErrors(prev => ({ ...prev, permanentEmail: 'Network error. Please try again.' }));
     } finally {
       setIsSendingVerification(false);
@@ -85,13 +85,13 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
       let data = {};
       try {
         data = await response.json();
-      } catch (parseError) {
+      } catch (parseError) { // eslint-disable-line no-unused-vars
         // If JSON parsing fails, create a default error message
-        console.warn('Failed to parse response as JSON:', parseError);
+        // console.warn('Failed to parse response as JSON:', parseError); // Removed as per requirements
       }
       
       if (response.ok) {
-        console.log('Email verified:', data);
+        // console.log('Email verified:', data); // Removed as per requirements
         setIsEmailVerified(true);
         if (onEmailVerified) {
           onEmailVerified(true);
@@ -112,8 +112,8 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
           setErrors(prev => ({ ...prev, verificationCode: data.message || data.error || 'Invalid verification code' }));
         }
       }
-    } catch (error) {
-      console.error('Error verifying code:', error);
+    } catch (_error) {
+      console.error('Error verifying code:', _error);
       setErrors(prev => ({ ...prev, verificationCode: 'Network error. Please try again.' }));
     } finally {
       setIsVerifying(false);

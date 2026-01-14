@@ -26,12 +26,12 @@ export const AppProvider = ({ children }) => {
       try {
         const [apiApplicants, testResults, feedbackResults] = await Promise.all([
           apiGetApplicants(),
-          getAllTestResults().catch(error => {
-            console.error('Failed to fetch test results:', error);
+          getAllTestResults().catch(() => {
+
             return [];
           }),
-          getAllFeedback().catch(error => {
-            console.error('Failed to fetch feedback:', error);
+          getAllFeedback().catch(() => {
+
             return [];
           })
         ]);
@@ -73,8 +73,7 @@ export const AppProvider = ({ children }) => {
         
         setApplicants(combinedApplicants);
         // console.log('Applicants loaded from API:', combinedApplicants);
-      } catch (error) {
-        console.error('Failed to fetch applicants from API:', error);
+      } catch {
         // Fallback to localStorage
         const savedApplicants = localStorage.getItem('applicants');
         if (savedApplicants) {
@@ -85,7 +84,7 @@ export const AppProvider = ({ children }) => {
           );
           
           if (hasPlaceholderData) {
-            console.warn('Found placeholder data in localStorage, clearing it');
+            // console.warn('Found placeholder data in localStorage, clearing it'); // Removed as per requirements
             localStorage.removeItem('applicants');
             setApplicants([]);
           } else {
@@ -152,8 +151,8 @@ export const AppProvider = ({ children }) => {
       
       setApplicants(combinedApplicants);
       return combinedApplicants;
-    } catch (error) {
-      console.error('Failed to refresh applicants from API:', error);
+    } catch (_error) {
+      console.error('Failed to refresh applicants from API:', _error);
       return applicants; // Return current applicants if refresh fails
     }
   };
@@ -221,8 +220,17 @@ export const AppProvider = ({ children }) => {
 
       const result = await apiAddApplicant(applicantData);
       
-      // If the result contains questions (from successful API call), update the context
-      if (result && Array.isArray(result)) {
+      // Handle the new API response format that includes studentFormId and questions
+      if (result && result.studentFormId) {
+        // The API returned the new response format with studentFormId and testData
+        if (result.testData && Array.isArray(result.testData)) {
+          setTestQuestions(result.testData);
+          console.log('Questions received from registration API:', result.testData);
+        } else {
+          // Fallback to mock questions if no questions in response
+          setTestQuestions(mockQuestions);
+        }
+      } else if (result && Array.isArray(result)) {
         // The API returned questions, store them
         setTestQuestions(result);
         // console.log('Questions received from API:', result);
@@ -260,7 +268,7 @@ export const AppProvider = ({ children }) => {
 
       // Add the applicant to the state
       const newApplicant = {
-        id: result.id || Date.now().toString(),
+        id: result.id || result._id || Date.now().toString(),
         ...applicantData,
         submittedAt: new Date().toISOString(),
         status: 'pending',
@@ -271,9 +279,10 @@ export const AppProvider = ({ children }) => {
       setApplicants(prev => [...prev, newApplicant]);
       
       // Return the actual result from the API which may contain questions
-      return result || newApplicant;
-    } catch (error) {
-      console.error('Failed to add applicant:', error);
+      // Prefer the newApplicant object which contains the ID
+      return newApplicant || result;
+    } catch (_error) {
+      console.error('Failed to add applicant:', _error);
       // Even if API call fails, we should return mock questions for the test
       setTestQuestions(mockQuestions);
       // Return a basic applicant object to continue with the flow
@@ -312,8 +321,8 @@ export const AppProvider = ({ children }) => {
             }
           : app
       ));
-    } catch (error) {
-      console.error('Failed to update applicant test:', error);
+    } catch (_error) {
+      console.error('Failed to update applicant test:', _error);
       // Fallback to local storage
       setApplicants(prev => prev.map(app => 
         (app.id === applicantId || 
@@ -347,8 +356,8 @@ export const AppProvider = ({ children }) => {
           ? { ...app, feedback, feedbackSubmittedAt: new Date().toISOString() }
           : app
       ));
-    } catch (error) {
-      console.error('Failed to update applicant feedback:', error);
+    } catch (_error) {
+      console.error('Failed to update applicant feedback:', _error);
       // Fallback to local storage
       setApplicants(prev => prev.map(app => 
         app.id === applicantId 

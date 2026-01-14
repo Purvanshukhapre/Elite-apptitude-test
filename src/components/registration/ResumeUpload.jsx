@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 
-const ResumeUpload = ({ resume, setResume, errors, setErrors, email }) => {
+const ResumeUpload = ({ resume, setResume, errors, setErrors }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState(''); // 'idle', 'uploading', 'success', 'error'
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -66,63 +65,6 @@ const ResumeUpload = ({ resume, setResume, errors, setErrors, email }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
   
-  const handleTestUpload = async () => {
-    if (!resume) return;
-      
-    setUploadStatus('uploading');
-      
-    try {
-      // Use the correct endpoint format as specified - this endpoint accepts email and resume in form data
-      const resumeUploadUrl = `https://eliterecruitmentbackend-production.up.railway.app/resume/upload/${encodeURIComponent(email)}`;
-        
-      const resumeData = new FormData();
-      // Using 'file' as the field name as per Postman test requirement
-      resumeData.append('file', resume, resume.name);
-        
-      console.log('Testing resume upload with email to:', resumeUploadUrl);
-            
-      // Use cors mode to match other working APIs
-      const resumeResponse = await fetch(resumeUploadUrl, {
-        method: 'POST',
-        body: resumeData,
-        // Handle CORS for cross-origin requests
-        mode: 'cors',
-        credentials: 'omit', // Don't send cookies/credentials that might cause issues
-      });
-            
-      console.log('Resume upload test response status:', resumeResponse.status);
-            
-      if (!resumeResponse.ok) {
-        const errorText = await resumeResponse.text();
-        console.error('Resume upload test failed with status:', resumeResponse.status, 'Error:', errorText);
-              
-        // Check if this is the specific authorization issue
-        if (resumeResponse.status === 403) {
-          console.warn('Resume upload test failed with 403 error - this endpoint requires proper authentication/authorization.');
-          console.info('This is expected behavior if the backend requires authentication for resume uploads.');
-        } else if (resumeResponse.status === 0) {
-          console.warn('CORS error detected during resume upload test');
-        }
-              
-        setUploadStatus('error');
-        alert(`Resume upload failed with status: ${resumeResponse.status}. Check console for details.`);
-      } else {
-        const responseText = await resumeResponse.text();
-        console.log('Resume upload test successful:', responseText);
-        setUploadStatus('success');
-        alert('Resume uploaded successfully!');
-      }
-    } catch (resumeError) {
-      console.error('Error during resume upload test:', resumeError);
-      setUploadStatus('error');
-      alert(`Resume upload failed: ${resumeError.message}`);
-    } finally {
-      // Reset status after a delay
-      setTimeout(() => {
-        setUploadStatus('');
-      }, 3000);
-    }
-  };
 
   return (
     <div className="mt-6">
@@ -208,27 +150,8 @@ const ResumeUpload = ({ resume, setResume, errors, setErrors, email }) => {
         </p>
       )}
       
-      {uploadStatus === 'uploading' && (
-        <p className="text-blue-500 text-sm mt-1 flex items-center">
-          <svg className="w-4 h-4 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Uploading resume...
-        </p>
-      )}
       
-      {resume && (
-        <div className="mt-3">
-          <button
-            type="button"
-            onClick={async () => await handleTestUpload()}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-          >
-            Test Resume Upload
-          </button>
-        </div>
-      )}
+
     </div>
   );
 };

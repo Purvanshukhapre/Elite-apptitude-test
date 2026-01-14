@@ -15,10 +15,11 @@ import {
   getAllFeedback,
   getAllTestResults,
   getTestQuestionsByEmail,
+  getAllTestQuestions,
   sendEmail,
   sendTestSubmissionEmail,
   sendResumeWithEmail,
-  getResumeByEmail
+  getResumeByApplicantId  // Changed from getResumeByEmail to getResumeByApplicantId
 } from './services/apiService';
 
 // Named exports for individual functions
@@ -38,12 +39,12 @@ export {
   getAllFeedback,
   getAllTestResults,
   getTestQuestionsByEmail,
+  getAllTestQuestions,
   sendEmail,
   sendTestSubmissionEmail,
   sendResumeWithEmail,
-  getResumeByEmail
+  getResumeByApplicantId  // Changed from getResumeByEmail to getResumeByApplicantId
 };
-
 
 
 // Mock data for fake APIs

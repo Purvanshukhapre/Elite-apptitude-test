@@ -77,7 +77,7 @@ src/
 ├── context/
 │   └── AppContext.jsx      # Global state management
 ├── data/
-│   └── questions.js        # Sample test questions
+
 ├── pages/
 │   ├── Welcome.jsx         # Landing page
 │   ├── Registration.jsx    # Multi-step registration

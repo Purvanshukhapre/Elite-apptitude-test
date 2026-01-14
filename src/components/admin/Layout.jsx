@@ -23,14 +23,7 @@ const Layout = ({ children }) => {
     navigate('/admin');
   };
 
-  const getPageTitle = () => {
-    if (location.pathname.includes('dashboard') || location.pathname === '/admin/modern') return 'Dashboard';
-    if (location.pathname.includes('analytics')) return 'Analytics';
-    if (location.pathname.includes('applicants')) return 'Applicants';
-    if (location.pathname.includes('feedback')) return 'Feedback';
-    if (location.pathname.includes('email')) return 'Email';
-    return 'Dashboard';
-  };
+
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
@@ -126,8 +119,7 @@ const Layout = ({ children }) => {
                 </svg>
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{getPageTitle()}</h1>
-                <p className="text-sm text-gray-500">Welcome back, Admin</p>
+                {/* Removed duplicate page title and welcome message to avoid duplication with individual page headers */}
               </div>
             </div>
 

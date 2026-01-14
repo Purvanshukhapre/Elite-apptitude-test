@@ -26,6 +26,54 @@ const Feedback = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Get user identity information (email and fullName) from multiple sources
+    // This follows the same approach as AptitudeTest to ensure data is available
+    let userEmail = null;
+    let userFullName = null;
+    
+    // First, try to get from sessionStorage (where it should be stored after registration)
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const storedIdentity = sessionStorage.getItem('userIdentity');
+      if (storedIdentity) {
+        try {
+          const identity = JSON.parse(storedIdentity);
+          userEmail = identity.email;
+          userFullName = identity.fullName;
+        } catch (e) {
+          console.error('Failed to parse stored user identity:', e);
+        }
+      }
+    }
+    
+    // If not found in sessionStorage, try to get from localStorage
+    if (!userEmail && !userFullName && typeof window !== 'undefined' && window.localStorage) {
+      const storedIdentity = localStorage.getItem('userIdentity');
+      if (storedIdentity) {
+        try {
+          const identity = JSON.parse(storedIdentity);
+          userEmail = identity.email;
+          userFullName = identity.fullName;
+        } catch (e) {
+          console.error('Failed to parse stored user identity from localStorage:', e);
+        }
+      }
+    }
+    
+    // If still not found, try to get from the currentApplicant context as fallback
+    if (!userEmail && !userFullName) {
+      if (currentApplicant) {
+        if (currentApplicant.email) {
+          userEmail = currentApplicant.email;
+        } else if (currentApplicant.permanentEmail) {
+          userEmail = currentApplicant.permanentEmail;
+        }
+        
+        if (currentApplicant.fullName) {
+          userFullName = currentApplicant.fullName;
+        }
+      }
+    }
+    
     // Map feedback data to the expected backend format
     const feedbackData = {
       rating: rating,  // Backend expects 'rating' as integer
@@ -34,11 +82,22 @@ const Feedback = () => {
       problem3: feedback.improvements || '',  // Send as string
       problem4: feedback.wouldRecommend || '',  // Send as string
       problem5: feedback.comments || '',  // Send as string
-      name: currentApplicant?.fullName || '',  // Include applicant's name
-      email: currentApplicant?.email || '',  // Include applicant's email
-      position: currentApplicant?.position || '',  // Include position applied for
-      submittedAt: new Date().toISOString()  // Include timestamp
+      name: userFullName || currentApplicant?.fullName || '',  // Include applicant's name
+      email: userEmail || currentApplicant?.email || '',  // Include applicant's email
+      position: currentApplicant?.postAppliedFor || currentApplicant?.position || '',  // Include position applied for
+      submittedAt: new Date().toISOString(),  // Include timestamp
+      applicantId: currentApplicant?.id || currentApplicant?._id || 'unknown'  // Include applicant ID for the new API
     };
+    
+    // Validate that we have at least the name and email
+    if (!feedbackData.name || !feedbackData.email) {
+      console.warn('Missing name or email for feedback submission:', {
+        userFullName,
+        userEmail,
+        currentApplicant,
+        feedbackData
+      });
+    }
     
     setSubmitting(true);
     

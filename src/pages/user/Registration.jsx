@@ -12,7 +12,7 @@ import polyBg from "../../assets/1397.jpg";
 
 const Registration = () => {
   const navigate = useNavigate();
-  const { addApplicant, setCurrentApplicant } = useApp();
+  const { addApplicant, setCurrentApplicant, setTestQuestions } = useApp();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -164,12 +164,14 @@ const Registration = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const applicant = await addApplicant(formData);
+      const result = await addApplicant(formData);
       
       // Send resume with email if it exists
       if (formData.resume) {
         try {
-          await sendResumeWithEmail(formData.permanentEmail, formData.resume);
+          // Use the studentFormId if available in the result, otherwise use the applicant id
+          const resumeApplicantId = result.studentFormId || result.id || result._id;
+          await sendResumeWithEmail(resumeApplicantId, formData.resume);
           console.log('Resume sent with email successfully');
         } catch (resumeError) {
           console.error('Failed to send resume with email:', resumeError);
@@ -177,6 +179,35 @@ const Registration = () => {
         }
       }
       
+      // Handle the new API response format that includes studentFormId and questions
+      let applicant = result;
+      
+      // If the result contains studentFormId, it means we got the new response format
+      if (result.studentFormId) {
+        // Store the studentFormId in session storage for use in other API calls
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          try {
+            window.sessionStorage.setItem('studentFormId', result.studentFormId);
+            console.log('Student Form ID stored in sessionStorage:', result.studentFormId);
+          } catch (storageError) {
+            console.error('Failed to store studentFormId in sessionStorage:', storageError);
+          }
+        }
+        
+        // Store the questions from the response
+        if (result.testData && Array.isArray(result.testData)) {
+          setTestQuestions(result.testData);
+          console.log('Questions received from registration API:', result.testData);
+        }
+        
+        // Create a simplified applicant object
+        applicant = {
+          id: result.studentFormId,
+          ...formData
+        };
+      }
+      
+      // Store the complete applicant object as currentApplicant
       setCurrentApplicant(applicant);
       
       // Store user identity information in sessionStorage as requested by the user
@@ -184,7 +215,8 @@ const Registration = () => {
       if (typeof window !== 'undefined' && window.sessionStorage) {
         const userIdentity = {
           email: formData.permanentEmail || formData.email,
-          fullName: formData.fullName
+          fullName: formData.fullName,
+          applicantId: applicant?.id || applicant?._id || result.studentFormId || 'unknown'  // Include applicant ID for API calls
         };
         
         try {

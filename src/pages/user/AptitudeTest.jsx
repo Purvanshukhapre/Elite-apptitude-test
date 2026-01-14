@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
-import { sampleQuestions } from '../../data/questions';
 import { submitTest, sendTestSubmissionEmail } from '../../api';
 import { submitTestQuestions } from '../../services/apiService';
 
@@ -9,7 +8,8 @@ const AptitudeTest = () => {
   const navigate = useNavigate();
   const { currentApplicant, updateApplicantTest, testQuestions } = useApp();
   const [questions, setQuestions] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(900); // 15 minutes in seconds
@@ -130,15 +130,78 @@ const AptitudeTest = () => {
     }
     
     // Create applicantToUse object with the identity information
+    // Try to get the actual applicant ID from multiple sources
+    let actualApplicantId = 'unknown';
+    let studentFormId = null;
+    
+    // First, try to get the studentFormId from sessionStorage (new format)
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const storedStudentFormId = sessionStorage.getItem('studentFormId');
+      if (storedStudentFormId) {
+        studentFormId = storedStudentFormId;
+        actualApplicantId = storedStudentFormId;
+        console.log('Using studentFormId from sessionStorage:', storedStudentFormId);
+      } else {
+        // If no studentFormId, try to get from userIdentity
+        const storedIdentity = sessionStorage.getItem('userIdentity');
+        if (storedIdentity) {
+          try {
+            const identity = JSON.parse(storedIdentity);
+            if (identity.applicantId && identity.applicantId !== 'unknown') {
+              actualApplicantId = identity.applicantId;
+            }
+          } catch (e) {
+            console.error('Failed to parse stored user identity:', e);
+          }
+        }
+      }
+    }
+    
+    // If not found in sessionStorage, try localStorage
+    if (actualApplicantId === 'unknown' && typeof window !== 'undefined' && window.localStorage) {
+      const storedIdentity = localStorage.getItem('userIdentity');
+      if (storedIdentity) {
+        try {
+          const identity = JSON.parse(storedIdentity);
+          if (identity.applicantId && identity.applicantId !== 'unknown') {
+            actualApplicantId = identity.applicantId;
+          }
+        } catch (e) {
+          console.error('Failed to parse stored user identity from localStorage:', e);
+        }
+      }
+    }
+    
+    // If still unknown, try to get from currentApplicant
+    if (actualApplicantId === 'unknown') {
+      if (currentApplicant?.id && currentApplicant?.id !== 'unknown') {
+        actualApplicantId = currentApplicant.id;
+      } else if (currentApplicant?._id && currentApplicant?._id !== 'unknown') {
+        actualApplicantId = currentApplicant._id;
+      }
+    }
+    
+    // If still unknown, try to get from the applicant object itself
+    if (actualApplicantId === 'unknown') {
+      if (Array.isArray(currentApplicant)) {
+        // If currentApplicant is an array, find the one with an ID
+        const applicantWithId = currentApplicant.find(app => app?.id && app?.id !== 'unknown');
+        if (applicantWithId) {
+          actualApplicantId = applicantWithId.id;
+        }
+      }
+    }
+    
     const applicantToUse = {
-      id: 'current_user', // Placeholder ID
+      id: actualApplicantId,
+      studentFormId: studentFormId, // Include studentFormId if available
       email: userEmail,
       fullName: userFullName,
       permanentEmail: userEmail
     };
     
     let score = 0;
-    const questionsToUse = questions.length > 0 ? questions : sampleQuestions;
+    const questionsToUse = questions;
     const detailedAnswers = {};
     
     // Prepare data for the new API
@@ -192,7 +255,8 @@ const AptitudeTest = () => {
       tabSwitchCount,
       copyAttempts,
       disqualified: isTestDisqualified,
-      applicantId: applicantToUse.id || 'unknown',
+      studentFormId: applicantToUse.studentFormId, // Include studentFormId if available
+      applicantId: applicantToUse.id || currentApplicant?.id || currentApplicant?._id || 'unknown',
       applicantName: applicantToUse.fullName || 'Unknown Applicant',
       email: applicantToUse.permanentEmail || applicantToUse.email || 'unknown@example.com'
     };
@@ -217,6 +281,8 @@ const AptitudeTest = () => {
     const testQuestionsData = {
       email: email,
       fullName: fullName,
+      studentFormId: applicantToUse.studentFormId, // Include studentFormId if available
+      applicantId: applicantToUse.id || currentApplicant?.id || currentApplicant?._id || 'unknown', // Include applicant ID for the new API
       questions: questionsForSubmission.map(q => ({
         aiQuestion: q.question,
         Options: q.options,
@@ -252,6 +318,7 @@ const AptitudeTest = () => {
       // Update applicant with test data
       updateApplicantTest(applicantToUse.id, {
         ...testData,
+        studentFormId: applicantToUse.studentFormId, // Include studentFormId in test data
         score: result.score || `${score}/${questionsToUse.length}`,
         result: result,
         // Ensure correctAnswers is included even if API submission fails later
@@ -291,6 +358,7 @@ const AptitudeTest = () => {
       // The testData object already contains correctAnswers: score from line 51
       updateApplicantTest(applicantToUse.id, {
         ...testData,
+        studentFormId: applicantToUse.studentFormId, // Include studentFormId in test data
         // Use the correctAnswers that was already calculated in the testData object
         correctAnswers: testData.correctAnswers,
         email: applicantToUse.permanentEmail || applicantToUse.email
@@ -470,71 +538,116 @@ const AptitudeTest = () => {
     };
   }, [handleSubmit]);
 
-  // Use questions from context or fallback to sample questions
+  // Get questions from the registration response stored in currentApplicant
   useEffect(() => {
-    setLoading(true);
-    try {
-      // console.log('testQuestions from context:', testQuestions);
-      if (testQuestions && testQuestions.length > 0) {
-        // console.log('Using dynamic questions from API');
-        // Transform API questions to match expected format
-        const transformedQuestions = testQuestions.map((q, index) => ({
-          // Use the original question ID if available, otherwise generate one
-          id: q.id || index + 1,
-          question: q.question,
-          options: q.options,
-          // Convert letter answer (A,B,C,D) to index (0,1,2,3)
-          // Handle the format where correctAnswer is a letter (A,B,C,D)
-          correctAnswer: (() => {
-            // Log the question structure for debugging
-            // console.log('Processing question:', q);
-            // console.log('Options:', q.options);
-            // console.log('Correct answer:', q.correctAnswer);
-            
-            // Handle when correctAnswer is already a number (from mock data)
-            if (typeof q.correctAnswer === 'number') {
-              // console.log('Correct answer is already a number:', q.correctAnswer);
-              return q.correctAnswer;
-            }
-            
-            // If correctAnswer is a single letter (A,B,C,D) from real API
-            if (q.correctAnswer && typeof q.correctAnswer === 'string' && q.correctAnswer.length === 1) {
-              const letterIndex = q.correctAnswer.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
-              // console.log('Letter answer:', q.correctAnswer, 'Index:', letterIndex, 'Options length:', q.options.length);
-              const result = letterIndex >= 0 && letterIndex < q.options.length ? letterIndex : 0;
-              // console.log('Final index:', result);
-              return result;
-            }
-            
-            // Fallback: try to find in options
-            const index = q.options.findIndex(opt => 
-              opt.startsWith(q.correctAnswer + '.') || 
-              opt.startsWith(q.correctAnswer + ')') ||
-              opt.startsWith(q.correctAnswer + ' ')
-            );
-            
-            // console.log('Fallback index:', index);
-            return index >= 0 ? index : 0;
-          })(),
-          category: q.category || q.type || 'General',
-          difficulty: q.difficulty || 'Medium'
-        }));
+    const loadQuestions = async () => {
+      try {
+        setLoading(true);
+        setError(null);
         
-        // console.log('Transformed questions:', transformedQuestions);
-        setQuestions(transformedQuestions);
-      } else {
-        // console.log('No dynamic questions available, using sample questions');
-        // Fallback to sample questions
-        setQuestions(sampleQuestions);
+        // Get questions from the registration response stored in currentApplicant
+        // The questions should be in the response from the registration API
+        let registrationQuestions = [];
+        
+        // Try different possible locations where questions might be stored
+        if (currentApplicant && currentApplicant.questions) {
+          registrationQuestions = currentApplicant.questions;
+        } else if (currentApplicant && currentApplicant.testData && currentApplicant.testData.questions) {
+          registrationQuestions = currentApplicant.testData.questions;
+        } else if (currentApplicant && Array.isArray(currentApplicant)) {
+          // If currentApplicant is an array, look for questions in the first applicant object
+          const applicant = currentApplicant[0];
+          if (applicant && applicant.questions) {
+            registrationQuestions = applicant.questions;
+          } else if (applicant && applicant.testData && applicant.testData.questions) {
+            registrationQuestions = applicant.testData.questions;
+          }
+        }
+        
+        if (registrationQuestions && Array.isArray(registrationQuestions) && registrationQuestions.length > 0) {
+          // Transform the questions from the registration API response format
+          // The format is: { type, difficulty, question, options, correctAnswer }
+          const transformedQuestions = registrationQuestions.map((q, index) => ({
+            id: q.id || index + 1,
+            question: q.question || q.Question,
+            options: q.options || q.Options || [],
+            // Convert letter answer (A,B,C,D) to index (0,1,2,3)
+            correctAnswer: (() => {
+              if (typeof q.correctAnswer === 'number') {
+                return q.correctAnswer;
+              }
+              
+              // If correctAnswer is a single letter (A,B,C,D) from API response
+              if (q.correctAnswer && typeof q.correctAnswer === 'string' && q.correctAnswer.length === 1) {
+                const letterIndex = q.correctAnswer.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
+                const result = letterIndex >= 0 && letterIndex < (q.options || []).length ? letterIndex : 0;
+                return result;
+              }
+              
+              // If correctAnswer is the actual option text, find its index
+              if (q.correctAnswer && typeof q.correctAnswer === 'string') {
+                const options = q.options || [];
+                const optionIndex = options.findIndex(opt => 
+                  opt.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()
+                );
+                if (optionIndex >= 0) {
+                  return optionIndex;
+                }
+              }
+              
+              return 0; // default to first option
+            })(),
+            category: q.type || q.category || 'General',
+            difficulty: q.difficulty || 'Medium'
+          }));
+          
+          setQuestions(transformedQuestions);
+        } else {
+          // If no questions found in registration response, try context
+          if (testQuestions && testQuestions.length > 0) {
+            const transformedQuestions = testQuestions.map((q, index) => ({
+              id: q.id || index + 1,
+              question: q.question,
+              options: q.options,
+              correctAnswer: (() => {
+                if (typeof q.correctAnswer === 'number') {
+                  return q.correctAnswer;
+                }
+                
+                if (q.correctAnswer && typeof q.correctAnswer === 'string' && q.correctAnswer.length === 1) {
+                  const letterIndex = q.correctAnswer.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
+                  const result = letterIndex >= 0 && letterIndex < q.options.length ? letterIndex : 0;
+                  return result;
+                }
+                
+                const index = q.options.findIndex(opt => 
+                  opt.startsWith(q.correctAnswer + '.') || 
+                  opt.startsWith(q.correctAnswer + ')') ||
+                  opt.startsWith(q.correctAnswer + ' ')
+                );
+                
+                return index >= 0 ? index : 0;
+              })(),
+              category: q.category || q.type || 'General',
+              difficulty: q.difficulty || 'Medium'
+            }));
+            
+            setQuestions(transformedQuestions);
+          } else {
+            // Show error if no questions available from any source
+            setError('No questions available from the server. Please try again later.');
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load questions from registration response:', err);
+        setError('Failed to load questions. Please try again later.');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to process questions:', err);
-      // Fallback to sample questions
-      setQuestions(sampleQuestions);
-    } finally {
-      setLoading(false);
-    }
-  }, [testQuestions]);
+    };
+    
+    loadQuestions();
+  }, [currentApplicant, testQuestions]);
 
   useEffect(() => {
     // Check if user identity information is available
@@ -656,9 +769,9 @@ const AptitudeTest = () => {
     }));
   };
 
-  const questionsToUse = questions.length > 0 ? questions : sampleQuestions;
+  const questionsToUse = questions;
   const answeredCount = Object.keys(answers).length;
-  const progress = (answeredCount / questionsToUse.length) * 100;
+  const progress = questionsToUse.length > 0 ? (answeredCount / questionsToUse.length) * 100 : 0;
 
   // Check if user identity information is available before rendering
   let hasIdentity = false;
@@ -722,6 +835,29 @@ const AptitudeTest = () => {
     return null;
   }
 
+  // Show error state if questions failed to load
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Unable to Start Test</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
   // Show loading state while fetching questions
   if (loading) {
     return (

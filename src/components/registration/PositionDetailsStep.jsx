@@ -693,7 +693,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
           Resume
         </h3>
         
-        <ResumeUpload resume={formData.resume} setResume={(file) => setFormData(prev => ({ ...prev, resume: file }))} errors={errors} setErrors={setErrors} email={formData.permanentEmail} />
+        <ResumeUpload resume={formData.resume} setResume={(file) => setFormData(prev => ({ ...prev, resume: file }))} errors={errors} setErrors={setErrors} />
       </div>
     </div>
   );

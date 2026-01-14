@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
-import { getTestQuestionsByEmail, getApplicantsByName, getAllTestResults, getAllFeedback, getResumeByEmail } from '../../api';
+import { getTestQuestionsByEmail, getApplicantsByName, getAllTestResults, getAllFeedback, getResumeByApplicantId } from '../../api';
 import StarRating from '../../components/StarRating';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -114,7 +114,7 @@ const ApplicantDetails = () => {
                                   
                   try {
                     // Fetch resume data
-                    const resumeInfo = await getResumeByEmail(email);
+                    const resumeInfo = await getResumeByApplicantId(decodedId);
                     setResumeData(resumeInfo);
                   } catch (resumeError) {
                     console.error('Could not fetch resume data:', resumeError);
@@ -393,53 +393,76 @@ const ApplicantDetails = () => {
   const handleDownloadPDF = () => {
     if (!applicant) return;
     
-    const doc = new jsPDF();
-    
-    // Add title
-    doc.setFontSize(20);
-    doc.text('Applicant Details Report', 20, 20);
-    
-    // Add applicant info
-    doc.setFontSize(14);
-    doc.text('Applicant Information', 20, 40);
-    
-    // Draw a line
-    doc.line(20, 45, 190, 45);
-    
-    // Add applicant details in a table format
-    const applicantDetails = [
-      ['Full Name', applicant.fullName || 'N/A'],
-      ['Email', applicant.permanentEmail || applicant.email || 'N/A'],
-      ['Phone', applicant.permanentPhone || applicant.phone || 'N/A'],
-      ['Date of Birth', applicant.dateOfBirth ? new Date(applicant.dateOfBirth).toLocaleDateString() : 'N/A'],
-      ['Age', applicant.age || 'N/A'],
-      ['Gender', applicant.sex || 'N/A'],
-      ['Marital Status', applicant.maritalStatus || 'N/A'],
-      ['Applied Position', applicant.postAppliedFor || applicant.position || 'N/A'],
-      ['Address', applicant.permanentAddressLine || 'N/A'],
-      ['Pin Code', applicant.permanentPin || 'N/A'],
-      ['Test Status', (applicant.testResult && applicant.testResult.correctAnswer !== undefined) || 
-                   (applicant.testData && applicant.testData.score) || 
-                   (applicant.correctAnswer !== undefined && applicant.correctAnswer !== null) ? 'Completed' : 'Pending'],
-      ['Overall Score', `${score.toFixed(1)}%`],
-      ['Correct Answers', `${correctAnswers}/15`],
-      ['Pass/Fail Status', score >= 60 ? 'PASS' : 'FAIL'],
-      ['Time Spent', formatTime(timeSpent)],
-      ['Feedback Rating', applicant.overallRating !== undefined && applicant.overallRating !== null ? applicant.overallRating : 'N/A']
-    ];
-    
-    autoTable(doc, {
-      startY: 50,
-      head: [['Field', 'Value']],
-      body: applicantDetails,
-      theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [59, 130, 246] } // blue-500
-    });
+    try {
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(20);
+      doc.text('Applicant Details Report', 20, 20);
+      
+      // Add applicant info
+      doc.setFontSize(14);
+      doc.text('Applicant Information', 20, 40);
+      
+      // Draw a line
+      doc.line(20, 45, 190, 45);
+      
+      // Add applicant details in a table format
+      const applicantDetails = [
+        ['Full Name', applicant.fullName || 'N/A'],
+        ['Email', applicant.permanentEmail || applicant.email || 'N/A'],
+        ['Phone', applicant.permanentPhone || applicant.phone || 'N/A'],
+
+        ['Age', applicant.age || 'N/A'],
+        ['Gender', applicant.sex || 'N/A'],
+        ['Marital Status', applicant.maritalStatus || 'N/A'],
+        ['Applied Position', applicant.postAppliedFor || applicant.position || 'N/A'],
+        ['Address', applicant.permanentAddressLine || 'N/A'],
+        ['Pin Code', applicant.permanentPin || 'N/A'],
+        ['Test Status', (applicant.testResult && applicant.testResult.correctAnswer !== undefined) || 
+                     (applicant.testData && applicant.testData.score) || 
+                     (applicant.correctAnswer !== undefined && applicant.correctAnswer !== null) ? 'Completed' : 'Pending'],
+        ['Overall Score', `${score.toFixed(1)}%`],
+        ['Correct Answers', `${correctAnswers}/15`],
+        ['Pass/Fail Status', score >= 60 ? 'PASS' : 'FAIL'],
+        ['Time Spent', formatTime(timeSpent)],
+        ['Feedback Rating', applicant.overallRating !== undefined && applicant.overallRating !== null ? applicant.overallRating : 'N/A']
+      ];
+      
+      autoTable(doc, {
+        startY: 50,
+        head: [['Field', 'Value']],
+        body: applicantDetails,
+        theme: 'grid',
+        styles: { 
+          fontSize: 10,
+          cellPadding: 4,
+          valign: 'middle'
+        },
+        headStyles: { 
+          fillColor: [59, 130, 246],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          cellPadding: 4
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251]
+        },
+        columnStyles: {
+          0: { cellWidth: 50 },
+          1: { cellWidth: 110 }
+        },
+        margin: { left: 15 }
+      });
     
     // Add academic records if available
     if (applicant.academicRecords && applicant.academicRecords.length > 0) {
-      let lastY = doc.lastAutoTable.finalY + 10;
+      let lastY = 20; // Start at top of page if no previous table exists
+      if (doc.lastAutoTable && doc.lastAutoTable.finalY) {
+        lastY = doc.lastAutoTable.finalY + 10;
+      }
       doc.setFontSize(14);
       doc.text('Academic Records', 20, lastY);
       
@@ -459,14 +482,36 @@ const ApplicantDetails = () => {
         head: [['Field', 'Value']],
         body: academicData,
         theme: 'grid',
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [59, 130, 246] }
+        styles: { 
+          fontSize: 10,
+          cellPadding: 4,
+          valign: 'middle'
+        },
+        headStyles: { 
+          fillColor: [59, 130, 246],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          cellPadding: 4
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251]
+        },
+        columnStyles: {
+          0: { cellWidth: 50 },
+          1: { cellWidth: 110 }
+        },
+        margin: { left: 15 }
       });
     }
     
     // Add work experience if available
     if (applicant.workExperiences && applicant.workExperiences.length > 0) {
-      let lastY = doc.lastAutoTable.finalY + 10;
+      let lastY = 20; // Start at top of page if no previous table exists
+      if (doc.lastAutoTable && doc.lastAutoTable.finalY) {
+        lastY = doc.lastAutoTable.finalY + 10;
+      }
       doc.setFontSize(14);
       doc.text('Work Experience', 20, lastY);
       
@@ -487,28 +532,102 @@ const ApplicantDetails = () => {
         head: [['Field', 'Value']],
         body: workData,
         theme: 'grid',
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [59, 130, 246] }
+        styles: { 
+          fontSize: 10,
+          cellPadding: 4,
+          valign: 'middle'
+        },
+        headStyles: { 
+          fillColor: [59, 130, 246],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          cellPadding: 4
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251]
+        },
+        columnStyles: {
+          0: { cellWidth: 50 },
+          1: { cellWidth: 110 }
+        },
+        margin: { left: 15 }
       });
     }
     
     // Add test questions and answers if available
     if (finalQuestions.length > 0) {
-      let lastY = doc.lastAutoTable.finalY + 10;
+      // Calculate if we have enough space for the questions section
+      // Approximately estimate space needed based on number of questions
+      let lastY = 20; // Start at top of page if no previous table exists
+      if (doc.lastAutoTable && doc.lastAutoTable.finalY) {
+        lastY = doc.lastAutoTable.finalY + 10;
+      }
+      const estimatedTableHeight = finalQuestions.length * 12 + 20; // approx height per row + header
+      
+      // If there's not enough space for the questions section, start a new page
+      if (lastY + estimatedTableHeight > 250) {
+        doc.addPage();
+        lastY = 20;
+      }
+      
       doc.setFontSize(14);
+      doc.setTextColor(30, 41, 59); // dark gray color
+      doc.setFillColor(239, 246, 255); // light blue background
+      
+      // Draw a background rectangle for the heading
+      doc.rect(15, lastY - 6, 180, 10, 'F');
       doc.text('Test Questions & Answers', 20, lastY);
+      
+      // Add some space after the heading
+      const headingY = lastY + 8;
       
       const questionData = finalQuestions.map((question, index) => {
         let userAnswer;
+        // Look for answers in different possible formats
         if (answersProvided && typeof answersProvided === 'object') {
+          // Try to match by question ID (most reliable)
           userAnswer = answersProvided[question.id] !== undefined 
             ? answersProvided[question.id] 
             : answersProvided[question._id] !== undefined 
               ? answersProvided[question._id] 
               : answersProvided[question.questionId] !== undefined
                 ? answersProvided[question.questionId]
-                : answersProvided[index];
+                : answersProvided[question.id?.toString()] !== undefined
+                  ? answersProvided[question.id?.toString()]
+                  : answersProvided[question._id?.toString()] !== undefined
+                    ? answersProvided[question._id?.toString()]
+                    : answersProvided[question.questionId?.toString()];
+          
+          // If still not found, try to find in nested structure
+          if (userAnswer === undefined && answersProvided.answers) {
+            // Handle if answers are in a nested structure
+            if (Array.isArray(answersProvided.answers)) {
+              userAnswer = answersProvided.answers[index];
+            } else if (typeof answersProvided.answers === 'object') {
+              userAnswer = answersProvided.answers[question.id] !== undefined 
+                ? answersProvided.answers[question.id]
+                : answersProvided.answers[question._id] !== undefined
+                  ? answersProvided.answers[question._id]
+                  : answersProvided.answers[question.questionId];
+            }
+          }
+          
+          // If still not found, try alternative formats
+          if (userAnswer === undefined) {
+            // Try with question ID as property
+            const questionKey = Object.keys(answersProvided).find(key => 
+              key === question.id || key === question._id || key === question.questionId ||
+              key.toString() === question.id?.toString() || key.toString() === question._id?.toString()
+            );
+            
+            if (questionKey) {
+              userAnswer = answersProvided[questionKey];
+            }
+          }
         } else if (Array.isArray(answersProvided)) {
+          // If answers are provided as an array, match by index
           userAnswer = answersProvided[index];
         } else {
           userAnswer = undefined;
@@ -522,81 +641,151 @@ const ApplicantDetails = () => {
               ? question.aiAnswer
               : undefined;
         
-        let isCorrect;
-        if (correctAnswer !== undefined && userAnswer !== undefined) {
-          if (typeof correctAnswer === 'number' && typeof userAnswer === 'number') {
-            isCorrect = correctAnswer === userAnswer;
-          } else if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
-            isCorrect = correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
-          } else if (question.options && typeof correctAnswer === 'number' && typeof userAnswer === 'string') {
-            isCorrect = question.options[correctAnswer]?.toString().trim().toLowerCase() === userAnswer.toString().trim().toLowerCase();
-          } else if (question.options && typeof correctAnswer === 'string' && typeof userAnswer === 'number') {
-            isCorrect = question.options[userAnswer]?.toString().trim().toLowerCase() === correctAnswer.toString().trim().toLowerCase();
-          } else {
-            isCorrect = correctAnswer === userAnswer;
+        let isCorrect = false;
+        
+        // Compare user answer with correct answer using multiple comparison strategies
+        // Check if answers are stored directly in the question object
+        const questionUserAnswer = question.userAnswer !== undefined ? question.userAnswer :
+                                  question.selectedAnswer !== undefined ? question.selectedAnswer :
+                                  question.userSelected !== undefined ? question.userSelected :
+                                  question.answer !== undefined ? question.answer :
+                                  undefined;
+        
+        // Use the question-level answer if available, otherwise use the global answers
+        const finalUserAnswer = questionUserAnswer !== undefined ? questionUserAnswer : userAnswer;
+        
+        if (correctAnswer !== undefined && finalUserAnswer !== undefined) {
+          // Strategy 1: Direct comparison
+          if (correctAnswer === finalUserAnswer) {
+            isCorrect = true;
           }
-        } else {
-          isCorrect = false;
+          // Strategy 2: Number vs String comparison
+          else if (typeof correctAnswer === 'number' && typeof finalUserAnswer === 'string') {
+            if (question.options && question.options[correctAnswer] && 
+                question.options[correctAnswer].toString().trim().toLowerCase() === finalUserAnswer.toString().trim().toLowerCase()) {
+              isCorrect = true;
+            } else if (correctAnswer.toString() === finalUserAnswer.toString()) {
+              isCorrect = true;
+            }
+          }
+          // Strategy 3: String vs Number comparison
+          else if (typeof correctAnswer === 'string' && typeof finalUserAnswer === 'number') {
+            if (question.options && question.options[finalUserAnswer] && 
+                question.options[finalUserAnswer].toString().trim().toLowerCase() === correctAnswer.toString().trim().toLowerCase()) {
+              isCorrect = true;
+            } else if (correctAnswer.toString() === finalUserAnswer.toString()) {
+              isCorrect = true;
+            }
+          }
+          // Strategy 4: String comparison with normalization
+          else if (typeof correctAnswer === 'string' && typeof finalUserAnswer === 'string') {
+            if (correctAnswer.trim().toLowerCase() === finalUserAnswer.trim().toLowerCase()) {
+              isCorrect = true;
+            }
+          }
+          // Strategy 5: Option text comparison
+          else if (question.options) {
+            const correctOptionText = question.options[correctAnswer] || 
+                                    (typeof correctAnswer === 'number' ? question.options[parseInt(correctAnswer)] : null);
+            const userOptionText = question.options[finalUserAnswer] || 
+                                  (typeof finalUserAnswer === 'number' ? question.options[parseInt(finalUserAnswer)] : null);
+            
+            if (correctOptionText && userOptionText && 
+                correctOptionText.toString().trim().toLowerCase() === userOptionText.toString().trim().toLowerCase()) {
+              isCorrect = true;
+            } else if (correctOptionText && typeof finalUserAnswer === 'string' &&
+                      correctOptionText.toString().trim().toLowerCase() === finalUserAnswer.trim().toLowerCase()) {
+              isCorrect = true;
+            }
+          }
         }
         
         const questionText = question.question || question.aiQuestion || question.Question || question.text || 'N/A';
         const options = question.options || question.Options || question.OptionsList || [];
         
+        const userAnswerText = finalUserAnswer !== undefined 
+          ? (typeof finalUserAnswer === 'number' ? options[finalUserAnswer] || finalUserAnswer : finalUserAnswer)
+          : 'Not answered';
+        
+        const correctAnswerText = correctAnswer !== undefined 
+          ? (typeof correctAnswer === 'number' ? options[correctAnswer] || correctAnswer : correctAnswer)
+          : 'N/A';
+        
         return [
-          `Q${index + 1}: ${questionText.substring(0, 50)}${questionText.length > 50 ? '...' : ''}`,
-          `Your Answer: ${userAnswer !== undefined ? (typeof userAnswer === 'number' ? options[userAnswer] || userAnswer : userAnswer) : 'Not answered'}`,
-          `Correct Answer: ${correctAnswer !== undefined ? (typeof correctAnswer === 'number' ? options[correctAnswer] || correctAnswer : correctAnswer) : 'N/A'}`,
+          `Q${index + 1}: ${questionText}`,
+          `Your Answer: ${userAnswerText}`,
+          `Correct Answer: ${correctAnswerText}`,
           `Status: ${isCorrect ? 'Correct' : 'Incorrect'}`
         ];
       });
       
       autoTable(doc, {
-        startY: lastY + 5,
+        startY: headingY,
         head: [['Question', 'Your Answer', 'Correct Answer', 'Status']],
         body: questionData,
         theme: 'grid',
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [59, 130, 246] },
+        styles: { 
+          fontSize: 8,
+          cellPadding: 4,
+          valign: 'top',
+          halign: 'left'
+        },
+        headStyles: { 
+          fillColor: [59, 130, 246],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          halign: 'center'
+        },
+        bodyStyles: {
+          cellPadding: 4
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251] // Very light gray for alternate rows
+        },
         columnStyles: {
-          0: { cellWidth: 40 },
+          0: { cellWidth: 65 },
           1: { cellWidth: 30 },
           2: { cellWidth: 30 },
-          3: { cellWidth: 20 }
-        }
+          3: { cellWidth: 25 }
+        },
+        // Make sure the table doesn't break in the middle of a row
+        rowPageBreak: 'avoid',
+        margin: { left: 15 }
       });
     }
     
-    // Add resume information if available
-    if (resumeData) {
-      let lastY = doc.lastAutoTable.finalY + 10;
-      doc.setFontSize(14);
-      doc.text('Resume Information', 20, lastY);
-      
-      const resumeInfo = [
-        ['Resume File Name', resumeData.s3Key.split('/').pop() || 'N/A'],
-        ['S3 Key', resumeData.s3Key || 'N/A'],
-        ['Resume URL', resumeData.resumeUrl || 'N/A'],
-        ['Uploaded At', resumeData.uploadedAt ? new Date(resumeData.uploadedAt).toLocaleDateString() : 'N/A'],
-        ['Email', resumeData.email || 'N/A']
-      ];
-      
-      autoTable(doc, {
-        startY: lastY + 5,
-        head: [['Field', 'Value']],
-        body: resumeInfo,
-        theme: 'grid',
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [59, 130, 246] }
-      });
+    
+    // Add page numbers if needed
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(10);
+      doc.setTextColor(150);
+      doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 40, doc.internal.pageSize.height - 10);
     }
     
     // Save the PDF
     doc.save(`applicant-details-${applicant.fullName || applicant.name || 'applicant'}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('An error occurred while generating the PDF. Please try again.');
+    }
   };
 
   // Get questions data if available - check multiple possible sources
   const questionsAttempted = applicant.testData?.questions || applicant.questions || [];
-  const answersProvided = applicant.testData?.answers || applicant.answers || [];
+  
+  // Get answers from multiple possible sources - prioritize the most reliable
+  const answersProvided = applicant.testData?.answers || 
+                       applicant.answers || 
+                       applicant.testData?.userAnswers || 
+                       applicant.userAnswers || 
+                       applicant.testData?.userAnswer || 
+                       applicant.userAnswer || 
+                       applicant.testData?.selectedAnswers || 
+                       applicant.selectedAnswers || 
+                       applicant.testQuestions?.userAnswers || 
+                       applicant.testQuestions?.answers || [];
   
   // Extract questions from questionsData if available (object format)
   const questionsFromData = applicant.questionsData && typeof applicant.questionsData === 'object' && !Array.isArray(applicant.questionsData) && applicant.questionsData.questions ? 
@@ -743,10 +932,7 @@ const ApplicantDetails = () => {
                 <span className="text-gray-600">Phone</span>
                 <span className="text-gray-900 font-medium">{applicant.permanentPhone || applicant.phone || applicant.phoneNumber || 'N/A'}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Date of Birth</span>
-                <span className="text-gray-900 font-medium">{applicant.dateOfBirth ? new Date(applicant.dateOfBirth).toLocaleDateString() : (applicant.dob ? new Date(applicant.dob).toLocaleDateString() : 'N/A')}</span>
-              </div>
+
               <div className="flex justify-between">
                 <span className="text-gray-600">Age</span>
                 <span className="text-gray-900 font-medium">{applicant.age || 'N/A'}</span>
