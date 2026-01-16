@@ -4,18 +4,20 @@ export const API_BASE_URL = 'https://eliterecruitmentbackend-production.up.railw
 // API Endpoints
 export const API_ENDPOINTS = {
   // Applicants
-  APPLICANTS: '/auth/student/submit',  // Using proxy in development
-  ALL_APPLICANTS: (id) => id ? `/auth/student/${id}` : '/auth/student/all',  // Using proxy in development - GET all data for a specific applicant or all applicants if no ID provided
-  APPLICANTS_BY_NAME: (name) => `/auth/student/name/${encodeURIComponent(name)}`,  // Using proxy in development
-  APPLICANT_TEST_DATA: (id) => `/applicants/${id}/test-data`,  // Using proxy in development
-  APPLICANT_FEEDBACK: (id) => `/applicants/${id}/feedback`,  // Using proxy in development
-  APPLICANT_BY_ID: (id) => `/auth/student/id/${id}`,  // Using proxy in development
-  APPLICANT_TEST_RESULT: (id) => `/test/result/${id}`,  // Using proxy in development
-  APPLICANT_FEEDBACK_RESULT: (id) => `/feedback/${id}`,  // Using proxy in development
-  SUBMIT_TEST: '/result/submit',  // New API endpoint for test submission
-  SUBMIT_FEEDBACK: (id) => `/feedback/${id}`,  // New API endpoint with applicant ID
-  TEST_QUESTIONS_SUBMIT: '/questions/submit', // Use this endpoint for submitting questions
-  SUBMIT_RESUME: (id) => `/resume/${id}`,  // New API endpoint with applicant ID
+  APPLICANTS: '/auth/student/submit',  // Student registration endpoint
+  ALL_APPLICANTS: (id) => id ? `/auth/student/${id}` : '/auth/student/all',  // GET all data for a specific applicant or all applicants
+  APPLICANTS_BY_ID: (id) => `/auth/student/${id}`,  // Get user by ID (dashboard)
+  APPLICANT_TEST_DATA: (id) => `/applicants/${id}/test-data`,
+  APPLICANT_FEEDBACK: (id) => `/applicants/${id}/feedback`,
+  APPLICANT_BY_ID: (id) => `/auth/student/id/${id}`,
+  APPLICANT_TEST_RESULT: (id) => `/test/result/${id}`,
+  APPLICANT_FEEDBACK_RESULT: (id) => `/feedback/${id}`,
+  SUBMIT_TEST: (id) => `/result/${id}`,  // Submit test result with studentFormId
+  SUBMIT_FEEDBACK: (id) => `/feedback/${id}`,  // Submit feedback with studentFormId
+  SUBMIT_QUESTIONS: (id) => `/questions/${id}`,  // Submit questions with studentFormId
+  SUBMIT_RESUME: (email) => `/resume/upload/${email}`,  // Submit resume with email in URL path
+  DELETE_APPLICANT: (id) => `/auth/student/${id}`,  // Delete applicant by ID
+  TEST_QUESTIONS_SUBMIT: '/questions/submit',
   TEST_QUESTIONS_ALL: '/questions/all',
   TEST_QUESTIONS_BY_EMAIL: (email) => `/questions/email/${encodeURIComponent(email)}`,
 
@@ -153,8 +155,8 @@ export const getApplicants = async (id) => {
   }
 };
 
-export const getApplicantsByName = async (name) => {
-  return apiCall(API_ENDPOINTS.APPLICANTS_BY_NAME(name));
+export const getApplicantsById = async (id) => {
+  return apiCall(API_ENDPOINTS.APPLICANTS_BY_ID(id));
 };
 
 export const addApplicant = async (applicantData) => {
@@ -175,49 +177,68 @@ export const addApplicant = async (applicantData) => {
 };
 
 export const updateApplicantTest = async (applicantId, testData) => {
+  // Use the studentFormId for the API endpoint
+  const studentFormId = testData.studentFormId || applicantId;
+  
+  if (!studentFormId) {
+    throw new Error('Student Form ID is required for test submission');
+  }
+  
   // Format the data according to the expected schema
   const resultData = {
     fullName: testData.applicantName || testData.name,
+    email: testData.email,
     correctAnswer: testData.correctAnswers || 0,
-    // Include applicantId in the data since endpoint doesn't use it in URL
-    applicantId: applicantId || testData.studentFormId || testData.applicantId || testData.id || testData.applicant_id,
     ...testData
   };
   
-  // Use the result submission endpoint since applicants/test-data is restricted
-  return apiCall(API_ENDPOINTS.SUBMIT_TEST, {
+  // Use the result submission endpoint with studentFormId in URL
+  return apiCall(API_ENDPOINTS.SUBMIT_TEST(studentFormId), {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(resultData)
   });
 };
 
 export const updateApplicantFeedback = async (applicantId, feedback) => {
-  // If applicantId is not provided, try to get it from feedback
-  const idToUse = applicantId || feedback.studentFormId || feedback.applicantId || feedback.id || feedback.applicant_id;
+  // Use the studentFormId for the API endpoint
+  const studentFormId = feedback.studentFormId || applicantId;
   
-  if (!idToUse) {
-    throw new Error('Applicant ID is required for updating feedback');
+  if (!studentFormId) {
+    throw new Error('Student Form ID is required for feedback submission');
   }
   
-  // Use the correct feedback endpoint since applicants/{id}/feedback is restricted
-  return apiCall(API_ENDPOINTS.SUBMIT_FEEDBACK(idToUse), {
+  // Use the feedback endpoint with studentFormId in URL
+  return apiCall(API_ENDPOINTS.SUBMIT_FEEDBACK(studentFormId), {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(feedback)
   });
 };
 
 export const submitTest = async (testData) => {
+  // Get the studentFormId
+  const studentFormId = testData.studentFormId || testData.applicantId || testData.id;
+  
+  if (!studentFormId) {
+    throw new Error('Student Form ID is required for test submission');
+  }
+  
   // Create the result data in the format expected by the backend
   const resultData = {
     fullName: testData.applicantName || testData.name,
+    email: testData.email,
     correctAnswer: testData.correctAnswers || 0,
-    // Include applicantId in the data since endpoint doesn't use it in URL
-    applicantId: testData.studentFormId || testData.applicantId || testData.id || testData.applicant_id
+    ...testData
   };
   
   try {
-    // Submit the test data to the result submission endpoint
-    const submitResponse = await apiCall(API_ENDPOINTS.SUBMIT_TEST, {
+    // Submit the test data to the result submission endpoint with studentFormId in URL
+    const submitResponse = await apiCall(API_ENDPOINTS.SUBMIT_TEST(studentFormId), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -233,7 +254,6 @@ export const submitTest = async (testData) => {
       score: `${testData.correctAnswers || 0}/${testData.questions ? testData.questions.length : 0}`
     };
   } catch (submitError) {
-
     // Fallback response when API submission fails
     return {
       correctAnswers: testData.correctAnswers || 0,
@@ -267,16 +287,15 @@ export const calculateCorrectAnswers = (userAnswers, questions) => {
 };
 
 export const submitFeedback = async (feedbackData) => {
-  // Get the applicant ID from the feedback data
-  // Prioritize studentFormId if available in feedbackData
-  const applicantId = feedbackData.studentFormId || feedbackData.applicantId || feedbackData.id || feedbackData.applicant_id;
+  // Get the studentFormId
+  const studentFormId = feedbackData.studentFormId || feedbackData.applicantId || feedbackData.id;
   
-  if (!applicantId) {
-    throw new Error('Applicant ID is required for feedback submission');
+  if (!studentFormId) {
+    throw new Error('Student Form ID is required for feedback submission');
   }
   
-  // Use the applicant-specific feedback endpoint as per updated requirements
-  return apiCall(API_ENDPOINTS.SUBMIT_FEEDBACK(applicantId), {
+  // Use the feedback endpoint with studentFormId in URL
+  return apiCall(API_ENDPOINTS.SUBMIT_FEEDBACK(studentFormId), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -295,9 +314,15 @@ export const getAllTestResults = async () => {
 
 // New API functions for test questions
 export const submitTestQuestions = async (testData) => {
-  // Submit all questions with user answers to the backend
-  // Use the correct endpoint without ID in URL
-  return apiCall(API_ENDPOINTS.TEST_QUESTIONS_SUBMIT, {
+  // Get the studentFormId
+  const studentFormId = testData.studentFormId || testData.applicantId || testData.id;
+  
+  if (!studentFormId) {
+    throw new Error('Student Form ID is required for question submission');
+  }
+  
+  // Submit all questions with user answers to the backend using studentFormId in URL
+  return apiCall(API_ENDPOINTS.SUBMIT_QUESTIONS(studentFormId), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -326,25 +351,34 @@ export const sendEmail = async (emailData) => {
   });
 };
 
-// Function to send resume with applicant ID - Using applicant ID in URL path as per new backend requirement
-export const sendResumeWithEmail = async (applicantId, resumeFile) => {
-  // If applicantId is an object containing studentFormId, use that instead
-  const idToUse = typeof applicantId === 'object' && applicantId.studentFormId ? applicantId.studentFormId :
-                 typeof applicantId === 'string' ? applicantId :
-                 applicantId || 'unknown';
-  
-  // Validate that applicant ID is provided
-  if (!idToUse || idToUse === 'unknown') {
-    throw new Error('Applicant ID is required for resume upload');
+// Function to send resume with applicantId - Using applicantId in URL path
+export const sendResumeWithEmail = async (email, resumeFile) => {
+  // Validate that email is provided
+  if (!email) {
+    throw new Error('Email is required for resume upload');
   }
   
+  // Validate that resumeFile is provided and is a File object
+  if (!resumeFile || !(resumeFile instanceof File)) {
+    throw new Error('Valid resume file is required for upload');
+  }
+  
+  console.log('Resume upload details:');
+  console.log('- Email:', email);
+  console.log('- File name:', resumeFile.name);
+  console.log('- File size:', resumeFile.size);
+  console.log('- File type:', resumeFile.type);
+  
   const formData = new FormData();
-  // Append the file to form data as 'file' field as per Postman test requirement
+  // Append the file to form data as 'file' field (as per working Postman configuration)
   formData.append('file', resumeFile, resumeFile.name);
   
-  // Use the new endpoint with applicant ID in URL path
-  // Using regular cors mode to match other working APIs
-  const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SUBMIT_RESUME(idToUse)}`, {
+  // Construct the full URL
+  const fullUrl = `${API_BASE_URL}${API_ENDPOINTS.SUBMIT_RESUME(email)}`;
+  console.log('Resume upload URL:', fullUrl);
+  
+  // Use the resume endpoint with email in URL path
+  const response = await fetch(fullUrl, {
     method: 'POST',
     body: formData,
     // Don't set Content-Type header - let the browser set it with the proper boundary
@@ -354,7 +388,6 @@ export const sendResumeWithEmail = async (applicantId, resumeFile) => {
   
   if (!response.ok) {
     const errorText = await response.text(); // Get error details
-
     throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
   }
   
@@ -368,13 +401,13 @@ export const sendResumeWithEmail = async (applicantId, resumeFile) => {
   }
 };
 
-// Function to get resume by applicant ID - Using applicant ID in URL path as per new backend requirement
-export const getResumeByApplicantId = async (applicantId) => {
-  if (!applicantId) {
-    throw new Error('Applicant ID is required to fetch resume');
+// Function to get resume by studentFormId
+export const getResumeByApplicantId = async (studentFormId) => {
+  if (!studentFormId) {
+    throw new Error('Student Form ID is required to fetch resume');
   }
   
-  const response = await fetch(`${API_BASE_URL}/resume/${applicantId}`, {
+  const response = await fetch(`${API_BASE_URL}/resume/${studentFormId}`, {
     method: 'GET',
     mode: 'cors',
     credentials: 'omit'
@@ -382,7 +415,6 @@ export const getResumeByApplicantId = async (applicantId) => {
   
   if (!response.ok) {
     const errorText = await response.text(); // Get error details
-
     throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
   }
   
@@ -394,6 +426,20 @@ export const getResumeByApplicantId = async (applicantId) => {
     // If not JSON, return the text response
     return response.text();
   }
+};
+
+// Function to delete applicant by ID
+export const deleteApplicantById = async (studentFormId) => {
+  if (!studentFormId) {
+    throw new Error('Student Form ID is required to delete applicant');
+  }
+  
+  return apiCall(API_ENDPOINTS.DELETE_APPLICANT(studentFormId), {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  });
 };
 
 // Email notification API function for test submission

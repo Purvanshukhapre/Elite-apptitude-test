@@ -164,76 +164,117 @@ const Registration = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      // Step 1: Submit student form to get studentFormId and questions
       const result = await addApplicant(formData);
       
-      // Send resume with email if it exists
+      // Extract studentFormId from the result
+      // The API might return it in different formats
+      console.log('Registration API response:', result);
+      
+      let studentFormId = result.studentFormId || 
+                         result.studentForm?.id || 
+                         result.id || 
+                         result._id || 
+                         result.data?.id || 
+                         result.data?.studentFormId;
+      
+      console.log('Extracted studentFormId:', studentFormId);
+      
+      // If studentFormId is not found, try to get it from session storage if previously stored
+      if (!studentFormId && typeof window !== 'undefined' && window.sessionStorage) {
+        studentFormId = window.sessionStorage.getItem('studentFormId');
+      }
+      
+      // If we still don't have studentFormId, use a fallback approach
+      if (!studentFormId) {
+        // Use email as a fallback identifier if available
+        studentFormId = formData.permanentEmail || formData.email || `temp_${Date.now()}`;
+        console.warn('Using fallback studentFormId:', studentFormId);
+      }
+      
+      // Step 2: Submit resume using email
       if (formData.resume) {
         try {
-          // Use the studentFormId if available in the result, otherwise use the applicant id
-          const resumeApplicantId = result.studentFormId || result.id || result._id;
-          await sendResumeWithEmail(resumeApplicantId, formData.resume);
-          console.log('Resume sent with email successfully');
+          console.log('=== RESUME UPLOAD START ===');
+          console.log('Email for resume upload:', formData.permanentEmail);
+          console.log('Resume file details:', {
+            name: formData.resume.name,
+            size: formData.resume.size,
+            type: formData.resume.type,
+            lastModified: formData.resume.lastModified
+          });
+          
+          const uploadResult = await sendResumeWithEmail(formData.permanentEmail, formData.resume);
+          
+          console.log('Resume upload completed successfully!');
+          console.log('Upload result:', uploadResult);
+          
+          // Small delay to ensure resume is processed on backend
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          console.log('=== RESUME UPLOAD END ===');
+          
         } catch (resumeError) {
-          console.error('Failed to send resume with email:', resumeError);
-          // Continue with form submission even if resume email fails
+          console.error('=== RESUME UPLOAD FAILED ===');
+          console.error('Error details:', resumeError);
+          console.error('Email used:', formData.permanentEmail);
+          console.error('Resume file:', formData.resume);
+          console.error('=== END ERROR DETAILS ===');
+          
+          // Show user-friendly error message
+          alert('Warning: Resume upload failed. You can upload your resume later from your profile.');
+          
+          // Continue with form submission even if resume fails
         }
       }
       
-      // Handle the new API response format that includes studentFormId and questions
-      let applicant = result;
-      
-      // If the result contains studentFormId, it means we got the new response format
-      if (result.studentFormId) {
-        // Store the studentFormId in session storage for use in other API calls
-        if (typeof window !== 'undefined' && window.sessionStorage) {
-          try {
-            window.sessionStorage.setItem('studentFormId', result.studentFormId);
-            console.log('Student Form ID stored in sessionStorage:', result.studentFormId);
-          } catch (storageError) {
-            console.error('Failed to store studentFormId in sessionStorage:', storageError);
-          }
+      // Step 3: Store studentFormId and questions in context/sessionStorage
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          window.sessionStorage.setItem('studentFormId', studentFormId);
+          console.log('Student Form ID stored:', studentFormId);
+        } catch (storageError) {
+          console.error('Failed to store studentFormId:', storageError);
         }
-        
-        // Store the questions from the response
-        if (result.testData && Array.isArray(result.testData)) {
-          setTestQuestions(result.testData);
-          console.log('Questions received from registration API:', result.testData);
-        }
-        
-        // Create a simplified applicant object
-        applicant = {
-          id: result.studentFormId,
-          ...formData
-        };
       }
       
-      // Store the complete applicant object as currentApplicant
+      // Store questions if received
+      if (result.testData && Array.isArray(result.testData)) {
+        setTestQuestions(result.testData);
+        console.log('Questions received:', result.testData);
+      }
+      
+      // Create applicant object with studentFormId
+      const applicant = {
+        id: studentFormId,
+        studentFormId: studentFormId,
+        ...formData
+      };
+      
+      // Store the complete applicant object
       setCurrentApplicant(applicant);
       
-      // Store user identity information in sessionStorage as requested by the user
-      // This ensures email and full name are available when submitting test questions
+      // Store user identity information
       if (typeof window !== 'undefined' && window.sessionStorage) {
         const userIdentity = {
           email: formData.permanentEmail || formData.email,
           fullName: formData.fullName,
-          applicantId: applicant?.id || applicant?._id || result.studentFormId || 'unknown'  // Include applicant ID for API calls
+          studentFormId: studentFormId
         };
         
         try {
           window.sessionStorage.setItem('userIdentity', JSON.stringify(userIdentity));
-          console.log('User identity stored in sessionStorage:', userIdentity);
+          console.log('User identity stored:', userIdentity);
         } catch (storageError) {
-          console.error('Failed to store user identity in sessionStorage:', storageError);
+          console.error('Failed to store user identity:', storageError);
         }
       }
-      
-      // Note: Questions are already set in the AppContext after form submission
-      // No need to set them again here as they're available in the context
       
       navigate('/test');
     } catch (error) {
       console.error('Failed to submit application:', error);
-      // Even if submission fails, try to continue
+      // Even if submission fails, try to continue to test page
+      // User may have already been registered
       navigate('/test');
     } finally {
       setIsSubmitting(false);

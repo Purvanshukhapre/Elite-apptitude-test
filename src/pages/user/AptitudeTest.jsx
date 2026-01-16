@@ -307,21 +307,24 @@ const AptitudeTest = () => {
     // console.log('Test Results:', testData);
 
     try {
-      // Submit test questions data to the new API
-      await submitTestQuestions(testQuestionsData);
-      // console.log('Test questions submission result:', questionsResult);
+      // Submit test questions data using studentFormId
+      await submitTestQuestions({
+        ...testQuestionsData,
+        studentFormId: applicantToUse.studentFormId
+      });
       
-      // Submit test data to the original API
-      const result = await submitTest(testData);
-      // console.log('Test submission result:', result);
+      // Submit test result using studentFormId
+      const result = await submitTest({
+        ...testData,
+        studentFormId: applicantToUse.studentFormId
+      });
       
       // Update applicant with test data
-      updateApplicantTest(applicantToUse.id, {
+      updateApplicantTest(applicantToUse.studentFormId, {
         ...testData,
-        studentFormId: applicantToUse.studentFormId, // Include studentFormId in test data
+        studentFormId: applicantToUse.studentFormId,
         score: result.score || `${score}/${questionsToUse.length}`,
         result: result,
-        // Ensure correctAnswers is included even if API submission fails later
         correctAnswers: result.correctAnswers
       });
       
@@ -355,11 +358,9 @@ const AptitudeTest = () => {
       console.error('Error submitting test:', error);
       
       // Update applicant with local test data including the calculated correct answers
-      // The testData object already contains correctAnswers: score from line 51
-      updateApplicantTest(applicantToUse.id, {
+      updateApplicantTest(applicantToUse.studentFormId, {
         ...testData,
-        studentFormId: applicantToUse.studentFormId, // Include studentFormId in test data
-        // Use the correctAnswers that was already calculated in the testData object
+        studentFormId: applicantToUse.studentFormId,
         correctAnswers: testData.correctAnswers,
         email: applicantToUse.permanentEmail || applicantToUse.email
       });

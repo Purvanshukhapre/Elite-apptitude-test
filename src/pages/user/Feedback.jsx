@@ -74,19 +74,23 @@ const Feedback = () => {
       }
     }
     
+    // Get studentFormId from currentApplicant
+    const studentFormId = currentApplicant?.studentFormId || currentApplicant?.id || currentApplicant?._id || 'unknown';
+    
     // Map feedback data to the expected backend format
     const feedbackData = {
       rating: rating,  // Backend expects 'rating' as integer
+      name: userFullName || currentApplicant?.fullName || '',  // Include applicant's name (required)
       problem1: feedback.testDifficulty || '',  // Send as string
       problem2: feedback.platformExperience || '',  // Send as string
       problem3: feedback.improvements || '',  // Send as string
       problem4: feedback.wouldRecommend || '',  // Send as string
       problem5: feedback.comments || '',  // Send as string
-      name: userFullName || currentApplicant?.fullName || '',  // Include applicant's name
       email: userEmail || currentApplicant?.email || '',  // Include applicant's email
       position: currentApplicant?.postAppliedFor || currentApplicant?.position || '',  // Include position applied for
       submittedAt: new Date().toISOString(),  // Include timestamp
-      applicantId: currentApplicant?.id || currentApplicant?._id || 'unknown'  // Include applicant ID for the new API
+      applicantId: currentApplicant?.id || currentApplicant?._id || 'unknown',  // Include applicant ID for the new API
+      studentFormId: studentFormId  // Include studentFormId for API submission
     };
     
     // Validate that we have at least the name and email
@@ -102,6 +106,7 @@ const Feedback = () => {
     setSubmitting(true);
     
     try {
+      // Submit feedback using studentFormId
       await submitFeedback(feedbackData);
       setSubmitted(true);
     } catch (error) {

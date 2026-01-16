@@ -5,7 +5,6 @@ import {
   buildUrl,
   apiCall,
   getApplicants,
-  getApplicantsByName,
   addApplicant,
   updateApplicantTest,
   updateApplicantFeedback,
@@ -19,7 +18,9 @@ import {
   sendEmail,
   sendTestSubmissionEmail,
   sendResumeWithEmail,
-  getResumeByApplicantId  // Changed from getResumeByEmail to getResumeByApplicantId
+  getResumeByApplicantId,  // Changed from getResumeByEmail to getResumeByApplicantId
+  deleteApplicantById,
+  getApplicantsById
 } from './services/apiService';
 
 // Named exports for individual functions
@@ -29,7 +30,6 @@ export {
   buildUrl,
   apiCall,
   getApplicants,
-  getApplicantsByName,
   addApplicant,
   updateApplicantTest,
   updateApplicantFeedback,
@@ -43,7 +43,9 @@ export {
   sendEmail,
   sendTestSubmissionEmail,
   sendResumeWithEmail,
-  getResumeByApplicantId  // Changed from getResumeByEmail to getResumeByApplicantId
+  getResumeByApplicantId,  // Changed from getResumeByEmail to getResumeByApplicantId
+  deleteApplicantById,
+  getApplicantsById
 };
 
 
@@ -479,7 +481,6 @@ export default {
   buildUrl,
   apiCall,
   getApplicants,
-  getApplicantsByName,
   addApplicant,
   updateApplicantTest,
   updateApplicantFeedback,

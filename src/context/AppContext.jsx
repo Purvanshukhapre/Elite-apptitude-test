@@ -24,8 +24,9 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     const fetchApplicants = async () => {
       try {
+        // Get all applicants using the all applicants endpoint (without ID parameter)
         const [apiApplicants, testResults, feedbackResults] = await Promise.all([
-          apiGetApplicants(),
+          apiGetApplicants(), // This calls ALL_APPLICANTS() without ID to get all applicants
           getAllTestResults().catch(() => {
 
             return [];

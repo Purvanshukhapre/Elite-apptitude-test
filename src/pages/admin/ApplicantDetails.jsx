@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
-import { getTestQuestionsByEmail, getApplicantsByName, getAllTestResults, getAllFeedback, getResumeByApplicantId } from '../../api';
+import { getTestQuestionsByEmail, getAllTestResults, getAllFeedback, deleteApplicantById, getApplicantsById } from '../../api';
 import StarRating from '../../components/StarRating';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -60,7 +60,7 @@ const ApplicantDetails = () => {
         // If we found the applicant locally, try to fetch updated data from API using their name
         if (localApplicant && localApplicant.fullName) {
           try {
-            const data = await getApplicantsByName(localApplicant.fullName);
+            const data = await getApplicantsById(decodedId); // Use the ID to fetch applicant data by ID instead of name
                     
             // If the API returns an array, take the first applicant
             const applicantData = Array.isArray(data) ? data[0] : data;
@@ -112,16 +112,12 @@ const ApplicantDetails = () => {
                     setQuestionsLoading(false);
                   }
                                   
-                  try {
-                    // Fetch resume data
-                    const resumeInfo = await getResumeByApplicantId(decodedId);
-                    setResumeData(resumeInfo);
-                  } catch (resumeError) {
-                    console.error('Could not fetch resume data:', resumeError);
-                    // Silently fail - resume data is optional
-                  } finally {
-                    setResumeLoading(false);
+                  // Resume data is now included in the main applicant response
+                  // Set resume data from the applicant object if available
+                  if (applicantData.resume) {
+                    setResumeData(applicantData.resume);
                   }
+                  setResumeLoading(false);
                 } else {
                   setQuestionsLoading(false);
                   setResumeLoading(false);
@@ -1719,8 +1715,37 @@ const ApplicantDetails = () => {
         {/* Action Buttons */}
         <div className="flex justify-end space-x-4">
           <button
-            onClick={handleDownloadPDF}
+            onClick={async () => {
+              if (window.confirm('Are you sure you want to delete this applicant and all their related data (feedback, resume, test results)? This action cannot be undone.')) {
+                try {
+                  // Get the actual ID to use for deletion
+                  const actualId = applicant._id || applicant.id || id;
+                  if (!actualId) {
+                    alert('Unable to delete: No valid ID found for this applicant');
+                    return;
+                  }
+                  
+                  // Call the delete API function
+                  await deleteApplicantById(actualId);
+                  
+                  alert('Applicant and all related data deleted successfully');
+                  navigate('/admin/modern/applicants');
+                } catch (error) {
+                  console.error('Error deleting applicant:', error);
+                  alert(`Failed to delete applicant: ${error.message || 'Unknown error'}`);
+                }
+              }
+            }}
             className="px-6 py-3 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors flex items-center space-x-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span>Delete Applicant</span>
+          </button>
+          <button
+            onClick={handleDownloadPDF}
+            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors flex items-center space-x-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
