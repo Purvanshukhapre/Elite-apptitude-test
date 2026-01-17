@@ -63,6 +63,8 @@ export const apiCall = async (endpoint, options = {}) => {
   const requiresAuth = typeof endpoint === 'string' && (
     endpoint.includes('/result/all') || 
     endpoint.includes('/auth/student/all') || 
+    endpoint.includes('/auth/student/') || // Include individual student details
+    endpoint.includes('/questions/email/') || // Include test questions by email
     endpoint.includes('/feedback/all') ||
     endpoint.includes('/analytics/')
   );
@@ -418,14 +420,11 @@ export const getResumeByApplicantId = async (studentFormId) => {
     throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
   }
   
-  // Check if response is JSON or plain text
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    return response.json();
-  } else {
-    // If not JSON, return the text response
-    return response.text();
-  }
+  // Response should be JSON with resume details
+  const resumeData = await response.json();
+  
+  // Return the resume URL from the response
+  return resumeData.resumeUrl;
 };
 
 // Function to delete applicant by ID

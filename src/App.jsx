@@ -11,8 +11,9 @@ import Dashboard from './pages/admin/Dashboard';
 import Analytics from './pages/admin/Analytics';
 import Applicants from './pages/admin/Applicants';
 import FeedbackPage from './pages/admin/Feedback';
-import ApplicantDetails from './pages/admin/ApplicantDetails';
+// import ApplicantDetails from './pages/admin/ApplicantDetails';
 import Email from './pages/admin/Email';
+import ApplicantDetailsClean from './pages/admin/ApplicantDetailsClean';
 
 function App() {
   return (
@@ -30,7 +31,7 @@ function App() {
             <Route path="/admin/modern/applicants" element={<Layout><Applicants /></Layout>} />
             <Route path="/admin/modern/feedback" element={<Layout><FeedbackPage /></Layout>} />
             <Route path="/admin/modern/email" element={<Layout><Email /></Layout>} />
-            <Route path="/admin/modern/applicants/:id" element={<Layout><ApplicantDetails /></Layout>} />
+            <Route path="/admin/modern/applicants/:id" element={<Layout><ApplicantDetailsClean /></Layout>} />
             <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
           </Routes>
         </Router>

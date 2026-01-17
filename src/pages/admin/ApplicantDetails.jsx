@@ -14,7 +14,6 @@ const ApplicantDetails = () => {
   const [loading, setLoading] = useState(true);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [resumeData, setResumeData] = useState(null);
-  const [resumeLoading, setResumeLoading] = useState(false);
 
   useEffect(() => {
     const fetchApplicantData = async () => {
@@ -57,22 +56,25 @@ const ApplicantDetails = () => {
           }
         }
         
-        // If we found the applicant locally, try to fetch updated data from API using their name
-        if (localApplicant && localApplicant.fullName) {
-          try {
-            const data = await getApplicantsById(decodedId); // Use the ID to fetch applicant data by ID instead of name
+        // Try to fetch updated data from API using the ID
+        let applicantData = null;
+        let apiCallSuccessful = false;
+        try {
+          const data = await getApplicantsById(decodedId); // Use the ID to fetch applicant data by ID
+                  
+          // If the API returns an array, take the first applicant
+          applicantData = Array.isArray(data) ? data[0] : data;
+          apiCallSuccessful = true;
+                  
+          if (applicantData) {
                     
-            // If the API returns an array, take the first applicant
-            const applicantData = Array.isArray(data) ? data[0] : data;
-                    
-            if (applicantData) {
-              // Fetch test results to get correct answer count
-              try {
+            // Fetch test results to get correct answer count
+            try {
                 const testResults = await getAllTestResults();
                 const applicantTestResult = testResults.find(result => 
                   result.fullName?.toLowerCase() === applicantData.fullName?.toLowerCase()
                 );
-                        
+                            
                 // Find feedback for this applicant
                 const applicantFeedback = feedbackData.find(feedback => 
                   feedback.email === applicantData.permanentEmail || 
@@ -80,7 +82,7 @@ const ApplicantDetails = () => {
                   feedback.name === applicantData.fullName ||
                   feedback.fullName === applicantData.fullName
                 );
-                        
+                            
                 // Add test result and feedback data to the applicant
                 const updatedApplicant = {
                   ...applicantData,
@@ -88,14 +90,22 @@ const ApplicantDetails = () => {
                   correctAnswer: applicantTestResult?.correctAnswer || applicantData.correctAnswer,
                   overallRating: applicantFeedback ? applicantFeedback.rating : undefined
                 };
-                        
+                            
+                // Process resume data after setting applicant
+                if (updatedApplicant.resumeUrl) {
+                  setResumeData({
+                    resumeUrl: updatedApplicant.resumeUrl,
+                    s3Key: updatedApplicant.resumeId || 'resume',
+                    uploadedAt: new Date().toISOString()
+                  });
+                }
+                                
                 setApplicant(updatedApplicant);
                               
                 // Fetch questions data if available
                 const email = updatedApplicant.permanentEmail || updatedApplicant.email;
                 if (email) {
                   setQuestionsLoading(true);
-                  setResumeLoading(true);
                   try {
                     // Fetch questions data
                     console.log('Fetching questions for email:', email);
@@ -111,19 +121,12 @@ const ApplicantDetails = () => {
                   } finally {
                     setQuestionsLoading(false);
                   }
-                                  
-                  // Resume data is now included in the main applicant response
-                  // Set resume data from the applicant object if available
-                  if (applicantData.resume) {
-                    setResumeData(applicantData.resume);
-                  }
-                  setResumeLoading(false);
                 } else {
                   setQuestionsLoading(false);
-                  setResumeLoading(false);
                 }
               } catch (testResultsError) {
                 console.warn('Could not fetch test results:', testResultsError);
+                
                 // Find feedback for this applicant
                 const applicantFeedback = feedbackData.find(feedback => 
                   feedback.email === applicantData.permanentEmail || 
@@ -132,13 +135,22 @@ const ApplicantDetails = () => {
                   feedback.fullName === applicantData.fullName
                 );
                         
-                // Set the applicant without test results but with feedback
+                // Set the applicant with feedback data
                 const updatedApplicant = {
                   ...applicantData,
                   overallRating: applicantFeedback ? applicantFeedback.rating : undefined
                 };
                         
                 setApplicant(updatedApplicant);
+                        
+                // Check for resume data in the applicant response
+                if (updatedApplicant.resumeUrl) {
+                  setResumeData({
+                    resumeUrl: updatedApplicant.resumeUrl,
+                    s3Key: updatedApplicant.resumeId || 'resume',
+                    uploadedAt: new Date().toISOString()
+                  });
+                }
                         
                 // Optionally fetch questions data if available
                 const email = updatedApplicant.permanentEmail || updatedApplicant.email;
@@ -204,6 +216,15 @@ const ApplicantDetails = () => {
           } catch (apiError) {
             console.error('Error fetching applicant data from API:', apiError);
             // If API call fails, use the local applicant data with fallback values
+            // Check for resume data in the localApplicant before processing
+            if (localApplicant && localApplicant.resumeUrl) {
+              setResumeData({
+                resumeUrl: localApplicant.resumeUrl,
+                s3Key: localApplicant.resumeId || 'resume',
+                uploadedAt: new Date().toISOString()
+              });
+            }
+                      
             // Find feedback for this applicant
             const applicantFeedback = feedbackData.find(feedback => 
               feedback.email === localApplicant.permanentEmail || 
@@ -211,7 +232,7 @@ const ApplicantDetails = () => {
               feedback.name === localApplicant.fullName ||
               feedback.fullName === localApplicant.fullName
             );
-                    
+                      
             // Set the applicant with local data and feedback, and mark test status as pending
             const updatedApplicant = {
               ...localApplicant,
@@ -220,9 +241,18 @@ const ApplicantDetails = () => {
               testResult: null,
               correctAnswer: localApplicant.correctAnswer || null
             };
-                    
+                      
             setApplicant(updatedApplicant);
-                    
+                      
+            // Double check for resume data in the updated applicant
+            if (updatedApplicant.resumeUrl) {
+              setResumeData({
+                resumeUrl: updatedApplicant.resumeUrl,
+                s3Key: updatedApplicant.resumeId || 'resume',
+                uploadedAt: new Date().toISOString()
+              });
+            }
+                      
             // Optionally fetch questions data if available
             const email = updatedApplicant.permanentEmail || updatedApplicant.email;
             if (email) {
@@ -243,50 +273,63 @@ const ApplicantDetails = () => {
               setQuestionsLoading(false);
             }
           }
-        } else if (localApplicant) {
-          // If we only have local data (no fullName to query API), use it
-          // Find feedback for this applicant
-          const applicantFeedback = feedbackData.find(feedback => 
-            feedback.email === localApplicant.permanentEmail || 
-            feedback.email === localApplicant.email ||
-            feedback.name === localApplicant.fullName ||
-            feedback.fullName === localApplicant.fullName
-          );
-          
-          // Set the applicant with feedback data
-          const updatedApplicant = {
-            ...localApplicant,
-            overallRating: applicantFeedback ? applicantFeedback.rating : undefined
-          };
-          
-          setApplicant(updatedApplicant);
-          
-          // Optionally fetch questions data if available
-          const email = updatedApplicant.permanentEmail || updatedApplicant.email;
-          if (email) {
-            setQuestionsLoading(true);
-            try {
-              const questionsData = await getTestQuestionsByEmail(email);
-              setApplicant(prev => ({
-                ...prev,
-                questionsData
-              }));
-            } catch (questionsError) {
-              console.error('Could not fetch questions data:', questionsError);
-              // Silently fail - questions data is optional
-            } finally {
-              setQuestionsLoading(false);
-            }
-          } else {
+        }
+      
+      // After API call (successful or failed), if we have localApplicant but haven't set applicant yet,
+      // or if API call failed and we have local data, use local data
+      if (!applicant && localApplicant) {
+        // Find feedback for this applicant
+        const applicantFeedback = feedbackData.find(feedback => 
+          feedback.email === localApplicant.permanentEmail || 
+          feedback.email === localApplicant.email ||
+          feedback.name === localApplicant.fullName ||
+          feedback.fullName === localApplicant.fullName
+        );
+        
+        // Set the applicant with feedback data
+        const updatedApplicant = {
+          ...localApplicant,
+          overallRating: applicantFeedback ? applicantFeedback.rating : undefined
+        };
+        
+        setApplicant(updatedApplicant);
+        
+        // Check for resume data in the applicant response
+        if (updatedApplicant.resumeUrl) {
+          setResumeData({
+            resumeUrl: updatedApplicant.resumeUrl,
+            s3Key: updatedApplicant.resumeId || 'resume',
+            uploadedAt: new Date().toISOString()
+          });
+        }
+        
+        // Optionally fetch questions data if available
+        const email = updatedApplicant.permanentEmail || updatedApplicant.email;
+        if (email) {
+          setQuestionsLoading(true);
+          try {
+            const questionsData = await getTestQuestionsByEmail(email);
+            setApplicant(prev => ({
+              ...prev,
+              questionsData
+            }));
+          } catch (questionsError) {
+            console.error('Could not fetch questions data:', questionsError);
+            // Silently fail - questions data is optional
+          } finally {
             setQuestionsLoading(false);
           }
         } else {
-          // If we couldn't find the applicant locally and the ID is not a valid name, set to null
-          // This prevents unnecessary API calls with index values like "0", "1", etc.
-          setApplicant(null);
           setQuestionsLoading(false);
         }
-      } catch (error) {
+      } else if (!applicant && !localApplicant) {
+        // If we couldn't find the applicant locally and the ID is not a valid name, set to null
+        // This prevents unnecessary API calls with index values like "0", "1", etc.
+        setApplicant(null);
+        setQuestionsLoading(false);
+      }
+    }
+    } catch (error) {
         console.error('Error fetching applicant data:', error);
         setApplicant(null);
         setQuestionsLoading(false);
@@ -1223,11 +1266,7 @@ const ApplicantDetails = () => {
         {/* Resume Section */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
           <h3 className="text-xl font-bold text-gray-900 mb-6">Resume</h3>
-          {resumeLoading ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-          ) : resumeData ? (
+          {resumeData ? (
             <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50">
               <div className="flex items-center">
                 <svg className="w-8 h-8 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
