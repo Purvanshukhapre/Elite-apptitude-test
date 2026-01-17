@@ -35,15 +35,8 @@ const ApplicantHeader = ({ applicant }) => {
       }
     }
     
-    // Only use feedback ratings if no test data is available
-    if (applicant.overallRating !== undefined && applicant.overallRating !== null) {
-      return ((applicant.overallRating / 5) * 100).toFixed(1);
-    }
-    
-    if (applicant.rating !== undefined && applicant.rating !== null) {
-      return ((applicant.rating / 5) * 100).toFixed(1);
-    }
-    
+    // Don't use feedback ratings as test score percentages
+    // Only return 0 if no actual test data is available
     return '0.0';
   }, [applicant]);
 

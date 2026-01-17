@@ -28,16 +28,7 @@ const ApplicantDetailsClean = () => {
       try {
         const decodedId = decodeURIComponent(id);
         
-        // Fetch feedback data
-        let feedbackData = [];
-        try {
-          feedbackData = await getAllFeedback();
-        } catch (error) {
-          console.error('Error fetching feedback:', error);
-          feedbackData = [];
-        }
-        
-        // Find applicant by ID, name, or index
+        // First, try to find in local applicants
         let localApplicant = applicants.find(app => 
           app._id === decodedId || app.id === decodedId
         ) || 
@@ -48,37 +39,58 @@ const ApplicantDetailsClean = () => {
         ) ||
         (isNaN(parseInt(decodedId)) ? null : applicants[parseInt(decodedId)]);
         
-        // Fetch from API
+        // Then, try to fetch from API to get fresh data
         let applicantData = null;
         try {
           const data = await getApplicantsById(decodedId);
-          applicantData = Array.isArray(data) ? data[0] : data;
+          // Check if the API returned an empty array (which happens on 403)
+          if (Array.isArray(data) && data.length === 0) {
+            // If API returns empty array (likely due to 403), use local data
+            if (localApplicant) {
+              applicantData = localApplicant;
+            }
+          } else {
+            applicantData = Array.isArray(data) ? data[0] : data;
+          }
         } catch (apiError) {
           console.error('Error fetching applicant data from API:', apiError);
+          // If API fails but we found locally, use the local data
+          if (localApplicant) {
+            applicantData = localApplicant;
+          }
         }
         
-        // Combine local and API data
-        const combinedApplicant = applicantData || localApplicant;
-        if (combinedApplicant) {
+        if (applicantData) {
+          // Fetch additional data (feedback, test results) to enrich the applicant data
+          
+          // Fetch feedback data
+          let feedbackData = [];
+          try {
+            feedbackData = await getAllFeedback();
+          } catch (error) {
+            console.error('Error fetching feedback:', error);
+            feedbackData = [];
+          }
+          
           // Fetch test results
           try {
             const testResults = await getAllTestResults();
             const applicantTestResult = testResults.find(result => 
-              result.fullName?.toLowerCase() === combinedApplicant.fullName?.toLowerCase()
+              result.fullName?.toLowerCase() === applicantData.fullName?.toLowerCase()
             );
             
             // Find feedback for this applicant
             const applicantFeedback = feedbackData.find(feedback => 
-              feedback.email === combinedApplicant.permanentEmail || 
-              feedback.email === combinedApplicant.email ||
-              feedback.name === combinedApplicant.fullName ||
-              feedback.fullName === combinedApplicant.fullName
+              feedback.email === applicantData.permanentEmail || 
+              feedback.email === applicantData.email ||
+              feedback.name === applicantData.fullName ||
+              feedback.fullName === applicantData.fullName
             );
             
             const updatedApplicant = {
-              ...combinedApplicant,
+              ...applicantData,
               testResult: applicantTestResult || null,
-              correctAnswer: applicantTestResult?.correctAnswer || combinedApplicant.correctAnswer,
+              correctAnswer: applicantTestResult?.correctAnswer || applicantData.correctAnswer,
               overallRating: applicantFeedback ? applicantFeedback.rating : undefined
             };
             
