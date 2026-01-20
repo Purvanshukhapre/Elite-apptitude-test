@@ -6,7 +6,7 @@ import StarRating from '../../components/StarRating';
 
 const Applicants = () => {
   const navigate = useNavigate();
-  const { applicants, isAdminAuthenticated } = useApp();
+  const { applicants, isAdminAuthenticated, refreshApplicants } = useApp();
   const [feedbackData, setFeedbackData] = useState([]);
   const [testResults, setTestResults] = useState([]);
   
@@ -88,27 +88,46 @@ const Applicants = () => {
 
   // Fetch feedback and test results data on component mount
   useEffect(() => {
+    let isCancelled = false; // Prevent state updates if component unmounts
+    
     const fetchData = async () => {
+      if (!isAdminAuthenticated || isCancelled) return;
+      
       setLoading(true);
-      if (isAdminAuthenticated) {
-        try {
-          // Fetch feedback data
-          const feedbackData = await getAllFeedback();
+      try {
+        // Refresh applicants data from API
+        await refreshApplicants();
+        
+        // Fetch feedback data
+        const feedbackData = await getAllFeedback();
+        if (!isCancelled) {
           setFeedbackData(feedbackData);
-          
-          // Fetch test results data
-          const resultsData = await getAllTestResults();
+        }
+        
+        // Fetch test results data
+        const resultsData = await getAllTestResults();
+        if (!isCancelled) {
           setTestResults(resultsData);
-        } catch (error) {
-          console.error('Error fetching data:', error);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        if (!isCancelled) {
           setFeedbackData([]);
           setTestResults([]);
         }
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
     };
     
     fetchData();
+    
+    // Cleanup function to cancel requests if component unmounts
+    return () => {
+      isCancelled = true;
+    };
   }, [isAdminAuthenticated]);
 
   // Combine applicants with feedback and test results data

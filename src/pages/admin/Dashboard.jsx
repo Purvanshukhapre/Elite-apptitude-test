@@ -23,7 +23,7 @@ import {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { applicants, isAdminAuthenticated } = useApp();
+  const { applicants, isAdminAuthenticated, refreshApplicants } = useApp();
   const [feedbackData, setFeedbackData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -64,27 +64,46 @@ const Dashboard = () => {
     return 0;
   };
 
-  // Fetch feedback data on component mount
+  // Fetch feedback data and refresh applicants on component mount
   useEffect(() => {
-    const fetchFeedback = async () => {
+    let isCancelled = false; // Prevent state updates if component unmounts
+    
+    const fetchData = async () => {
+      if (!isAdminAuthenticated || isCancelled) return;
+      
       setLoading(true);
       try {
+        // Refresh applicants data from API
+        await refreshApplicants();
+        
+        // Fetch feedback data
         const data = await getAllFeedback();
-        setFeedbackData(data);
+        if (!isCancelled) {
+          setFeedbackData(data);
+        }
       } catch (error) {
-        console.error('Error fetching feedback:', error);
-        setFeedbackData([]);
+        console.error('Error fetching data:', error);
+        if (!isCancelled) {
+          setFeedbackData([]);
+        }
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
     
     if (isAdminAuthenticated) {
-      fetchFeedback();
+      fetchData();
     } else {
       setLoading(false);
     }
-  }, [isAdminAuthenticated]);
+    
+    // Cleanup function to cancel requests if component unmounts
+    return () => {
+      isCancelled = true;
+    };
+  }, [isAdminAuthenticated]); // Only run when authentication status changes
 
   // Combine applicants with feedback data
   const combinedApplicants = useMemo(() => {

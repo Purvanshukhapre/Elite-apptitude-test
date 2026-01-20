@@ -18,7 +18,7 @@ import {
 } from 'recharts';
 
 const Analytics = () => {
-  const { applicants, isAdminAuthenticated } = useApp();
+  const { applicants, isAdminAuthenticated, refreshApplicants } = useApp();
   const [feedbackData, setFeedbackData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('all'); // 'week', 'month', 'year', 'all'
@@ -98,26 +98,44 @@ const Analytics = () => {
     });
   }, [applicants, timeFilter]);
 
-  // Fetch feedback data on component mount
+  // Fetch feedback data and refresh applicants on component mount
   useEffect(() => {
+    let isCancelled = false; // Prevent state updates if component unmounts
+    
     if (isAdminAuthenticated) {
-      const fetchFeedback = async () => {
+      const fetchData = async () => {
+        if (!isAdminAuthenticated || isCancelled) return;
+        
         setLoading(true);
         try {
+          // Refresh applicants data from API
+          await refreshApplicants();
+          
           const data = await getAllFeedback();
-          setFeedbackData(data);
+          if (!isCancelled) {
+            setFeedbackData(data);
+          }
         } catch (error) {
-          console.error('Error fetching feedback:', error);
-          setFeedbackData([]);
+          console.error('Error fetching data:', error);
+          if (!isCancelled) {
+            setFeedbackData([]);
+          }
         } finally {
-          setLoading(false);
+          if (!isCancelled) {
+            setLoading(false);
+          }
         }
       };
       
-      fetchFeedback();
+      fetchData();
     } else {
       setLoading(false);
     }
+    
+    // Cleanup function to cancel requests if component unmounts
+    return () => {
+      isCancelled = true;
+    };
   }, [isAdminAuthenticated]);
 
   // Combine filtered applicants with feedback data
