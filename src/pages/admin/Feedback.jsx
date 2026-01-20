@@ -1,48 +1,39 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/useApp';
-import { getAllFeedback, getApplicants } from '../../api';
+import { getAllFeedback } from '../../api';
 import StarRating from '../../components/StarRating';
 
 const Feedback = () => {
-  const { applicants: contextApplicants, isAdminAuthenticated } = useApp();
+  const { applicants: contextApplicants } = useApp();
   const [feedbackData, setFeedbackData] = useState([]);
-  const [applicantsData, setApplicantsData] = useState([]);
+  const [applicantsData, setApplicantsData] = useState(contextApplicants);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [ratingFilter, setRatingFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
 
-  // Fetch feedback data and applicants data
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    const fetchFeedbackData = async () => {
       try {
-        if (isAdminAuthenticated) {
-          // Fetch feedback data from API
-          const feedback = await getAllFeedback();
-          
-          // Fetch all applicants from API
-          const applicants = await getApplicants();
-          
-          setFeedbackData(feedback);
-          setApplicantsData(applicants);
-        } else {
-          // Fallback to context data if not authenticated
-          setFeedbackData([]);
+        setLoading(true);
+        const feedback = await getAllFeedback();
+        setFeedbackData(Array.isArray(feedback) ? feedback : []);
+        
+        // Update applicants data if it's different from context
+        if (JSON.stringify(contextApplicants) !== JSON.stringify(applicantsData)) {
           setApplicantsData(contextApplicants);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching feedback:', error);
         setFeedbackData([]);
-        setApplicantsData(contextApplicants);
       } finally {
         setLoading(false);
       }
     };
     
-    fetchData();
-  }, [isAdminAuthenticated, contextApplicants]);
+    fetchFeedbackData();
+  }, [contextApplicants]);
 
   // Combine feedback with applicant data
   const combinedFeedback = useMemo(() => {

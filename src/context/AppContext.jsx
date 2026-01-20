@@ -13,92 +13,12 @@ export const AppProvider = ({ children }) => {
     const hasToken = localStorage.getItem('adminToken');
     return saved === 'true' && !!hasToken;
   });
-  const [loading, setLoading] = useState(true);
+  const [loading] = useState(false);
 
   // Save admin auth state to localStorage
   useEffect(() => {
     localStorage.setItem('adminAuth', isAdminAuthenticated.toString());
   }, [isAdminAuthenticated]);
-
-  // Initialize by fetching applicants, test results, and feedback from API
-  useEffect(() => {
-    const fetchApplicants = async () => {
-      try {
-        // Get all applicants using the all applicants endpoint (without ID parameter)
-        const [apiApplicants, testResults, feedbackResults] = await Promise.all([
-          apiGetApplicants(), // This calls ALL_APPLICANTS() without ID to get all applicants
-          getAllTestResults().catch(() => {
-
-            return [];
-          }),
-          getAllFeedback().catch(() => {
-
-            return [];
-          })
-        ]);
-        
-        // Combine applicants with test results and feedback
-        const combinedApplicants = apiApplicants.map(applicant => {
-          // Find corresponding test result by fullName
-          const testResult = testResults.find(result => 
-            result.fullName === applicant.fullName || result.name === applicant.fullName
-          );
-          
-          // Find corresponding feedback by fullName or email
-          const feedback = feedbackResults.find(f => 
-            f.fullName === applicant.fullName || f.name === applicant.fullName || f.email === applicant.permanentEmail
-          );
-          
-          return {
-            ...applicant,
-            // Add test result data if available
-            ...testResult,
-            // Add feedback data if available
-            feedback,
-            // Ensure test completion status is set
-            isTestCompleted: !!testResult,
-            // Set test completed at date if available
-            testCompletedAt: testResult?.submittedAt || testResult?.createdAt || applicant.testCompletedAt,
-            // Set correct answers if available
-            correctAnswer: testResult?.correctAnswer || testResult?.correctAnswers || applicant.correctAnswer,
-            // Set score if available
-            score: testResult?.score || applicant.score,
-            // Set percentage if available
-            percentage: testResult?.percentage || testResult?.overallPercentage || applicant.percentage,
-            // Set rating from feedback if available
-            rating: feedback?.rating || applicant.rating,
-            // Set feedback submitted at date if available
-            feedbackSubmittedAt: feedback?.submittedAt || feedback?.createdAt
-          };
-        });
-        
-        setApplicants(combinedApplicants);
-        // console.log('Applicants loaded from API:', combinedApplicants);
-      } catch {
-        // Fallback to localStorage
-        const savedApplicants = localStorage.getItem('applicants');
-        if (savedApplicants) {
-          const parsedApplicants = JSON.parse(savedApplicants);
-          // Check if the data contains placeholder data like "ARYAN NAGARDHANKAR" and clear if so
-          const hasPlaceholderData = parsedApplicants.some(applicant => 
-            applicant.fullName && applicant.fullName.includes('ARYAN') && applicant.fullName.includes('NAGARDHANKAR')
-          );
-          
-          if (hasPlaceholderData) {
-            // console.warn('Found placeholder data in localStorage, clearing it'); // Removed as per requirements
-            localStorage.removeItem('applicants');
-            setApplicants([]);
-          } else {
-            setApplicants(parsedApplicants);
-          }
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchApplicants();
-  }, []);
 
   // Function to refresh applicants from API
   const refreshApplicants = async () => {
@@ -114,6 +34,8 @@ export const AppProvider = ({ children }) => {
           return [];
         })
       ]);
+      
+      console.log('Refresh API Response - All Applicants:', apiApplicants);
       
       // Combine applicants with test results and feedback
       const combinedApplicants = apiApplicants.map(applicant => {
@@ -168,7 +90,7 @@ export const AppProvider = ({ children }) => {
     try {
       // Transform the form data to match the expected backend structure
       const { resume, ...formDataWithoutResume } = formData;
-      
+        
       const applicantData = {
         fullName: formDataWithoutResume.fullName,
         fatherName: formDataWithoutResume.fatherName,
@@ -218,9 +140,11 @@ export const AppProvider = ({ children }) => {
         primarySkills: formDataWithoutResume.primarySkills || [],
         secondarySkills: formDataWithoutResume.secondarySkills || []
       };
-
+  
       const result = await apiAddApplicant(applicantData);
-      
+        
+      console.log('Registration API response for student form submission:', result);
+        
       // Handle the new API response format that includes studentFormId and questions
       if (result && result.studentFormId) {
         // The API returned the new response format with studentFormId and testData
@@ -266,19 +190,24 @@ export const AppProvider = ({ children }) => {
           setTestQuestions(mockQuestions);
         }
       }
-
+  
       // Add the applicant to the state
       const newApplicant = {
         id: result.id || result._id || Date.now().toString(),
+        // Include studentFormId from the registration API response if available
+        studentFormId: result.studentFormId || result.id || result._id || Date.now().toString(),
         ...applicantData,
         submittedAt: new Date().toISOString(),
         status: 'pending',
         // Include resume in the applicant data for reference
         resume
       };
-      
+        
       setApplicants(prev => [...prev, newApplicant]);
-      
+            
+      // Update currentApplicant to the new applicant with studentFormId
+      setCurrentApplicant(newApplicant);
+            
       // Return the actual result from the API which may contain questions
       // Prefer the newApplicant object which contains the ID
       return newApplicant || result;
@@ -289,11 +218,13 @@ export const AppProvider = ({ children }) => {
       // Return a basic applicant object to continue with the flow
       const newApplicant = {
         id: Date.now().toString(),
+        studentFormId: Date.now().toString(), // Use same ID as fallback
         ...formData,
         submittedAt: new Date().toISOString(),
         status: 'pending'
       };
       setApplicants(prev => [...prev, newApplicant]);
+      setCurrentApplicant(newApplicant);
       return newApplicant;
     }
   };

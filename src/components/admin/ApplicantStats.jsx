@@ -9,11 +9,26 @@ const formatTime = (seconds) => {
 const ApplicantStats = ({ applicant }) => {
   const stats = useMemo(() => {
     const totalQuestions = 15; // Fixed total as per API
-    const correctAnswers = (applicant.testResult && applicant.testResult.correctAnswer !== undefined) 
-      ? applicant.testResult.correctAnswer 
-      : (applicant.testData?.correctAnswers !== undefined ? applicant.testData.correctAnswers : 
-         (applicant.correctAnswer !== undefined && applicant.correctAnswer !== null ? applicant.correctAnswer : 0));
-    const timeSpent = applicant.testData?.timeSpent || 0; // in seconds
+    
+    // Extract correct answers from multiple possible sources in the API response
+    const correctAnswers = 
+      // Priority 1: result field from API response
+      (applicant.result && applicant.result.correctAnswer !== undefined) ? applicant.result.correctAnswer :
+      // Priority 2: testResult field
+      (applicant.testResult && applicant.testResult.correctAnswer !== undefined) ? applicant.testResult.correctAnswer :
+      // Priority 3: testData field
+      (applicant.testData?.correctAnswers !== undefined) ? applicant.testData.correctAnswers :
+      // Priority 4: direct correctAnswer field
+      (applicant.correctAnswer !== undefined && applicant.correctAnswer !== null) ? applicant.correctAnswer :
+      // Fallback
+      0;
+    
+    // Extract time spent from multiple possible sources
+    const timeSpent = 
+      (applicant.result && applicant.result.timeSpent !== undefined) ? applicant.result.timeSpent :
+      (applicant.testResult && applicant.testResult.timeSpent !== undefined) ? applicant.testResult.timeSpent :
+      (applicant.testData?.timeSpent !== undefined) ? applicant.testData.timeSpent :
+      0; // in seconds
 
     return {
       totalQuestions,

@@ -9,7 +9,7 @@ export const API_ENDPOINTS = {
   APPLICANTS_BY_ID: (id) => `/auth/student/${id}`,  // Get user by ID (dashboard)
   APPLICANT_TEST_DATA: (id) => `/applicants/${id}/test-data`,
   APPLICANT_FEEDBACK: (id) => `/applicants/${id}/feedback`,
-  APPLICANT_BY_ID: (id) => `/auth/student/id/${id}`,
+  APPLICANT_BY_ID: (id) => `/auth/student/${id}`,
   APPLICANT_TEST_RESULT: (id) => `/test/result/${id}`,
   APPLICANT_FEEDBACK_RESULT: (id) => `/feedback/${id}`,
   SUBMIT_TEST: (id) => `/result/${id}`,  // Submit test result with studentFormId
@@ -63,11 +63,12 @@ export const apiCall = async (endpoint, options = {}) => {
   const requiresAuth = typeof endpoint === 'string' && (
     endpoint.includes('/result/all') || 
     endpoint.includes('/auth/student/all') || 
-    endpoint.includes('/auth/student/') || // Include individual student details
+    endpoint.includes('/auth/student/') || // All auth/student endpoints except registration require auth
     endpoint.includes('/questions/email/') || // Include test questions by email
     endpoint.includes('/feedback/all') ||
-    endpoint.includes('/analytics/')
-  );
+    endpoint.includes('/analytics/') ||
+    endpoint.includes('/questions/') // Include questions endpoint for test submission
+  ) && !endpoint.includes('/auth/student/submit') && !endpoint.includes('/questions/'); // Exclude registration and questions endpoints from requiring auth
   
   // Get admin token from localStorage if available
   const adminToken = localStorage.getItem('adminToken');
@@ -172,6 +173,12 @@ export const addApplicant = async (applicantData) => {
   };
   
   const result = await apiCall(API_ENDPOINTS.APPLICANTS, options);
+  
+  console.log('Registration API Response Expected Format:', {
+    testData: result.testData || [],
+    message: result.message || 'Student form submitted successfully and test generated',
+    studentFormId: result.studentFormId || result.id || result._id
+  });
   
   // Return the result as received from the API
   // The result may contain studentFormId, message, and testData as per the new API format

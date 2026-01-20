@@ -172,18 +172,17 @@ const Registration = () => {
       console.log('Registration API response:', result);
       
       let studentFormId = result.studentFormId || 
+                         result.data?.studentFormId ||
                          result.studentForm?.id || 
                          result.id || 
                          result._id || 
-                         result.data?.id || 
-                         result.data?.studentFormId;
+                         result.data?.id;
+      
+      console.log('Raw registration response to identify correct studentFormId format:', JSON.stringify(result, null, 2));
       
       console.log('Extracted studentFormId:', studentFormId);
       
-      // If studentFormId is not found, try to get it from session storage if previously stored
-      if (!studentFormId && typeof window !== 'undefined' && window.sessionStorage) {
-        studentFormId = window.sessionStorage.getItem('studentFormId');
-      }
+      // No fallback to session storage as per requirements
       
       // If we still don't have studentFormId, use a fallback approach
       if (!studentFormId) {
@@ -228,15 +227,7 @@ const Registration = () => {
         }
       }
       
-      // Step 3: Store studentFormId and questions in context/sessionStorage
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        try {
-          window.sessionStorage.setItem('studentFormId', studentFormId);
-          console.log('Student Form ID stored:', studentFormId);
-        } catch (storageError) {
-          console.error('Failed to store studentFormId:', storageError);
-        }
-      }
+      // Step 3: Store studentFormId and questions in context only (no sessionStorage)
       
       // Store questions if received
       if (result.testData && Array.isArray(result.testData)) {
@@ -254,21 +245,7 @@ const Registration = () => {
       // Store the complete applicant object
       setCurrentApplicant(applicant);
       
-      // Store user identity information
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        const userIdentity = {
-          email: formData.permanentEmail || formData.email,
-          fullName: formData.fullName,
-          studentFormId: studentFormId
-        };
-        
-        try {
-          window.sessionStorage.setItem('userIdentity', JSON.stringify(userIdentity));
-          console.log('User identity stored:', userIdentity);
-        } catch (storageError) {
-          console.error('Failed to store user identity:', storageError);
-        }
-      }
+      // User identity information is stored in context only (no sessionStorage)
       
       navigate('/test');
     } catch (error) {

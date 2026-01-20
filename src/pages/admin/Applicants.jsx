@@ -9,6 +9,8 @@ const Applicants = () => {
   const { applicants, isAdminAuthenticated } = useApp();
   const [feedbackData, setFeedbackData] = useState([]);
   const [testResults, setTestResults] = useState([]);
+  
+
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');

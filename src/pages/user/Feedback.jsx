@@ -75,21 +75,29 @@ const Feedback = () => {
     }
     
     // Get studentFormId from currentApplicant
+    // Priority: studentFormId (from registration API response) > id (from raw registration response)
     const studentFormId = currentApplicant?.studentFormId || currentApplicant?.id || currentApplicant?._id || 'unknown';
     
-    // Map feedback data to the expected backend format
+    console.log('Feedback submission - Using studentFormId:', studentFormId);
+    console.log('Feedback submission - Available IDs in currentApplicant:', {
+      studentFormId: currentApplicant?.studentFormId,
+      id: currentApplicant?.id,
+      _id: currentApplicant?._id
+    });
+    
+    // Map feedback data to the exact backend schema required
     const feedbackData = {
       rating: rating,  // Backend expects 'rating' as integer
-      name: userFullName || currentApplicant?.fullName || '',  // Include applicant's name (required)
-      problem1: feedback.testDifficulty || '',  // Send as string
-      problem2: feedback.platformExperience || '',  // Send as string
-      problem3: feedback.improvements || '',  // Send as string
-      problem4: feedback.wouldRecommend || '',  // Send as string
-      problem5: feedback.comments || '',  // Send as string
+      name: userFullName || currentApplicant?.fullName || '',  // Include applicant's name
+      problem1: feedback.testDifficulty || '',  // Test difficulty feedback
+      problem2: feedback.platformExperience || '',  // Platform experience feedback
+      problem3: feedback.improvements || '',  // Improvement suggestions
+      problem4: feedback.wouldRecommend || '',  // Recommendation feedback
+      problem5: feedback.comments || '',  // Additional comments
       email: userEmail || currentApplicant?.email || '',  // Include applicant's email
       position: currentApplicant?.postAppliedFor || currentApplicant?.position || '',  // Include position applied for
       submittedAt: new Date().toISOString(),  // Include timestamp
-      applicantId: currentApplicant?.id || currentApplicant?._id || 'unknown',  // Include applicant ID for the new API
+      applicantId: currentApplicant?.id || currentApplicant?._id || 'unknown',  // Include applicant ID
       studentFormId: studentFormId  // Include studentFormId for API submission
     };
     

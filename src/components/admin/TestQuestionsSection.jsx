@@ -2,8 +2,9 @@ import { useMemo } from 'react';
 
 const TestQuestionsSection = ({ applicant, loading }) => {
   const questionsData = useMemo(() => {
-    // Get questions from multiple possible sources
-    const questionsAttempted = applicant.testData?.questions || applicant.questions || [];
+    // NEW LOGIC: Handle the nested questions structure from the API response
+    // The API returns questions at response.questions?.questions
+    const testQuestions = applicant.questions?.questions || [];
     
     // Get answers from multiple possible sources - prioritize the most reliable
     const answersProvided = applicant.testData?.answers || 
@@ -34,13 +35,14 @@ const TestQuestionsSection = ({ applicant, loading }) => {
       !applicant.questionsData.some(item => item.questions) ? applicant.questionsData : [];
     
     // Combine all available questions from different sources
+    // Prioritize the new API structure (response.questions?.questions) first
     const allQuestions = [
+      ...testQuestions, // NEW: From API response.questions.questions
       ...questionsFromData,
       ...questionsFromArray,
       ...questionsDirectArray,
       ...questionsFromTestData,
-      ...questionsFromApplicant,
-      ...questionsAttempted
+      ...questionsFromApplicant
     ];
     
     // Remove duplicates based on question ID if available, otherwise use all questions
