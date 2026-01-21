@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/useApp';
-import { getAllFeedback } from '../../api';
-import StarRating from '../../components/StarRating';
+import { useAdminData } from '../../hooks/useAdminData';
+import { getNumericScore, getSubmissionDate } from '../../utils/helpers';
+import StarRating from '../../components/shared/StarRating';
 import { 
   BarChart, 
   Bar, 
@@ -18,58 +19,13 @@ import {
 } from 'recharts';
 
 const Analytics = () => {
-  const { applicants, isAdminAuthenticated, refreshApplicants } = useApp();
+  const { applicants, refreshApplicants } = useApp();
+  const { fetchFeedback } = useAdminData();
   const [feedbackData, setFeedbackData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('all'); // 'week', 'month', 'year', 'all'
 
-  // Helper function to extract numeric score from test data
-  const getNumericScore = (applicant) => {
-    // Use test result data if available, prioritize over feedback
-    if (applicant.correctAnswer !== undefined && applicant.testData?.totalQuestions) {
-      return (applicant.correctAnswer / applicant.testData.totalQuestions) * 100;
-    }
-    
-    const testData = applicant.testData;
-    if (testData) {
-      if (typeof testData.score === 'string' && testData.score.includes('/')) {
-        const [correct, total] = testData.score.split('/').map(Number);
-        if (total > 0) {
-          return (correct / total) * 100;
-        }
-      }
-      
-      if (testData.percentage) {
-        return parseFloat(testData.percentage);
-      }
-      
-      if (testData.score && typeof testData.score === 'number') {
-        return testData.score;
-      }
-      
-      if (testData.correctAnswers !== undefined && testData.totalQuestions) {
-        return (testData.correctAnswers / testData.totalQuestions) * 100;
-      }
-    }
-    
-    // Only use feedback ratings if no test data is available
-    if (applicant.rating !== undefined && applicant.rating !== null) {
-      return (applicant.rating / 5) * 100;
-    }
-    
-    return 0;
-  };
 
-  // Helper function to get submission date
-  const getSubmissionDate = (applicant) => {
-    return new Date(
-      applicant.submittedAt || 
-      applicant.createdAt || 
-      applicant.updatedAt || 
-      applicant.date || 
-      Date.now()
-    );
-  };
 
   // Filter applicants based on time filter
   const filteredApplicants = useMemo(() => {
@@ -100,43 +56,51 @@ const Analytics = () => {
 
   // Fetch feedback data and refresh applicants on component mount
   useEffect(() => {
+    console.log('Analytics useEffect running, attempting data fetch regardless of auth status');
     let isCancelled = false; // Prevent state updates if component unmounts
     
-    if (isAdminAuthenticated) {
-      const fetchData = async () => {
-        if (!isAdminAuthenticated || isCancelled) return;
-        
-        setLoading(true);
-        try {
-          // Refresh applicants data from API
-          await refreshApplicants();
-          
-          const data = await getAllFeedback();
-          if (!isCancelled) {
-            setFeedbackData(data);
-          }
-        } catch (error) {
-          console.error('Error fetching data:', error);
-          if (!isCancelled) {
-            setFeedbackData([]);
-          }
-        } finally {
-          if (!isCancelled) {
-            setLoading(false);
-          }
-        }
-      };
+    const fetchData = async () => {
+      console.log('Starting data fetch in Analytics...');
+      // Remove authentication check - attempt to fetch data regardless of auth status
+      if (isCancelled) {
+        console.log('Component cancelled, skipping data fetch');
+        return;
+      }
       
-      fetchData();
-    } else {
-      setLoading(false);
-    }
+      setLoading(true);
+      try {
+        // Refresh applicants data from API
+        console.log('Calling refreshApplicants in Analytics...');
+        await refreshApplicants();
+        console.log('refreshApplicants completed in Analytics');
+        
+        console.log('Calling fetchFeedback in Analytics...');
+        const data = await fetchFeedback();
+        console.log('fetchFeedback completed in Analytics, received data:', data);
+        if (!isCancelled) {
+          setFeedbackData(data);
+        }
+      } catch (error) {
+        console.error('Error fetching data in Analytics:', error);
+        if (!isCancelled) {
+          setFeedbackData([]);
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
+          console.log('Loading set to false in Analytics');
+        }
+      }
+    };
+    
+    fetchData();
     
     // Cleanup function to cancel requests if component unmounts
     return () => {
+      console.log('Analytics unmounting, cancelling requests');
       isCancelled = true;
     };
-  }, [isAdminAuthenticated]);
+  }, []); // Run once on mount
 
   // Combine filtered applicants with feedback data
   const combinedApplicants = useMemo(() => {

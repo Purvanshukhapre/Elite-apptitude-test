@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useApp } from '../../context/useApp';
+import { useApp } from '../../../context/useApp';
 
 const Layout = ({ children }) => {
   const location = useLocation();

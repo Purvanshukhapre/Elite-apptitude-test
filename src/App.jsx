@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
-import ErrorBoundary from './components/ErrorBoundary';
-import Layout from './components/admin/Layout';
+import ErrorBoundary from './components/shared/ErrorBoundary';
+import Layout from './pages/admin/components/Layout';
 import Welcome from './pages/user/Welcome';
 import Registration from './pages/user/Registration';
 import AptitudeTest from './pages/user/AptitudeTest';
@@ -11,7 +11,6 @@ import Dashboard from './pages/admin/Dashboard';
 import Analytics from './pages/admin/Analytics';
 import Applicants from './pages/admin/Applicants';
 import FeedbackPage from './pages/admin/Feedback';
-// import ApplicantDetails from './pages/admin/ApplicantDetails';
 import Email from './pages/admin/Email';
 import ApplicantDetailsClean from './pages/admin/ApplicantDetailsClean';
 

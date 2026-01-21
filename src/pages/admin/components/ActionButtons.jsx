@@ -204,7 +204,7 @@ const ActionButtons = ({ applicant, navigate }) => {
       }
       
       // Call the delete API function
-      const { deleteApplicantById } = await import('../../api');
+      const { deleteApplicantById } = await import('../../../api');
       await deleteApplicantById(actualId);
       
       alert('Applicant and all related data deleted successfully');

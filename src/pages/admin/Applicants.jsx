@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
-import { getAllFeedback, getAllTestResults } from '../../api';
-import StarRating from '../../components/StarRating';
+import { useAdminData } from '../../hooks/useAdminData';
+import { getNumericScore } from '../../utils/helpers';
+import StarRating from '../../components/shared/StarRating';
 
 const Applicants = () => {
   const navigate = useNavigate();
-  const { applicants, isAdminAuthenticated, refreshApplicants } = useApp();
+  const { applicants, refreshApplicants } = useApp();
+  const { fetchFeedback, fetchTestResults } = useAdminData();
   const [feedbackData, setFeedbackData] = useState([]);
   const [testResults, setTestResults] = useState([]);
   
@@ -20,97 +22,72 @@ const Applicants = () => {
   const [viewMode, setViewMode] = useState('grid'); // grid or list
 
   const handleRowClick = (applicant) => {
-    const applicantId = applicant._id || applicant.id || applicant.fullName || applicant.name || applicant.email || applicant.permanentEmail;
+    // Use the exact 'id' field from the API response - this is the correct ID needed
+    const applicantId = applicant.id;
+    
+    console.log("CARD DATA:", applicant);
+    console.log("USING ID FOR URL:", applicant.id);
+    
+    console.log('Applicant clicked - RAW API RESPONSE DATA:', {
+      fullName: applicant.fullName,
+      id: applicant.id,  // This is the ID from the /auth/student/all API response
+      selectedId: applicantId,
+      idField: applicant.id,
+      _idField: applicant._id,
+      studentFormIdField: applicant.studentFormId,
+      resumeId: applicant.resumeId,
+      resumeUrl: applicant.resumeUrl,
+      allApplicantData: applicant
+    });
+    
     if (applicantId) {
+      console.log('NAVIGATING WITH API RESPONSE ID:', applicantId);
+      console.log('*** CONFIRMING: USING ID FROM /auth/student/all API RESPONSE:', applicantId, '***');
+      console.log('*** PASSING ID FROM APPLICANTS TO APPLICANTDETAILSCLEAN:', applicantId, '***');
       navigate(`/admin/modern/applicants/${encodeURIComponent(applicantId)}`);
     } else {
-      // Fallback to index if no unique identifier found
-      const index = combinedApplicants.findIndex(app => app === applicant);
-      navigate(`/admin/modern/applicants/${index}`);
+      console.error('No valid ID found for applicant:', applicant);
+      // The ID should always be available as it comes from the API response
     }
-  };
-
-  // Helper function to extract numeric score from test data
-  const getNumericScore = (applicant) => {
-    // Prioritize test result data if available
-    if (applicant.testResult && applicant.testResult.correctAnswer !== undefined) {
-      // Use test result's total questions if available, otherwise default to 15
-      const totalQuestions = applicant.testResult.totalQuestions || applicant.testResult.questions?.length || 15;
-      return totalQuestions > 0 ? (applicant.testResult.correctAnswer / totalQuestions) * 100 : 0;
-    }
-    
-    // Check test data for correct answers
-    const testData = applicant.testData;
-    if (testData) {
-      // Check for score in fraction format (e.g., "8/15")
-      if (typeof testData.score === 'string' && testData.score.includes('/')) {
-        const [correct, total] = testData.score.split('/').map(Number);
-        if (total > 0) {
-          return (correct / total) * 100;
-        }
-      }
-      
-      // Check for percentage directly
-      if (testData.percentage !== undefined) {
-        // Ensure it's a number, if it's a string, parse it
-        if (typeof testData.percentage === 'string') {
-          return parseFloat(testData.percentage);
-        } else {
-          return testData.percentage;
-        }
-      }
-      
-      // Check for numeric score
-      if (typeof testData.score === 'number') {
-        return testData.score;
-      }
-      
-      // Check for correct answers and total questions
-      if (testData.correctAnswers !== undefined) {
-        const totalQuestions = testData.totalQuestions || 15;
-        return (testData.correctAnswers / totalQuestions) * 100;
-      }
-    }
-    
-    // Use the applicant's direct correctAnswer field as fallback
-    if (applicant.correctAnswer !== undefined) {
-      const totalQuestions = testData?.totalQuestions || 15;
-      return (applicant.correctAnswer / totalQuestions) * 100;
-    }
-    
-    // Only use feedback ratings if no test data is available
-    if (applicant.rating !== undefined && applicant.rating !== null) {
-      return (applicant.rating / 5) * 100;
-    }
-    
-    return 0;
   };
 
   // Fetch feedback and test results data on component mount
   useEffect(() => {
+    console.log('Applicants useEffect running, attempting data fetch regardless of auth status');
     let isCancelled = false; // Prevent state updates if component unmounts
     
     const fetchData = async () => {
-      if (!isAdminAuthenticated || isCancelled) return;
+      console.log('Starting data fetch in Applicants...');
+      // Remove authentication check - attempt to fetch data regardless of auth status
+      if (isCancelled) {
+        console.log('Component cancelled, skipping data fetch');
+        return;
+      }
       
       setLoading(true);
       try {
         // Refresh applicants data from API
+        console.log('Calling refreshApplicants in Applicants...');
         await refreshApplicants();
+        console.log('refreshApplicants completed in Applicants');
         
-        // Fetch feedback data
-        const feedbackData = await getAllFeedback();
+        // Fetch feedback data using the new hook
+        console.log('Calling fetchFeedback in Applicants...');
+        const feedback = await fetchFeedback();
+        console.log('fetchFeedback completed in Applicants, received data:', feedback);
         if (!isCancelled) {
-          setFeedbackData(feedbackData);
+          setFeedbackData(feedback);
         }
         
-        // Fetch test results data
-        const resultsData = await getAllTestResults();
+        // Fetch test results data using the new hook
+        console.log('Calling fetchTestResults in Applicants...');
+        const testResults = await fetchTestResults();
+        console.log('fetchTestResults completed in Applicants, received data:', testResults.length, 'items');
         if (!isCancelled) {
-          setTestResults(resultsData);
+          setTestResults(testResults);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching data in Applicants:', error);
         if (!isCancelled) {
           setFeedbackData([]);
           setTestResults([]);
@@ -118,6 +95,7 @@ const Applicants = () => {
       } finally {
         if (!isCancelled) {
           setLoading(false);
+          console.log('Loading set to false in Applicants');
         }
       }
     };
@@ -126,31 +104,46 @@ const Applicants = () => {
     
     // Cleanup function to cancel requests if component unmounts
     return () => {
+      console.log('Applicants unmounting, cancelling requests');
       isCancelled = true;
     };
-  }, [isAdminAuthenticated]);
+  }, []); // Run once on mount
 
   // Combine applicants with feedback and test results data
+  // 🔒 PRESERVE ORIGINAL APPLICANT ID - NEVER OVERRIDE THE MAIN ID
   const combinedApplicants = applicants.map(applicant => {
+    // 🔥 CRITICAL: Store the original ID before any processing
+    const originalId = applicant.id;
+    
     const applicantFeedback = feedbackData.find(feedback => 
-      feedback.email === applicant.email || 
-      feedback.name === applicant.fullName ||
-      feedback.fullName === applicant.fullName ||
-      feedback.email === applicant.permanentEmail
+      // Priority 1: Match by ID if available
+      (feedback.studentFormId && applicant.studentFormId && feedback.studentFormId === applicant.studentFormId) ||
+      (feedback.id && applicant.id && feedback.id === applicant.id) ||
+      // Priority 2: Match by email
+      (feedback.email && applicant.permanentEmail && feedback.email.toLowerCase() === applicant.permanentEmail.toLowerCase()) ||
+      (feedback.email && applicant.email && feedback.email.toLowerCase() === applicant.email.toLowerCase()) ||
+      // Priority 3: Match by name as fallback
+      (feedback.name && applicant.fullName && feedback.name.toLowerCase() === applicant.fullName.toLowerCase()) ||
+      (feedback.fullName && applicant.fullName && feedback.fullName.toLowerCase() === applicant.fullName.toLowerCase())
     );
     
-    // Find test results for this applicant - prioritize by email if available, then by name
+    // Find test results for this applicant - prioritize by ID, then email, then by name
     const applicantTestResult = testResults.find(result => 
-      // First try to match by email
+      // Priority 1: Match by ID if available
+      (result.studentFormId && applicant.studentFormId && result.studentFormId === applicant.studentFormId) ||
+      (result.id && applicant.id && result.id === applicant.id) ||
+      // Priority 2: Match by email
       (result.email && applicant.permanentEmail && result.email.toLowerCase() === applicant.permanentEmail.toLowerCase()) ||
       (result.email && applicant.email && result.email.toLowerCase() === applicant.email.toLowerCase()) ||
-      // Then by full name
+      // Priority 3: Match by name as fallback
       (result.fullName && applicant.fullName && result.fullName.toLowerCase() === applicant.fullName.toLowerCase()) ||
       (result.name && applicant.fullName && result.name.toLowerCase() === applicant.fullName.toLowerCase())
     );
     
+    // 🔒 CRITICAL: Always preserve the original applicant ID
     return {
       ...applicant,
+      id: originalId, // 🔥 ENSURE ORIGINAL ID IS PRESERVED
       feedback: applicantFeedback || null,
       testData: applicant.testData || null,
       rating: applicant.rating,
@@ -439,7 +432,7 @@ const Applicants = () => {
             const hasTest = applicant.testData || applicant.correctAnswer !== undefined;
             return (
               <div
-                key={applicant._id || applicant.id || index}
+                key={`grid-${applicant._id || applicant.id || applicant.fullName?.replace(/[^a-zA-Z0-9]/g, '') || index}-${index}`}
                 onClick={() => handleRowClick(applicant)}
                 className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 group"
               >
@@ -466,7 +459,13 @@ const Applicants = () => {
                     <span className="text-2xl font-bold text-blue-600">{score.toFixed(1)}%</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                    <span>{getNumericScore(applicant) > 0 ? (applicant.testResult?.correctAnswer || applicant.correctAnswer || 0) : '0'}/15</span>
+                    <span>{getNumericScore(applicant) > 0 ? (
+                      applicant.testResult?.correctAnswer !== undefined ? applicant.testResult.correctAnswer :
+                      applicant.testResult?.correctAnswers !== undefined ? applicant.testResult.correctAnswers :
+                      applicant.correctAnswer !== undefined ? applicant.correctAnswer :
+                      applicant.testData?.correctAnswer !== undefined ? applicant.testData.correctAnswer :
+                      applicant.testData?.correctAnswers !== undefined ? applicant.testData.correctAnswers : '0'
+                    ) : '0'}/15</span>
                     <span>Correct</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
@@ -532,7 +531,7 @@ const Applicants = () => {
                   const hasTest = applicant.testData || applicant.correctAnswer !== undefined;
                   return (
                     <tr 
-                      key={applicant._id || applicant.id || index}
+                      key={`row-${applicant._id || applicant.id || applicant.fullName?.replace(/[^a-zA-Z0-9]/g, '') || index}-${index}`}
                       className="hover:bg-blue-50 transition-colors cursor-pointer"
                       onClick={() => handleRowClick(applicant)}
                     >
@@ -556,7 +555,13 @@ const Applicants = () => {
                         <div className="flex items-center space-x-3">
                           <span className="text-lg font-bold text-gray-900">{score.toFixed(1)}%</span>
                           <div className="text-sm text-gray-500">
-                            <span>{getNumericScore(applicant) > 0 ? (applicant.testResult?.correctAnswer || applicant.correctAnswer || 0) : '0'}/15</span>
+                            <span>{getNumericScore(applicant) > 0 ? (
+                              applicant.testResult?.correctAnswer !== undefined ? applicant.testResult.correctAnswer :
+                              applicant.testResult?.correctAnswers !== undefined ? applicant.testResult.correctAnswers :
+                              applicant.correctAnswer !== undefined ? applicant.correctAnswer :
+                              applicant.testData?.correctAnswer !== undefined ? applicant.testData.correctAnswer :
+                              applicant.testData?.correctAnswers !== undefined ? applicant.testData.correctAnswers : '0'
+                            ) : '0'}/15</span>
                           </div>
                           <div className="w-20 bg-gray-200 rounded-full h-2">
                             <div 

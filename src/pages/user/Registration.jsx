@@ -1,18 +1,19 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
-import { sendResumeWithEmail } from '../../api';
-import ProgressBar from '../../components/registration/ProgressBar';
-import PersonalInfoStep from '../../components/registration/PersonalInfoStep';
-import PositionDetailsStep from '../../components/registration/PositionDetailsStep';
-import ReviewStep from '../../components/registration/ReviewStep';
-import NavigationButtons from '../../components/registration/NavigationButtons';
+import { useTestData } from '../../hooks/useTestData';
+import ProgressBar from './components/registration/ProgressBar';
+import PersonalInfoStep from './components/registration/PersonalInfoStep';
+import PositionDetailsStep from './components/registration/PositionDetailsStep';
+import ReviewStep from './components/registration/ReviewStep';
+import NavigationButtons from './components/registration/NavigationButtons';
 import logo from "../../assets/elitelogo.png";
 import polyBg from "../../assets/1397.jpg";
 
 const Registration = () => {
   const navigate = useNavigate();
   const { addApplicant, setCurrentApplicant, setTestQuestions } = useApp();
+  const { sendResumeWithEmail } = useTestData();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -60,6 +61,7 @@ const Registration = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const lastSubmitTimeRef = useRef(0);
 
   const validateStep1 = () => {
     const newErrors = {};
@@ -162,6 +164,20 @@ const Registration = () => {
   };
 
   const handleSubmit = async () => {
+    // Prevent multiple submissions
+    if (isSubmitting) {
+      console.log('Registration already in progress, ignoring duplicate submission');
+      return;
+    }
+    
+    // Debounce protection - prevent submissions within 1 second of each other
+    const now = Date.now();
+    if (now - lastSubmitTimeRef.current < 1000) {
+      console.log('Submission too frequent, ignoring');
+      return;
+    }
+    lastSubmitTimeRef.current = now;
+    
     setIsSubmitting(true);
     try {
       // Step 1: Submit student form to get studentFormId and questions
@@ -169,8 +185,6 @@ const Registration = () => {
       
       // Extract studentFormId from the result
       // The API might return it in different formats
-      console.log('Registration API response:', result);
-      
       let studentFormId = result.studentFormId || 
                          result.data?.studentFormId ||
                          result.studentForm?.id || 
@@ -178,9 +192,9 @@ const Registration = () => {
                          result._id || 
                          result.data?.id;
       
-      console.log('Raw registration response to identify correct studentFormId format:', JSON.stringify(result, null, 2));
-      
-      console.log('Extracted studentFormId:', studentFormId);
+      // Log the studentFormId that will be used for test submission
+      console.log('Registration result:', result);
+      console.log('studentFormId extracted for test submission:', studentFormId);
       
       // No fallback to session storage as per requirements
       
@@ -188,38 +202,18 @@ const Registration = () => {
       if (!studentFormId) {
         // Use email as a fallback identifier if available
         studentFormId = formData.permanentEmail || formData.email || `temp_${Date.now()}`;
-        console.warn('Using fallback studentFormId:', studentFormId);
+        console.log('Using fallback studentFormId:', studentFormId);
       }
       
       // Step 2: Submit resume using email
       if (formData.resume) {
         try {
-          console.log('=== RESUME UPLOAD START ===');
-          console.log('Email for resume upload:', formData.permanentEmail);
-          console.log('Resume file details:', {
-            name: formData.resume.name,
-            size: formData.resume.size,
-            type: formData.resume.type,
-            lastModified: formData.resume.lastModified
-          });
-          
-          const uploadResult = await sendResumeWithEmail(formData.permanentEmail, formData.resume);
-          
-          console.log('Resume upload completed successfully!');
-          console.log('Upload result:', uploadResult);
+          await sendResumeWithEmail(formData.permanentEmail, formData.resume);
           
           // Small delay to ensure resume is processed on backend
           await new Promise(resolve => setTimeout(resolve, 1500));
           
-          console.log('=== RESUME UPLOAD END ===');
-          
-        } catch (resumeError) {
-          console.error('=== RESUME UPLOAD FAILED ===');
-          console.error('Error details:', resumeError);
-          console.error('Email used:', formData.permanentEmail);
-          console.error('Resume file:', formData.resume);
-          console.error('=== END ERROR DETAILS ===');
-          
+        } catch {
           // Show user-friendly error message
           alert('Warning: Resume upload failed. You can upload your resume later from your profile.');
           
@@ -232,7 +226,6 @@ const Registration = () => {
       // Store questions if received
       if (result.testData && Array.isArray(result.testData)) {
         setTestQuestions(result.testData);
-        console.log('Questions received:', result.testData);
       }
       
       // Create applicant object with studentFormId
@@ -248,8 +241,7 @@ const Registration = () => {
       // User identity information is stored in context only (no sessionStorage)
       
       navigate('/test');
-    } catch (error) {
-      console.error('Failed to submit application:', error);
+    } catch {
       // Even if submission fails, try to continue to test page
       // User may have already been registered
       navigate('/test');
@@ -355,7 +347,15 @@ const Registration = () => {
                 </div>
               )}
               
-              <form id="registration-form" className="space-y-6">
+              <form 
+                id="registration-form" 
+                className="space-y-6"
+                onSubmit={(e) => {
+                  // Prevent default form submission
+                  e.preventDefault();
+                  console.log('Form submission prevented - using button handler instead');
+                }}
+              >
                 {renderStep()}
                 
                 <NavigationButtons

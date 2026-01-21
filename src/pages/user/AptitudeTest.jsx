@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
-import { submitTest, sendTestSubmissionEmail } from '../../api';
-import { submitTestQuestions } from '../../services/apiService';
+import { useTestData } from '../../hooks/useTestData';
+import { sendTestSubmissionEmail } from '../../services/apiService';
 
 const AptitudeTest = () => {
   const navigate = useNavigate();
-  const { currentApplicant, updateApplicantTest, testQuestions } = useApp();
+  const { currentApplicant, setCurrentApplicant, updateApplicantTest, testQuestions } = useApp();
+  const { submitTestResults, submitQuestions } = useTestData();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -239,27 +240,38 @@ const AptitudeTest = () => {
 
     try {
       // API 1 — SUBMIT QUESTIONS & ANSWERS
-      // Submit test questions data using studentFormId
-      await submitTestQuestions({
+      // Submit test questions data with user answers using studentFormId
+      console.log('About to submit questions and answers with studentFormId:', applicantToUse.studentFormId);
+      console.log('Questions submission data:', {
+        ...testQuestionsData,
+        studentFormId: applicantToUse.studentFormId
+      });
+      await submitQuestions({
         ...testQuestionsData,
         studentFormId: applicantToUse.studentFormId
       });
       
       // API 2 — SUBMIT RESULT (CORRECT ANSWER COUNT)
-      // Submit test result using studentFormId (only after API 1 succeeds)
-      const result = await submitTest({
+      // Submit test result using studentFormId
+      console.log('About to submit test results with studentFormId:', applicantToUse.studentFormId);
+      console.log('Results submission data:', {
+        ...testData,
+        studentFormId: applicantToUse.studentFormId
+      });
+      const result = await submitTestResults({
         ...testData,
         studentFormId: applicantToUse.studentFormId
       });
       
-      // Update applicant with test data
-      updateApplicantTest(applicantToUse.studentFormId, {
+      // Update currentApplicant in context with test results
+      setCurrentApplicant(prevApplicant => ({
+        ...prevApplicant,
         ...testData,
-        studentFormId: applicantToUse.studentFormId,
         score: result.score || `${score}/${questionsToUse.length}`,
         result: result,
-        correctAnswers: result.correctAnswers
-      });
+        correctAnswers: result.correctAnswers,
+        testCompleted: true
+      }));
       
       // API 3 — EMAIL NOTIFICATION
       // Send email notification about test submission
@@ -291,13 +303,15 @@ const AptitudeTest = () => {
     } catch (error) {
       console.error('Error submitting test:', error);
       
-      // Update applicant with local test data including the calculated correct answers
-      updateApplicantTest(applicantToUse.studentFormId, {
+      // Update currentApplicant in context with local test data instead of calling updateApplicantTest to avoid duplicate API calls
+      setCurrentApplicant(prevApplicant => ({
+        ...prevApplicant,
         ...testData,
         studentFormId: applicantToUse.studentFormId,
         correctAnswers: testData.correctAnswers,
-        email: applicantToUse.permanentEmail || applicantToUse.email
-      });
+        email: applicantToUse.permanentEmail || applicantToUse.email,
+        testCompleted: true
+      }));
       
       // Send email notification about test submission even if API submission failed
       try {

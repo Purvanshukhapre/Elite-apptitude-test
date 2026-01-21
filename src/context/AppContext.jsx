@@ -1,96 +1,139 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { AppContext } from './AppContextDefinition';
-import { addApplicant as apiAddApplicant, updateApplicantTest as apiUpdateApplicantTest, updateApplicantFeedback as apiUpdateApplicantFeedback, getApplicants as apiGetApplicants, getAllTestResults, getAllFeedback, mockQuestions, getTestQuestionsByEmail as apiGetTestQuestionsByEmail } from '../api';
-// mockQuestions is now properly exported from api.js
+import { addApplicant as apiAddApplicant, updateApplicantTest as apiUpdateApplicantTest, updateApplicantFeedback as apiUpdateApplicantFeedback, getApplicants as apiGetApplicants, getAllTestResults, getAllFeedback } from '../api';
 
 export const AppProvider = ({ children }) => {
   const [applicants, setApplicants] = useState([]);
   const [currentApplicant, setCurrentApplicant] = useState(null);
   const [testQuestions, setTestQuestions] = useState([]);
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
-    const saved = localStorage.getItem('adminAuth');
-    // Also check if we have a valid admin token
-    const hasToken = localStorage.getItem('adminToken');
-    return saved === 'true' && !!hasToken;
-  });
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [loading] = useState(false);
+  const refreshApplicantsRef = useRef(false);
 
-  // Save admin auth state to localStorage
-  useEffect(() => {
-    localStorage.setItem('adminAuth', isAdminAuthenticated.toString());
-  }, [isAdminAuthenticated]);
-
-  // Function to refresh applicants from API
-  const refreshApplicants = async () => {
+  const refreshApplicants = useCallback(async () => {
+    // Prevent multiple simultaneous calls
+    if (refreshApplicantsRef.current) {
+      console.log('refreshApplicants already in progress, skipping');
+      return applicants;
+    }
+    
+    console.log('refreshApplicants called - fetching all applicants and additional data');
+    refreshApplicantsRef.current = true;
+    
     try {
+      console.log('Calling apiGetApplicants...');
+      console.log('Calling getAllTestResults...');
+      console.log('Calling getAllFeedback...');
+      
+      // Fetch all applicants from the backend along with test results and feedback
       const [apiApplicants, testResults, feedbackResults] = await Promise.all([
-        apiGetApplicants(),
-        getAllTestResults().catch(error => {
-          console.error('Failed to fetch test results:', error);
+        apiGetApplicants().catch((error) => {
+          console.error('Error in apiGetApplicants:', error);
           return [];
         }),
-        getAllFeedback().catch(error => {
-          console.error('Failed to fetch feedback:', error);
+        getAllTestResults().catch((error) => {
+          console.error('Error in getAllTestResults:', error);
+          return [];
+        }),
+        getAllFeedback().catch((error) => {
+          console.error('Error in getAllFeedback:', error);
           return [];
         })
       ]);
       
-      console.log('Refresh API Response - All Applicants:', apiApplicants);
+      console.log('API calls completed:', {
+        apiApplicants: apiApplicants.length,
+        testResults: testResults.length,
+        feedbackResults: feedbackResults.length
+      });
       
-      // Combine applicants with test results and feedback
+      // 🔥 MANDATORY DEBUG: Log raw API response IDs
+      console.log(
+        "RAW /auth/student/all API RESPONSE IDS:",
+        apiApplicants.map(a => a.id)
+      );
+      
+      // Log sample applicant data to see the ID structure
+      if (apiApplicants.length > 0) {
+        console.log('Sample applicant data:', apiApplicants[0]);
+        console.log('Applicant ID structure:', {
+          _id: apiApplicants[0]._id,
+          id: apiApplicants[0].id,
+          studentFormId: apiApplicants[0].studentFormId
+        });
+      }
+      
       const combinedApplicants = apiApplicants.map(applicant => {
-        // Find corresponding test result by fullName
+        // 🔥 CRITICAL: Store the original applicant ID before any data merging
+        const originalApplicantId = applicant.id;
+        const originalApplicantStudentFormId = applicant.studentFormId;
+        
+        // Find test result by matching ID first, then by email, then by name
         const testResult = testResults.find(result => 
-          result.fullName === applicant.fullName || result.name === applicant.fullName
+          // Priority 1: Match by ID if available
+          (result.studentFormId && applicant.studentFormId && result.studentFormId === applicant.studentFormId) ||
+          (result.id && applicant.id && result.id === applicant.id) ||
+          // Priority 2: Match by email
+          (result.email && applicant.permanentEmail && result.email.toLowerCase() === applicant.permanentEmail.toLowerCase()) ||
+          (result.email && applicant.email && result.email.toLowerCase() === applicant.email.toLowerCase()) ||
+          // Priority 3: Match by name as fallback
+          (result.fullName && applicant.fullName && result.fullName.toLowerCase() === applicant.fullName.toLowerCase()) ||
+          (result.name && applicant.fullName && result.name.toLowerCase() === applicant.fullName.toLowerCase())
         );
         
-        // Find corresponding feedback by fullName or email
+        // Find feedback by matching ID first, then by email, then by name
         const feedback = feedbackResults.find(f => 
-          f.fullName === applicant.fullName || f.name === applicant.fullName || f.email === applicant.permanentEmail
+          // Priority 1: Match by ID if available
+          (f.studentFormId && applicant.studentFormId && f.studentFormId === applicant.studentFormId) ||
+          (f.id && applicant.id && f.id === applicant.id) ||
+          // Priority 2: Match by email
+          (f.email && applicant.permanentEmail && f.email.toLowerCase() === applicant.permanentEmail.toLowerCase()) ||
+          (f.email && applicant.email && f.email.toLowerCase() === applicant.email.toLowerCase()) ||
+          // Priority 3: Match by name as fallback
+          (f.fullName === applicant.fullName || f.name === applicant.fullName)
         );
         
+        // 🔥 CRITICAL: Preserve the original applicant ID and never let it be overwritten
         return {
           ...applicant,
-          // Add test result data if available
           ...testResult,
-          // Add feedback data if available
           feedback,
-          // Ensure test completion status is set
+          // 🔥 ENSURE ORIGINAL ID IS PRESERVED - THIS IS THE CANONICAL SOURCE
+          id: originalApplicantId,
+          studentFormId: originalApplicantStudentFormId,
           isTestCompleted: !!testResult,
-          // Set test completed at date if available
           testCompletedAt: testResult?.submittedAt || testResult?.createdAt || applicant.testCompletedAt,
-          // Set correct answers if available
           correctAnswer: testResult?.correctAnswer || testResult?.correctAnswers || applicant.correctAnswer,
-          // Set score if available
           score: testResult?.score || applicant.score,
-          // Set percentage if available
           percentage: testResult?.percentage || testResult?.overallPercentage || applicant.percentage,
-          // Set rating from feedback if available
           rating: feedback?.rating || applicant.rating,
-          // Set feedback submitted at date if available
           feedbackSubmittedAt: feedback?.submittedAt || feedback?.createdAt
         };
       });
       
+      // 🔥 MANDATORY DEBUG: Log combined applicants IDs before setting state
+      console.log(
+        "APPLICANTS USED FOR UI IDS:",
+        combinedApplicants.map(a => a.id)
+      );
+      
       setApplicants(combinedApplicants);
+      console.log('Applicants state updated with', combinedApplicants.length, 'applicants');
       return combinedApplicants;
-    } catch (_error) {
-      console.error('Failed to refresh applicants from API:', _error);
-      return applicants; // Return current applicants if refresh fails
+    } catch (error) {
+      console.error('Error in refreshApplicants:', error);
+      return applicants;
+    } finally {
+      // Reset the flag after completion
+      refreshApplicantsRef.current = false;
     }
-  };
+  }, [apiGetApplicants, getAllTestResults, getAllFeedback, setApplicants, applicants]);
 
-  useEffect(() => {
-    if (!loading) {
-      localStorage.setItem('applicants', JSON.stringify(applicants));
-    }
-  }, [applicants, loading]);
-
-  const addApplicant = async (formData) => {
+  const addApplicant = useCallback(async (formData) => {
     try {
       // Transform the form data to match the expected backend structure
       const { resume, ...formDataWithoutResume } = formData;
-        
+      
       const applicantData = {
         fullName: formDataWithoutResume.fullName,
         fatherName: formDataWithoutResume.fatherName,
@@ -140,57 +183,27 @@ export const AppProvider = ({ children }) => {
         primarySkills: formDataWithoutResume.primarySkills || [],
         secondarySkills: formDataWithoutResume.secondarySkills || []
       };
-  
+
       const result = await apiAddApplicant(applicantData);
-        
-      console.log('Registration API response for student form submission:', result);
-        
-      // Handle the new API response format that includes studentFormId and questions
+      
+      // Handle API response containing studentFormId and questions
       if (result && result.studentFormId) {
-        // The API returned the new response format with studentFormId and testData
         if (result.testData && Array.isArray(result.testData)) {
           setTestQuestions(result.testData);
-          console.log('Questions received from registration API:', result.testData);
         } else {
-          // Fallback to mock questions if no questions in response
-          setTestQuestions(mockQuestions);
+          setTestQuestions([]);
         }
       } else if (result && Array.isArray(result)) {
-        // The API returned questions, store them
         setTestQuestions(result);
-        // console.log('Questions received from API:', result);
       } else if (result && result.questions && Array.isArray(result.questions)) {
-        // The API returned an object with questions property
         setTestQuestions(result.questions);
-        // console.log('Questions received from API:', result.questions);
       } else if (result && result.data && Array.isArray(result.data)) {
-        // Some APIs return questions in a data property
         setTestQuestions(result.data);
-        // console.log('Questions received from API data:', result.data);
       } else {
-        // If the API doesn't return questions after submission, try to fetch them separately
-        try {
-          // Attempt to fetch questions by email after successful form submission
-          if (formDataWithoutResume.permanentEmail) {
-            const questionsResult = await apiGetTestQuestionsByEmail(formDataWithoutResume.permanentEmail);
-            if (questionsResult && Array.isArray(questionsResult)) {
-              setTestQuestions(questionsResult);
-              // console.log('Questions received from email API:', questionsResult);
-            } else {
-              // Fallback to mock questions if API doesn't return them
-              setTestQuestions(mockQuestions);
-            }
-          } else {
-            // Fallback to mock questions if API doesn't return them
-            setTestQuestions(mockQuestions);
-          }
-        } catch (questionsError) {
-          console.error('Failed to fetch questions after form submission:', questionsError);
-          // Fallback to mock questions if API doesn't return them
-          setTestQuestions(mockQuestions);
-        }
+        // No questions available from API
+        setTestQuestions([]);
       }
-  
+
       // Add the applicant to the state
       const newApplicant = {
         id: result.id || result._id || Date.now().toString(),
@@ -202,7 +215,7 @@ export const AppProvider = ({ children }) => {
         // Include resume in the applicant data for reference
         resume
       };
-        
+      
       setApplicants(prev => [...prev, newApplicant]);
             
       // Update currentApplicant to the new applicant with studentFormId
@@ -211,10 +224,9 @@ export const AppProvider = ({ children }) => {
       // Return the actual result from the API which may contain questions
       // Prefer the newApplicant object which contains the ID
       return newApplicant || result;
-    } catch (_error) {
-      console.error('Failed to add applicant:', _error);
-      // Even if API call fails, we should return mock questions for the test
-      setTestQuestions(mockQuestions);
+    } catch {
+      // No questions available from API
+      setTestQuestions([]);
       // Return a basic applicant object to continue with the flow
       const newApplicant = {
         id: Date.now().toString(),
@@ -227,94 +239,74 @@ export const AppProvider = ({ children }) => {
       setCurrentApplicant(newApplicant);
       return newApplicant;
     }
-  };
+  }, [apiAddApplicant, setTestQuestions, setApplicants, setCurrentApplicant]);
 
-  const updateApplicantTest = async (applicantId, testData) => {
+  const updateApplicantTest = useCallback(async (applicantId, testData) => {
+    // Define the update logic as a separate function to avoid duplication
+    const updateApplicantData = (applicantsList) => {
+      return applicantsList.map(app => 
+        (app.id === applicantId || 
+         (testData.email && app.permanentEmail === testData.email) || 
+         (testData.applicantId && app.id === testData.applicantId) ||
+         (testData.applicantName && app.fullName === testData.applicantName)) // More specific matching to prevent incorrect updates
+          ? { 
+              ...app, 
+              testData, 
+              // Update top-level correctAnswer field if available in testData (handle both correctAnswer and correctAnswers)
+              correctAnswer: testData.correctAnswer !== undefined ? testData.correctAnswer : 
+                         testData.correctAnswers !== undefined ? testData.correctAnswers : app.correctAnswer,
+              // Update other test-related fields
+              percentage: testData.percentage !== undefined ? testData.percentage : 
+                        testData.overallPercentage !== undefined ? testData.overallPercentage : app.percentage,
+              score: testData.score !== undefined ? testData.score : app.score,
+              rating: testData.rating !== undefined ? testData.rating : app.rating,
+              testCompletedAt: new Date().toISOString(),
+              isTestCompleted: true
+            }
+          : app
+      );
+    };
+    
     try {
       await apiUpdateApplicantTest(applicantId, testData);
-      setApplicants(prev => prev.map(app => 
-        (app.id === applicantId || 
-         (testData.email && app.permanentEmail === testData.email) || 
-         (testData.applicantId && app.id === testData.applicantId) ||
-         (testData.applicantName && app.fullName === testData.applicantName)) // More specific matching to prevent incorrect updates
-          ? { 
-              ...app, 
-              testData, 
-              // Update top-level correctAnswer field if available in testData (handle both correctAnswer and correctAnswers)
-              correctAnswer: testData.correctAnswer !== undefined ? testData.correctAnswer : 
-                         testData.correctAnswers !== undefined ? testData.correctAnswers : app.correctAnswer,
-              // Update other test-related fields
-              percentage: testData.percentage !== undefined ? testData.percentage : 
-                        testData.overallPercentage !== undefined ? testData.overallPercentage : app.percentage,
-              score: testData.score !== undefined ? testData.score : app.score,
-              rating: testData.rating !== undefined ? testData.rating : app.rating,
-              testCompletedAt: new Date().toISOString(),
-              isTestCompleted: true
-            }
-          : app
-      ));
-    } catch (_error) {
-      console.error('Failed to update applicant test:', _error);
+      setApplicants(prev => updateApplicantData(prev));
+    } catch {
       // Fallback to local storage
-      setApplicants(prev => prev.map(app => 
-        (app.id === applicantId || 
-         (testData.email && app.permanentEmail === testData.email) || 
-         (testData.applicantId && app.id === testData.applicantId) ||
-         (testData.applicantName && app.fullName === testData.applicantName)) // More specific matching to prevent incorrect updates
-          ? { 
-              ...app, 
-              testData, 
-              // Update top-level correctAnswer field if available in testData (handle both correctAnswer and correctAnswers)
-              correctAnswer: testData.correctAnswer !== undefined ? testData.correctAnswer : 
-                         testData.correctAnswers !== undefined ? testData.correctAnswers : app.correctAnswer,
-              // Update other test-related fields
-              percentage: testData.percentage !== undefined ? testData.percentage : 
-                        testData.overallPercentage !== undefined ? testData.overallPercentage : app.percentage,
-              score: testData.score !== undefined ? testData.score : app.score,
-              rating: testData.rating !== undefined ? testData.rating : app.rating,
-              testCompletedAt: new Date().toISOString(),
-              isTestCompleted: true
-            }
-          : app
-      ));
+      setApplicants(prev => updateApplicantData(prev));
     }
-  };
+  }, [apiUpdateApplicantTest, setApplicants, applicants]);
 
-  const updateApplicantFeedback = async (applicantId, feedback) => {
+  const updateApplicantFeedback = useCallback(async (applicantId, feedback) => {
+    // Define the update logic as a separate function to avoid duplication
+    const updateApplicantData = (applicantsList) => {
+      return applicantsList.map(app => 
+        app.id === applicantId 
+          ? { ...app, feedback, feedbackSubmittedAt: new Date().toISOString() }
+          : app
+      );
+    };
+    
     try {
       await apiUpdateApplicantFeedback(applicantId, feedback);
-      setApplicants(prev => prev.map(app => 
-        app.id === applicantId 
-          ? { ...app, feedback, feedbackSubmittedAt: new Date().toISOString() }
-          : app
-      ));
-    } catch (_error) {
-      console.error('Failed to update applicant feedback:', _error);
+      setApplicants(prev => updateApplicantData(prev));
+    } catch {
       // Fallback to local storage
-      setApplicants(prev => prev.map(app => 
-        app.id === applicantId 
-          ? { ...app, feedback, feedbackSubmittedAt: new Date().toISOString() }
-          : app
-      ));
+      setApplicants(prev => updateApplicantData(prev));
     }
-  };
+  }, [apiUpdateApplicantFeedback, setApplicants, applicants]);
 
-  const adminLogin = (username, password) => {
+  const adminLogin = useCallback((username, password) => {
     // Simple authentication - in production, use proper backend authentication
     if (username === 'admin' && password === 'admin123') {
       setIsAdminAuthenticated(true);
-      // Store a dummy token for API authentication (in production, this would come from the backend)
-      localStorage.setItem('adminToken', 'dummy-admin-token-for-development');
       return true;
     }
     return false;
-  };
+  }, [setIsAdminAuthenticated]);
 
-  const adminLogout = () => {
+  const adminLogout = useCallback(() => {
     setIsAdminAuthenticated(false);
-    // Clear the admin token on logout
-    localStorage.removeItem('adminToken');
-  };
+  }, [setIsAdminAuthenticated]);
 
   const value = {
     applicants,

@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
-import { getAllFeedback } from '../../api';
-import StarRating from '../../components/StarRating';
+import { useAdminData } from '../../hooks/useAdminData';
+import { getNumericScore, extractDate } from '../../utils/helpers';
+import StarRating from '../../components/shared/StarRating';
 import { 
   AreaChart, 
   Area, 
@@ -23,87 +24,60 @@ import {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { applicants, isAdminAuthenticated, refreshApplicants } = useApp();
+  const { applicants, refreshApplicants } = useApp();
+  const { fetchFeedback } = useAdminData();
   const [feedbackData, setFeedbackData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Helper function to extract numeric score from test data
-  const getNumericScore = (applicant) => {
-    // Use test result data if available, prioritize over feedback
-    if (applicant.correctAnswer !== undefined && applicant.testData?.totalQuestions) {
-      return (applicant.correctAnswer / applicant.testData.totalQuestions) * 100;
-    }
-    
-    const testData = applicant.testData;
-    if (testData) {
-      if (typeof testData.score === 'string' && testData.score.includes('/')) {
-        const [correct, total] = testData.score.split('/').map(Number);
-        if (total > 0) {
-          return (correct / total) * 100;
-        }
-      }
-      
-      if (testData.percentage) {
-        return parseFloat(testData.percentage);
-      }
-      
-      if (testData.score && typeof testData.score === 'number') {
-        return testData.score;
-      }
-      
-      if (testData.correctAnswers !== undefined && testData.totalQuestions) {
-        return (testData.correctAnswers / testData.totalQuestions) * 100;
-      }
-    }
-    
-    // Only use feedback ratings if no test data is available
-    if (applicant.rating !== undefined && applicant.rating !== null) {
-      return (applicant.rating / 5) * 100;
-    }
-    
-    return 0;
-  };
-
   // Fetch feedback data and refresh applicants on component mount
   useEffect(() => {
+    console.log('Dashboard useEffect running, attempting data fetch regardless of auth status');
     let isCancelled = false; // Prevent state updates if component unmounts
     
     const fetchData = async () => {
-      if (!isAdminAuthenticated || isCancelled) return;
+      console.log('Starting data fetch...');
+      // Remove authentication check - attempt to fetch data regardless of auth status
+      if (isCancelled) {
+        console.log('Component cancelled, skipping data fetch');
+        return;
+      }
       
       setLoading(true);
       try {
         // Refresh applicants data from API
+        console.log('Calling refreshApplicants...');
         await refreshApplicants();
+        console.log('refreshApplicants completed');
         
         // Fetch feedback data
-        const data = await getAllFeedback();
+        console.log('Calling fetchFeedback...');
+        const data = await fetchFeedback();
+        console.log('fetchFeedback completed, received data:', data);
         if (!isCancelled) {
           setFeedbackData(data);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error in dashboard data fetch:', error);
         if (!isCancelled) {
           setFeedbackData([]);
         }
       } finally {
         if (!isCancelled) {
           setLoading(false);
+          console.log('Loading set to false');
         }
       }
     };
     
-    if (isAdminAuthenticated) {
-      fetchData();
-    } else {
-      setLoading(false);
-    }
+    console.log('Attempting to call fetchData');
+    fetchData();
     
     // Cleanup function to cancel requests if component unmounts
     return () => {
+      console.log('Dashboard unmounting, cancelling requests');
       isCancelled = true;
     };
-  }, [isAdminAuthenticated]); // Only run when authentication status changes
+  }, []); // Run once on mount
 
   // Combine applicants with feedback data
   const combinedApplicants = useMemo(() => {
@@ -193,25 +167,6 @@ const Dashboard = () => {
       const formattedDateStr = `${year}-${month}-${day}`;
       
       const dayApplicants = combinedApplicants.filter(app => {
-        // Function to extract date from applicant
-        const extractDate = (applicant) => {
-          // Try to get date from various fields
-          const dateValue = applicant.submittedAt || applicant.createdAt || applicant.date || applicant.timestamp || applicant.updatedAt || applicant.testCompletedAt || applicant.feedbackSubmittedAt || applicant.created_at || applicant.updated_at || applicant.date_created || applicant.date_updated || applicant.submitted_at || applicant.created || applicant.created_date || applicant.updated || applicant.dateSubmitted || applicant.submissionDate || applicant.applicationDate;
-          if (dateValue) {
-            return dateValue;
-          }
-          // If no date field is available, try to extract from MongoDB ObjectId
-          if (applicant._id) {
-            try {
-              const timestamp = parseInt(applicant._id.substring(0, 8), 16) * 1000;
-              return new Date(timestamp);
-            } catch {
-              return null; // fallback to null
-            }
-          }
-          return null; // fallback to null
-        };
-                 
         const appDate = extractDate(app);
         if (!appDate) return false;
         
@@ -235,26 +190,22 @@ const Dashboard = () => {
       });
       
       const dayTests = combinedApplicants.filter(app => {
-        // Function to extract date from applicant
-        const extractTestDate = (applicant) => {
-          // Try to get date from various fields, prioritizing testData dates
-          const dateValue = applicant.testData?.submittedAt || applicant.submittedAt || applicant.createdAt || applicant.date || applicant.timestamp || applicant.updatedAt || applicant.testCompletedAt || applicant.feedbackSubmittedAt || applicant.created_at || applicant.updated_at || applicant.date_created || applicant.date_updated || applicant.submitted_at || applicant.created || applicant.created_date || applicant.updated || applicant.dateSubmitted || applicant.submissionDate || applicant.applicationDate;
-          if (dateValue) {
-            return dateValue;
+        // Try to get date from various fields, prioritizing testData dates
+        const dateValue = app.testData?.submittedAt || app.submittedAt || app.createdAt || app.date || app.timestamp || app.updatedAt || app.testCompletedAt || app.feedbackSubmittedAt || app.created_at || app.updated_at || app.date_created || app.date_updated || app.submitted_at || app.created || app.created_date || app.updated || app.dateSubmitted || app.submissionDate || app.applicationDate;
+        let testDate;
+        if (dateValue) {
+          testDate = dateValue;
+        } else if (app._id) {
+          try {
+            const timestamp = parseInt(app._id.substring(0, 8), 16) * 1000;
+            testDate = new Date(timestamp);
+          } catch {
+            testDate = null;
           }
-          // If no date field is available, try to extract from MongoDB ObjectId
-          if (applicant._id) {
-            try {
-              const timestamp = parseInt(applicant._id.substring(0, 8), 16) * 1000;
-              return new Date(timestamp);
-            } catch {
-              return null; // fallback to null
-            }
-          }
-          return null; // fallback to null
-        };
+        } else {
+          testDate = null;
+        }
         
-        const testDate = extractTestDate(app);
         if (!testDate) return false;
         
         // Handle different date formats
@@ -354,28 +305,15 @@ const Dashboard = () => {
   const recentApplicants = useMemo(() => {
     return [...combinedApplicants]
       .sort((a, b) => {
-        // Function to extract date from applicant
-        const extractDate = (applicant) => {
-          // Try to get date from various fields
-          const dateValue = applicant.submittedAt || applicant.createdAt || applicant.date || applicant.timestamp || applicant.updatedAt || applicant.testCompletedAt || applicant.feedbackSubmittedAt || applicant.created_at || applicant.updated_at || applicant.date_created || applicant.date_updated || applicant.submitted_at || applicant.created || applicant.created_date || applicant.updated || applicant.dateSubmitted || applicant.submissionDate || applicant.applicationDate;
-          if (dateValue) {
-            return new Date(dateValue);
-          }
-          // If no date field is available, try to extract from MongoDB ObjectId
-          if (applicant._id) {
-            try {
-              const timestamp = parseInt(applicant._id.substring(0, 8), 16) * 1000;
-              return new Date(timestamp);
-            } catch {
-              return new Date(0); // fallback to epoch
-            }
-          }
-          return new Date(0); // fallback to epoch
-        };
-                 
         const dateA = extractDate(a);
         const dateB = extractDate(b);
-        return dateB - dateA;
+        if (!dateA || !dateB) return 0;
+        
+        // Convert to Date objects if they're strings
+        const dateObjA = typeof dateA === 'string' ? new Date(dateA) : dateA;
+        const dateObjB = typeof dateB === 'string' ? new Date(dateB) : dateB;
+        
+        return dateObjB - dateObjA;
       })
       .slice(0, 5);
   }, [combinedApplicants]);

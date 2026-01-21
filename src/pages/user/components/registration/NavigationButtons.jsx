@@ -29,7 +29,15 @@ const NavigationButtons = ({ step, onBack, onNext, onSubmit, isSubmitting }) => 
       ) : (
         <button
           type="button"
-          onClick={onSubmit}
+          onClick={() => {
+            // Additional protection against multiple clicks
+            if (!isSubmitting) {
+              console.log('Submit button clicked - triggering onSubmit');
+              onSubmit();
+            } else {
+              console.log('Submit button ignored - already submitting');
+            }
+          }}
           disabled={isSubmitting}
           className="ml-auto px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 rounded-lg text-white font-medium hover:from-green-600 hover:to-green-700 hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >

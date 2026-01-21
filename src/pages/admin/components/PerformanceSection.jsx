@@ -1,4 +1,4 @@
-import StarRating from '../StarRating';
+import StarRating from '../../../components/shared/StarRating';
 import { useMemo } from 'react';
 
 const PerformanceSection = ({ applicant }) => {

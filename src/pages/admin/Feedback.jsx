@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/useApp';
-import { getAllFeedback } from '../../api';
-import StarRating from '../../components/StarRating';
+import { useAdminData } from '../../hooks/useAdminData';
+import StarRating from '../../components/shared/StarRating';
 
 const Feedback = () => {
   const { applicants: contextApplicants } = useApp();
+  const { fetchFeedback } = useAdminData();
   const [feedbackData, setFeedbackData] = useState([]);
   const [applicantsData, setApplicantsData] = useState(contextApplicants);
   const [loading, setLoading] = useState(true);
@@ -17,7 +18,7 @@ const Feedback = () => {
     const fetchFeedbackData = async () => {
       try {
         setLoading(true);
-        const feedback = await getAllFeedback();
+        const feedback = await fetchFeedback();
         setFeedbackData(Array.isArray(feedback) ? feedback : []);
         
         // Update applicants data if it's different from context
@@ -33,7 +34,7 @@ const Feedback = () => {
     };
     
     fetchFeedbackData();
-  }, [contextApplicants]);
+  }, [contextApplicants, fetchFeedback]);
 
   // Combine feedback with applicant data
   const combinedFeedback = useMemo(() => {

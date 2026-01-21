@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
-import { submitFeedback } from '../../api';
+import { useFeedbackData } from '../../hooks/useFeedbackData';
 
 const Feedback = () => {
   const navigate = useNavigate();
   const { currentApplicant } = useApp();
+  const { submitFeedbackData } = useFeedbackData();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [feedback, setFeedback] = useState({
@@ -115,7 +116,7 @@ const Feedback = () => {
     
     try {
       // Submit feedback using studentFormId
-      await submitFeedback(feedbackData);
+      await submitFeedbackData(feedbackData);
       setSubmitted(true);
     } catch (error) {
       console.error('Error submitting feedback:', error);
