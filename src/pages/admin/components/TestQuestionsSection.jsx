@@ -55,9 +55,9 @@ const TestQuestionsSection = ({ applicant, loading }) => {
             
             // 🔥 DETERMINE IF ANSWER IS CORRECT
             let isCorrect = false;
-            if (correctAnswer !== undefined && userAnswer !== undefined) {
+            if (correctAnswer !== undefined && userAnswer !== undefined && correctAnswer !== null && userAnswer !== null) {
               // Compare the answer strings directly (they're both in the same format)
-              isCorrect = correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+              isCorrect = correctAnswer.toString().trim().toLowerCase() === userAnswer.toString().trim().toLowerCase();
             }
             
             // Determine the question text
@@ -91,10 +91,10 @@ const TestQuestionsSection = ({ applicant, loading }) => {
                     
                     <div className="space-y-2 mb-3">
                       {options.map((option, optIndex) => {
-                        const isSelected = userAnswer !== undefined && 
+                        const isSelected = userAnswer !== undefined && userAnswer !== null &&
                           option.toString().trim().toLowerCase() === userAnswer.toString().trim().toLowerCase();
                         
-                        const isAnswer = correctAnswer !== undefined && 
+                        const isAnswer = correctAnswer !== undefined && correctAnswer !== null &&
                           option.toString().trim().toLowerCase() === correctAnswer.toString().trim().toLowerCase();
                         
                         return (
