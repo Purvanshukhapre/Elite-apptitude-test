@@ -80,25 +80,25 @@ export const apiCall = async (endpoint, options = {}) => {
     ...options
   };
 
-  try {
-    // Check if this is an applicant by name endpoint to avoid CORS issues
-    const isApplicantByName = typeof endpoint === 'string' && endpoint.includes('/auth/student/name/');
-    
-    const fetchOptions = {
-      ...defaultOptions
-    };
-    
-    // For production backend, we need to handle CORS properly
-    if (API_BASE_URL.includes('railway.app')) {
-      fetchOptions.mode = 'cors';
-      fetchOptions.credentials = 'omit'; // Use 'omit' for cross-origin requests
-    } else {
-      // Don't include credentials for applicant by name to avoid CORS issues
-      if (!isApplicantByName) {
-        fetchOptions.credentials = 'include';
-      }
+  // Check if this is an applicant by name endpoint to avoid CORS issues
+  const isApplicantByName = typeof endpoint === 'string' && endpoint.includes('/auth/student/name/');
+  
+  const fetchOptions = {
+    ...defaultOptions
+  };
+  
+  // For production backend, we need to handle CORS properly
+  if (API_BASE_URL.includes('railway.app')) {
+    fetchOptions.mode = 'cors';
+    fetchOptions.credentials = 'omit'; // Use 'omit' for cross-origin requests
+  } else {
+    // Don't include credentials for applicant by name to avoid CORS issues
+    if (!isApplicantByName) {
+      fetchOptions.credentials = 'include';
     }
-    
+  }
+
+  try {
     console.log(`Making API call to: ${url}`);
     console.log('Request options:', {
       method: options.method || 'GET',
@@ -116,6 +116,12 @@ export const apiCall = async (endpoint, options = {}) => {
     
     // For specific endpoints that might return 403, handle gracefully
     if (!response.ok && response.status === 403) {
+      // Special handling for DELETE requests to student endpoints
+      if (options.method === 'DELETE' && (url.includes('/auth/student/') || url.includes('/student/'))) {
+        console.warn('DELETE operation blocked for security reasons');
+        throw new Error('Delete operation is not permitted for security reasons. Contact administrator for manual deletion.');
+      }
+      
       console.warn('API returned 403 Forbidden - endpoint may be restricted or unavailable');
       // Throw a generic error that works for all endpoints
       throw new Error('This service is temporarily unavailable. Please try again later.');
@@ -344,11 +350,11 @@ export const deleteApplicantById = async (studentFormId) => {
     throw new Error('Student Form ID is required to delete applicant');
   }
   
-  return apiCall(API_ENDPOINTS.DELETE_APPLICANT(studentFormId), {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    }
+  // Use the correct endpoint: /student/{id} without /auth prefix
+  // No headers required according to API documentation
+  return apiCall(`/student/${studentFormId}`, {
+    method: 'DELETE'
+    // No headers needed for DELETE operation
   });
 };
 
