@@ -59,12 +59,48 @@ export const useTestData = () => {
       setLoading(false);
     }
   }, []);
+  
+  // Submit profile image with email
+  const submitProfileImage = useCallback(async (email, profileImageFile) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Create form data for profile image upload
+      const profileImageData = new FormData();
+      profileImageData.append('file', profileImageFile);
+      
+      // Upload profile image to the API using email in the path
+      const response = await fetch(
+        `https://eliterecruitmentbackend-production.up.railway.app/image/upload/${email}`,
+        {
+          method: 'POST',
+          body: profileImageData,
+          // Don't set Content-Type header - let browser set it with boundary
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Profile image upload failed: ${response.status} ${response.statusText}`);
+      }
+      
+      // API returns plain text, not JSON
+      const result = await response.text();
+      return result;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   return {
     submitTestResults,
     submitQuestions: submitQuestionsWrapper,
     getQuestionsByEmail,
     sendResumeWithEmail,
+    submitProfileImage,
     loading,
     error
   };

@@ -2,8 +2,10 @@ import { useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const ActionButtons = ({ applicant, navigate }) => {
+const ActionButtons = ({ applicant, navigate, userRole }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Debug logging to check userRole value
 
   const handleDownloadPDF = () => {
     if (!applicant) return;
@@ -283,16 +285,19 @@ const ActionButtons = ({ applicant, navigate }) => {
 
   return (
     <div className="flex justify-end space-x-4">
-      <button
-        onClick={handleDeleteApplicant}
-        disabled={isDeleting}
-        className="px-6 py-3 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors flex items-center space-x-2"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-        <span>{isDeleting ? 'Deleting...' : 'Delete Applicant'}</span>
-      </button>
+      {/* Show delete button only for admin users */}
+      {userRole === 'admin' && (
+        <button
+          onClick={handleDeleteApplicant}
+          disabled={isDeleting}
+          className="px-6 py-3 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors flex items-center space-x-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span>{isDeleting ? 'Deleting...' : 'Delete Applicant'}</span>
+        </button>
+      )}
       <button
         onClick={handleDownloadPDF}
         className="px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors flex items-center space-x-2"

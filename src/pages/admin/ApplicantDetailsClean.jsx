@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getApplicantById, getTestResultById } from '../../api';
+import { useApp } from '../../context/useApp';
+import { getApplicantById, getTestResultById, getApplicants } from '../../api';
 import ApplicantHeader from './components/ApplicantHeader';
 import ApplicantStats from './components/ApplicantStats';
 import ApplicantDetailsSection from './components/ApplicantDetailsSection';
@@ -16,6 +17,7 @@ import ActionButtons from './components/ActionButtons';
 const ApplicantDetailsClean = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { userRole } = useApp(); // Get the user role from context
   const [applicant, setApplicant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [questionsLoading, setQuestionsLoading] = useState(false);
@@ -34,13 +36,10 @@ const ApplicantDetailsClean = () => {
           throw new Error("Applicant ID missing – cannot proceed");
         }
         
-        console.log('Using route param ID as single source of truth:', id);
         const decodedId = decodeURIComponent(id);
         
         // ✅ FETCH PARTICULAR STUDENT DETAILS using ONLY the route param ID
-        console.log('Fetching individual applicant with route param ID:', decodedId);
         const apiResponse = await getApplicantById(decodedId);
-        console.log('Individual applicant API Response:', apiResponse);
         
         if (apiResponse) {
           // Process the API response to extract applicant data
@@ -79,7 +78,6 @@ const ApplicantDetailsClean = () => {
                 const testResultData = await getTestResultById(resultId);
                 if (testResultData && (testResultData.correctAnswer !== undefined || testResultData.correctAnswers !== undefined)) {
                   finalResultData = testResultData;
-                  console.log('Successfully fetched test result from result endpoint:', testResultData);
                 }
               }
             } catch (resultError) {
@@ -91,18 +89,15 @@ const ApplicantDetailsClean = () => {
           // Handle the new API structure where questions are in response.questions.questions
           let finalQuestions = [];
                   
-          console.log('Processing questions data:', questionsData);
                   
           // First, try the new API structure: response.questions.questions
           if (questionsData && typeof questionsData === 'object' && questionsData.questions) {
             finalQuestions = questionsData.questions;
-            console.log('Found questions in response.questions.questions:', finalQuestions.length);
           }
                   
           // Fallback to direct questions array
           if ((!finalQuestions || finalQuestions.length === 0) && Array.isArray(questionsData)) {
             finalQuestions = questionsData;
-            console.log('Using direct questions array:', finalQuestions.length);
           }
                   
           // Last resort: try other possible locations
@@ -110,11 +105,8 @@ const ApplicantDetailsClean = () => {
             const backupQuestions = applicantData?.questions || applicantData?.testData?.questions || [];
             if (backupQuestions.length > 0) {
               finalQuestions = backupQuestions;
-              console.log('Using backup questions:', finalQuestions.length);
             }
           }
-                  
-          console.log('Final questions count:', finalQuestions.length);
           
           const updatedApplicant = {
             ...applicantData,
@@ -160,15 +152,56 @@ const ApplicantDetailsClean = () => {
             });
           }
         } else {
-          // ❌ No data found - show error state
-          console.log('Applicant not found in API');
           setApplicant(null);
         }
       } catch (error) {
         console.error('Error fetching individual applicant:', error);
-        setError(error.message);
-        // ❌ API failed - show error state, NO FALLBACKS
-        setApplicant(null);
+        
+        // Check if the error is specifically a 403 Forbidden related to the auth endpoint
+        if (error.message.includes('403') || error.message.includes('unavailable') || error.message.includes('service is temporarily unavailable')) {
+          
+          // Fallback: try to get all applicants and find the one with matching ID
+          try {
+            const allApplicants = await getApplicants();
+            const foundApplicant = allApplicants.find(app => app.id === id || app._id === id);
+            
+            if (foundApplicant) {
+              
+              // Try to get test results separately if available
+              let testResult = null;
+              try {
+                const resultId = foundApplicant.studentFormId || foundApplicant.id;
+                if (resultId) {
+                  testResult = await getTestResultById(resultId);
+                }
+              } catch (resultError) {
+                console.warn('Could not fetch test result:', resultError.message);
+              }
+              
+              const updatedApplicant = {
+                ...foundApplicant,
+                testResult: testResult,
+                correctAnswer:
+                  testResult?.correctAnswer ||
+                  testResult?.correctAnswers ||
+                  foundApplicant.correctAnswer,
+                overallRating: foundApplicant.rating
+              };
+              
+              setApplicant(updatedApplicant);
+            } else {
+              setError('Applicant not found in the system.');
+              setApplicant(null);
+            }
+          } catch (fallbackError) {
+            console.error('Fallback also failed:', fallbackError);
+            setError('Unable to retrieve applicant details. The service is temporarily unavailable.');
+            setApplicant(null);
+          }
+        } else {
+          setError(error.message);
+          setApplicant(null);
+        }
       } finally {
         setLoading(false);
         setQuestionsLoading(false);
@@ -231,7 +264,7 @@ const ApplicantDetailsClean = () => {
       <ResumeSection resumeData={resumeData} />
       <PerformanceSection applicant={applicant} />
       <TestQuestionsSection applicant={applicant} loading={questionsLoading} />
-      <ActionButtons applicant={applicant} navigate={navigate} />
+      <ActionButtons applicant={applicant} navigate={navigate} userRole={userRole} />
     </div>
   );
 };

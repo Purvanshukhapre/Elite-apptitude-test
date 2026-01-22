@@ -31,6 +31,13 @@ function App() {
             <Route path="/admin/modern/feedback" element={<Layout><FeedbackPage /></Layout>} />
             <Route path="/admin/modern/email" element={<Layout><Email /></Layout>} />
             <Route path="/admin/modern/applicants/:id" element={<Layout><ApplicantDetailsClean /></Layout>} />
+            {/* HR Routes - same components but without delete permissions */}
+            <Route path="/hr/modern" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/hr/modern/analytics" element={<Layout><Analytics /></Layout>} />
+            <Route path="/hr/modern/applicants" element={<Layout><Applicants /></Layout>} />
+            <Route path="/hr/modern/feedback" element={<Layout><FeedbackPage /></Layout>} />
+            <Route path="/hr/modern/email" element={<Layout><Email /></Layout>} />
+            <Route path="/hr/modern/applicants/:id" element={<Layout><ApplicantDetailsClean /></Layout>} />
             <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
           </Routes>
         </Router>

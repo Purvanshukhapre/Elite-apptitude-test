@@ -7,23 +7,19 @@ export const AppProvider = ({ children }) => {
   const [currentApplicant, setCurrentApplicant] = useState(null);
   const [testQuestions, setTestQuestions] = useState([]);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState(null); // 'admin' or 'hr'
   const [loading] = useState(false);
   const refreshApplicantsRef = useRef(false);
 
   const refreshApplicants = useCallback(async () => {
     // Prevent multiple simultaneous calls
     if (refreshApplicantsRef.current) {
-      console.log('refreshApplicants already in progress, skipping');
       return applicants;
     }
     
-    console.log('refreshApplicants called - fetching all applicants and additional data');
     refreshApplicantsRef.current = true;
     
     try {
-      console.log('Calling apiGetApplicants...');
-      console.log('Calling getAllTestResults...');
-      console.log('Calling getAllFeedback...');
       
       // Fetch all applicants from the backend along with test results and feedback
       const [apiApplicants, testResults, feedbackResults] = await Promise.all([
@@ -40,28 +36,6 @@ export const AppProvider = ({ children }) => {
           return [];
         })
       ]);
-      
-      console.log('API calls completed:', {
-        apiApplicants: apiApplicants.length,
-        testResults: testResults.length,
-        feedbackResults: feedbackResults.length
-      });
-      
-      // 🔥 MANDATORY DEBUG: Log raw API response IDs
-      console.log(
-        "RAW /auth/student/all API RESPONSE IDS:",
-        apiApplicants.map(a => a.id)
-      );
-      
-      // Log sample applicant data to see the ID structure
-      if (apiApplicants.length > 0) {
-        console.log('Sample applicant data:', apiApplicants[0]);
-        console.log('Applicant ID structure:', {
-          _id: apiApplicants[0]._id,
-          id: apiApplicants[0].id,
-          studentFormId: apiApplicants[0].studentFormId
-        });
-      }
       
       const combinedApplicants = apiApplicants.map(applicant => {
         // 🔥 CRITICAL: Store the original applicant ID before any data merging
@@ -111,14 +85,8 @@ export const AppProvider = ({ children }) => {
         };
       });
       
-      // 🔥 MANDATORY DEBUG: Log combined applicants IDs before setting state
-      console.log(
-        "APPLICANTS USED FOR UI IDS:",
-        combinedApplicants.map(a => a.id)
-      );
       
       setApplicants(combinedApplicants);
-      console.log('Applicants state updated with', combinedApplicants.length, 'applicants');
       return combinedApplicants;
     } catch (error) {
       console.error('Error in refreshApplicants:', error);
@@ -297,12 +265,17 @@ export const AppProvider = ({ children }) => {
 
   const adminLogin = useCallback((username, password) => {
     // Simple authentication - in production, use proper backend authentication
-    if (username === 'admin' && password === 'admin123') {
+    if (username === 'admin' && password === 'elite@associate') {
       setIsAdminAuthenticated(true);
+      setUserRole('admin');
+      return true;
+    } else if (username === 'elite' && password === 'eliteassociate123') {  // HR credentials
+      setIsAdminAuthenticated(true);
+      setUserRole('hr');
       return true;
     }
     return false;
-  }, [setIsAdminAuthenticated]);
+  }, [setIsAdminAuthenticated, setUserRole]);
 
   const adminLogout = useCallback(() => {
     setIsAdminAuthenticated(false);
@@ -319,6 +292,7 @@ export const AppProvider = ({ children }) => {
     updateApplicantTest,
     updateApplicantFeedback,
     isAdminAuthenticated,
+    userRole,  // Add user role to context
     adminLogin,
     adminLogout,
     refreshApplicants

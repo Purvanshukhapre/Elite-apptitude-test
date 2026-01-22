@@ -28,9 +28,7 @@ export const useAdminData = () => {
   // Fetch feedback data
   const fetchFeedback = useCallback(async () => {
     try {
-      console.log('Calling getAllFeedback API...');
       const result = await getAllFeedback();
-      console.log('getAllFeedback API completed, got', Array.isArray(result) ? result.length : 'unknown', 'items');
       return result;
     } catch (error) {
       console.error('Error in fetchFeedback:', error);
@@ -41,9 +39,7 @@ export const useAdminData = () => {
   // Fetch test results
   const fetchTestResults = useCallback(async () => {
     try {
-      console.log('Calling getAllTestResults API...');
       const result = await getAllTestResults();
-      console.log('getAllTestResults API completed, got', Array.isArray(result) ? result.length : 'unknown', 'items');
       return result;
     } catch (error) {
       console.error('Error in fetchTestResults:', error);

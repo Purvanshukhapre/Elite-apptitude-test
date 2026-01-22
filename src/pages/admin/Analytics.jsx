@@ -56,27 +56,20 @@ const Analytics = () => {
 
   // Fetch feedback data and refresh applicants on component mount
   useEffect(() => {
-    console.log('Analytics useEffect running, attempting data fetch regardless of auth status');
     let isCancelled = false; // Prevent state updates if component unmounts
     
     const fetchData = async () => {
-      console.log('Starting data fetch in Analytics...');
       // Remove authentication check - attempt to fetch data regardless of auth status
       if (isCancelled) {
-        console.log('Component cancelled, skipping data fetch');
         return;
       }
       
       setLoading(true);
       try {
         // Refresh applicants data from API
-        console.log('Calling refreshApplicants in Analytics...');
         await refreshApplicants();
-        console.log('refreshApplicants completed in Analytics');
         
-        console.log('Calling fetchFeedback in Analytics...');
         const data = await fetchFeedback();
-        console.log('fetchFeedback completed in Analytics, received data:', data);
         if (!isCancelled) {
           setFeedbackData(data);
         }
@@ -88,7 +81,6 @@ const Analytics = () => {
       } finally {
         if (!isCancelled) {
           setLoading(false);
-          console.log('Loading set to false in Analytics');
         }
       }
     };
@@ -97,7 +89,6 @@ const Analytics = () => {
     
     // Cleanup function to cancel requests if component unmounts
     return () => {
-      console.log('Analytics unmounting, cancelling requests');
       isCancelled = true;
     };
   }, []); // Run once on mount

@@ -10,7 +10,12 @@ const ResumeSection = ({ resumeData }) => {
             </svg>
             <div>
               <p className="font-medium text-gray-900">{resumeData.fileName || resumeData.originalName || resumeData.s3Key.split('/').pop()}</p>
-              <p className="text-sm text-gray-500">Uploaded: {resumeData.uploadedAt ? new Date(resumeData.uploadedAt).toLocaleDateString() : 'N/A'}</p>
+              <p className="text-sm text-gray-500">Uploaded: {resumeData.uploadedAt ? new Date(resumeData.uploadedAt).toLocaleDateString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric"
+                        }) : 'N/A'}</p>
             </div>
           </div>
           <a 

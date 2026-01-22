@@ -31,28 +31,21 @@ const Dashboard = () => {
 
   // Fetch feedback data and refresh applicants on component mount
   useEffect(() => {
-    console.log('Dashboard useEffect running, attempting data fetch regardless of auth status');
     let isCancelled = false; // Prevent state updates if component unmounts
     
     const fetchData = async () => {
-      console.log('Starting data fetch...');
       // Remove authentication check - attempt to fetch data regardless of auth status
       if (isCancelled) {
-        console.log('Component cancelled, skipping data fetch');
         return;
       }
       
       setLoading(true);
       try {
         // Refresh applicants data from API
-        console.log('Calling refreshApplicants...');
         await refreshApplicants();
-        console.log('refreshApplicants completed');
         
         // Fetch feedback data
-        console.log('Calling fetchFeedback...');
         const data = await fetchFeedback();
-        console.log('fetchFeedback completed, received data:', data);
         if (!isCancelled) {
           setFeedbackData(data);
         }
@@ -64,17 +57,13 @@ const Dashboard = () => {
       } finally {
         if (!isCancelled) {
           setLoading(false);
-          console.log('Loading set to false');
         }
       }
     };
-    
-    console.log('Attempting to call fetchData');
     fetchData();
     
     // Cleanup function to cancel requests if component unmounts
     return () => {
-      console.log('Dashboard unmounting, cancelling requests');
       isCancelled = true;
     };
   }, []); // Run once on mount

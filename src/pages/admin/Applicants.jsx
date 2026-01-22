@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
 import { useAdminData } from '../../hooks/useAdminData';
@@ -11,7 +11,6 @@ const Applicants = () => {
   const { fetchFeedback, fetchTestResults } = useAdminData();
   const [feedbackData, setFeedbackData] = useState([]);
   const [testResults, setTestResults] = useState([]);
-  
 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,30 +19,16 @@ const Applicants = () => {
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
   const [viewMode, setViewMode] = useState('grid'); // grid or list
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12); // Default items per page
+  
+  // Ref for the main container to scroll to
+  const mainContainerRef = useRef(null);
 
   const handleRowClick = (applicant) => {
     // Use the exact 'id' field from the API response - this is the correct ID needed
     const applicantId = applicant.id;
-    
-    console.log("CARD DATA:", applicant);
-    console.log("USING ID FOR URL:", applicant.id);
-    
-    console.log('Applicant clicked - RAW API RESPONSE DATA:', {
-      fullName: applicant.fullName,
-      id: applicant.id,  // This is the ID from the /auth/student/all API response
-      selectedId: applicantId,
-      idField: applicant.id,
-      _idField: applicant._id,
-      studentFormIdField: applicant.studentFormId,
-      resumeId: applicant.resumeId,
-      resumeUrl: applicant.resumeUrl,
-      allApplicantData: applicant
-    });
-    
     if (applicantId) {
-      console.log('NAVIGATING WITH API RESPONSE ID:', applicantId);
-      console.log('*** CONFIRMING: USING ID FROM /auth/student/all API RESPONSE:', applicantId, '***');
-      console.log('*** PASSING ID FROM APPLICANTS TO APPLICANTDETAILSCLEAN:', applicantId, '***');
       navigate(`/admin/modern/applicants/${encodeURIComponent(applicantId)}`);
     } else {
       console.error('No valid ID found for applicant:', applicant);
@@ -53,36 +38,27 @@ const Applicants = () => {
 
   // Fetch feedback and test results data on component mount
   useEffect(() => {
-    console.log('Applicants useEffect running, attempting data fetch regardless of auth status');
     let isCancelled = false; // Prevent state updates if component unmounts
     
     const fetchData = async () => {
-      console.log('Starting data fetch in Applicants...');
       // Remove authentication check - attempt to fetch data regardless of auth status
       if (isCancelled) {
-        console.log('Component cancelled, skipping data fetch');
         return;
       }
       
       setLoading(true);
       try {
         // Refresh applicants data from API
-        console.log('Calling refreshApplicants in Applicants...');
         await refreshApplicants();
-        console.log('refreshApplicants completed in Applicants');
         
         // Fetch feedback data using the new hook
-        console.log('Calling fetchFeedback in Applicants...');
         const feedback = await fetchFeedback();
-        console.log('fetchFeedback completed in Applicants, received data:', feedback);
         if (!isCancelled) {
           setFeedbackData(feedback);
         }
         
         // Fetch test results data using the new hook
-        console.log('Calling fetchTestResults in Applicants...');
         const testResults = await fetchTestResults();
-        console.log('fetchTestResults completed in Applicants, received data:', testResults.length, 'items');
         if (!isCancelled) {
           setTestResults(testResults);
         }
@@ -95,7 +71,6 @@ const Applicants = () => {
       } finally {
         if (!isCancelled) {
           setLoading(false);
-          console.log('Loading set to false in Applicants');
         }
       }
     };
@@ -104,7 +79,6 @@ const Applicants = () => {
     
     // Cleanup function to cancel requests if component unmounts
     return () => {
-      console.log('Applicants unmounting, cancelling requests');
       isCancelled = true;
     };
   }, []); // Run once on mount
@@ -198,8 +172,40 @@ const Applicants = () => {
         break;
       case 'date':
       default:
-        aValue = new Date(a.submittedAt || a.createdAt || new Date(0));
-        bValue = new Date(b.submittedAt || b.createdAt || new Date(0));
+        // Try multiple date sources in order of preference
+        // First, try submittedAt or createdAt if available
+        const dateA = a.submittedAt || a.createdAt || a.timestamp;
+        const dateB = b.submittedAt || b.createdAt || b.timestamp;
+        
+        if (dateA && dateB) {
+          // If both have explicit date fields, use those
+          aValue = new Date(dateA);
+          bValue = new Date(dateB);
+        } else {
+          // Fallback to MongoDB _id timestamp if dates aren't available
+          // Extract timestamp from MongoDB ObjectId (_id)
+          const getIdTimestamp = (obj) => {
+            if (obj._id && typeof obj._id === 'string' && obj._id.length >= 24) {
+              try {
+                return parseInt(obj._id.substring(0, 8), 16) * 1000;
+              } catch {
+                // If parsing fails, fall back to other methods
+              }
+            }
+            // Also try the regular id field
+            if (obj.id && typeof obj.id === 'string' && obj.id.length >= 24) {
+              try {
+                return parseInt(obj.id.substring(0, 8), 16) * 1000;
+              } catch {
+                // If parsing fails, return epoch time
+              }
+            }
+            return new Date(0).getTime(); // Epoch time if no ID available
+          };
+          
+          aValue = new Date(getIdTimestamp(a));
+          bValue = new Date(getIdTimestamp(b));
+        }
         break;
     }
     
@@ -253,6 +259,52 @@ const Applicants = () => {
     feedbackRate
   };
 
+  // Pagination calculations
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentFilteredApplicants = filteredApplicants.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredApplicants.length / itemsPerPage);
+
+  // Change page
+  const paginate = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    // Scroll to top using the ref
+    if (mainContainerRef.current) {
+      mainContainerRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
+  // Previous page
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+      // Scroll to top using the ref
+      if (mainContainerRef.current) {
+        mainContainerRef.current.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }
+  };
+
+  // Next page
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+      // Scroll to top using the ref
+      if (mainContainerRef.current) {
+        mainContainerRef.current.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -262,7 +314,7 @@ const Applicants = () => {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div ref={mainContainerRef} className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -415,7 +467,7 @@ const Applicants = () => {
       </div>
 
       {/* Applicants List/Grid */}
-      {filteredApplicants.length === 0 ? (
+      {currentFilteredApplicants.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -427,14 +479,19 @@ const Applicants = () => {
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredApplicants.map((applicant, index) => {
-            const score = getNumericScore(applicant);
+          {currentFilteredApplicants.map((applicant, index) => {
             const hasTest = applicant.testData || applicant.correctAnswer !== undefined;
+            // Add data attribute to the first card of the current page
+            const isFirstCurrentPageCard = indexOfFirstItem === index + (currentPage - 1) * itemsPerPage;
+            
             return (
               <div
                 key={`grid-${applicant._id || applicant.id || applicant.fullName?.replace(/[^a-zA-Z0-9]/g, '') || index}-${index}`}
                 onClick={() => handleRowClick(applicant)}
-                className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 group"
+                className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 group ${isFirstCurrentPageCard ? 'focus:outline-none focus:ring-0' : ''}`}
+                tabIndex={isFirstCurrentPageCard ? 0 : -1}
+                data-page-card={isFirstCurrentPageCard ? "true" : "false"}
+                style={isFirstCurrentPageCard ? { outline: 'none' } : {}}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-4 flex-1 min-w-0">
@@ -453,34 +510,6 @@ const Applicants = () => {
                   </span>
                 </div>
 
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600">Score</span>
-                    <span className="text-2xl font-bold text-blue-600">{score.toFixed(1)}%</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                    <span>{getNumericScore(applicant) > 0 ? (
-                      applicant.testResult?.correctAnswer !== undefined ? applicant.testResult.correctAnswer :
-                      applicant.testResult?.correctAnswers !== undefined ? applicant.testResult.correctAnswers :
-                      applicant.correctAnswer !== undefined ? applicant.correctAnswer :
-                      applicant.testData?.correctAnswer !== undefined ? applicant.testData.correctAnswer :
-                      applicant.testData?.correctAnswers !== undefined ? applicant.testData.correctAnswers : '0'
-                    ) : '0'}/15</span>
-                    <span>Correct</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className={`h-3 rounded-full transition-all duration-500 ${
-                        score >= 80 ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
-                        score >= 60 ? 'bg-gradient-to-r from-blue-500 to-cyan-500' :
-                        score >= 40 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
-                        'bg-gradient-to-r from-red-500 to-pink-500'
-                      }`}
-                      style={{ width: `${Math.min(score, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Position</span>
@@ -494,14 +523,12 @@ const Applicants = () => {
                   )}
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                     <div className="text-xs text-gray-500 truncate">
-                      {applicant.rating ? (
-                        <div className="flex items-center space-x-1">
-                          <span className="text-yellow-500">★</span>
-                          <span>{applicant.rating}</span>
-                        </div>
-                      ) : (
-                        <span>No rating</span>
-                      )}
+                      <div className="flex items-center space-x-1 mt-1">
+                        <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{applicant.createdAt || "Not Available"}</span>
+                      </div>
                     </div>
                     <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
                       View Details →
@@ -520,20 +547,24 @@ const Applicants = () => {
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Applicant</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Position</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Score</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Status</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Feedback Rating</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredApplicants.map((applicant, index) => {
-                  const score = getNumericScore(applicant);
+                {currentFilteredApplicants.map((applicant, index) => {
                   const hasTest = applicant.testData || applicant.correctAnswer !== undefined;
+                  // Add data attribute to the first row of the current page
+                  const isFirstCurrentPageRow = indexOfFirstItem === index + (currentPage - 1) * itemsPerPage;
+                  
                   return (
                     <tr 
                       key={`row-${applicant._id || applicant.id || applicant.fullName?.replace(/[^a-zA-Z0-9]/g, '') || index}-${index}`}
-                      className="hover:bg-blue-50 transition-colors cursor-pointer"
+                      className={`hover:bg-blue-50 transition-colors cursor-pointer ${isFirstCurrentPageRow ? 'focus:outline-none focus:ring-0' : ''}`}
                       onClick={() => handleRowClick(applicant)}
+                      tabIndex={isFirstCurrentPageRow ? 0 : -1}
+                      data-page-card={isFirstCurrentPageRow ? "true" : "false"}
+                      style={isFirstCurrentPageRow ? { outline: 'none' } : {}}
                     >
                       <td className="py-4 px-6">
                         <div className="flex items-center space-x-3">
@@ -552,30 +583,6 @@ const Applicants = () => {
                         </span>
                       </td>
                       <td className="py-4 px-6">
-                        <div className="flex items-center space-x-3">
-                          <span className="text-lg font-bold text-gray-900">{score.toFixed(1)}%</span>
-                          <div className="text-sm text-gray-500">
-                            <span>{getNumericScore(applicant) > 0 ? (
-                              applicant.testResult?.correctAnswer !== undefined ? applicant.testResult.correctAnswer :
-                              applicant.testResult?.correctAnswers !== undefined ? applicant.testResult.correctAnswers :
-                              applicant.correctAnswer !== undefined ? applicant.correctAnswer :
-                              applicant.testData?.correctAnswer !== undefined ? applicant.testData.correctAnswer :
-                              applicant.testData?.correctAnswers !== undefined ? applicant.testData.correctAnswers : '0'
-                            ) : '0'}/15</span>
-                          </div>
-                          <div className="w-20 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full ${
-                                score >= 80 ? 'bg-green-500' :
-                                score >= 60 ? 'bg-blue-500' :
-                                score >= 40 ? 'bg-yellow-500' : 'bg-red-500'
-                              }`}
-                              style={{ width: `${Math.min(score, 100)}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           hasTest ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                         }`}>
@@ -591,6 +598,12 @@ const Applicants = () => {
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
+                        <div className="flex items-center space-x-1 mt-1">
+                          <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-xs text-gray-500">{applicant.createdAt || "Not Available"}</span>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -601,12 +614,85 @@ const Applicants = () => {
         </div>
       )}
 
+      {/* Pagination Controls */}
+      {filteredApplicants.length > itemsPerPage && (
+        <div className="flex items-center justify-between bg-white rounded-2xl shadow-lg border border-gray-100 p-4">
+          <div className="text-sm text-gray-700">
+            Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{' '}
+            <span className="font-medium">
+              {Math.min(indexOfLastItem, filteredApplicants.length)}
+            </span>{' '}
+            of <span className="font-medium">{filteredApplicants.length}</span> results
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={prevPage}
+              disabled={currentPage === 1}
+              className={`px-4 py-2 rounded-lg ${
+                currentPage === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Previous
+            </button>
+            
+            {/* Page Numbers */}
+            {[...Array(Math.min(5, totalPages))].map((_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                // Show all pages if total is 5 or less
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                // Show first 5 pages when near the beginning
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                // Show last 5 pages when near the end
+                pageNum = totalPages - 4 + i;
+              } else {
+                // Show current page in the middle
+                pageNum = currentPage - 2 + i;
+              }
+              
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => paginate(pageNum)}
+                  className={`px-4 py-2 rounded-lg ${
+                    currentPage === pageNum
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+            
+            <button
+              onClick={nextPage}
+              disabled={currentPage === totalPages}
+              className={`px-4 py-2 rounded-lg ${
+                currentPage === totalPages
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Results Count */}
       <div className="text-center text-gray-500 text-sm">
-        Showing {filteredApplicants.length} of {combinedApplicants.length} applicants
+        Showing {currentFilteredApplicants.length} of {filteredApplicants.length} applicants
+        {searchTerm && ` for "${searchTerm}"`}
       </div>
     </div>
   );
 };
 
 export default Applicants;
+

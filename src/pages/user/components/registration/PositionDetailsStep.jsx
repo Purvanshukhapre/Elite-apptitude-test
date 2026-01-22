@@ -282,6 +282,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
             <div className="relative rounded-lg transition-all duration-200">
               <input
                 type="text"
+                id="postAppliedFor"
                 name="postAppliedFor"
                 value={formData.postAppliedFor || ''}
                 onChange={handleChange}
@@ -694,6 +695,101 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
         </h3>
         
         <ResumeUpload resume={formData.resume} setResume={(file) => setFormData(prev => ({ ...prev, resume: file }))} errors={errors} setErrors={setErrors} />
+      </div>
+      
+      {/* Profile Image Upload Section */}
+      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Profile Image
+        </h3>
+        
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Upload Profile Image
+          </label>
+          <div className="flex items-center space-x-4">
+            <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  <span className="font-semibold">Click to upload</span>
+                </p>
+              </div>
+              <input 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    // Validate file type
+                    if (!file.type.startsWith('image/')) {
+                      alert('Please select an image file (jpg, png, jpeg)');
+                      return;
+                    }
+                    
+                    // Validate file size (max 5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                      alert('File size exceeds 5MB limit');
+                      return;
+                    }
+                    
+                    setFormData(prev => ({ ...prev, profileImage: file }));
+                    
+                    // Clear error if there was one
+                    if (errors.profileImage) {
+                      setErrors(prev => ({
+                        ...prev,
+                        profileImage: ''
+                      }));
+                    }
+                  }
+                }}
+              />
+            </label>
+            
+            {formData.profileImage && (
+              <div className="flex flex-col items-center">
+                <div className="w-32 h-32 rounded-xl overflow-hidden border border-gray-200">
+                  <img 
+                    src={URL.createObjectURL(formData.profileImage)} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="mt-2 text-sm text-red-600 hover:text-red-800"
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, profileImage: null }));
+                  }}
+                >
+                  Remove Image
+                </button>
+              </div>
+            )}
+          </div>
+          
+          {!formData.profileImage && (
+            <p className="text-xs text-gray-500 mt-2">
+              Accepted formats: JPG, PNG, JPEG | Max size: 5MB
+            </p>
+          )}
+          
+          {errors.profileImage && (
+            <p className="text-red-500 text-sm mt-2 flex items-center">
+              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              {errors.profileImage}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

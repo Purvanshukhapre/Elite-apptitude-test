@@ -2,7 +2,16 @@ import { useMemo } from 'react';
 
 const formatDate = (dateValue) => {
   if (dateValue) {
-    return new Date(dateValue).toLocaleDateString();
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return 'Date not available';
+    
+    // Format date with explicit India timezone (IST) - date only
+    return new Date(date).toLocaleDateString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    });
   }
   return 'Date not available';
 };

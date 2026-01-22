@@ -13,7 +13,7 @@ import polyBg from "../../assets/1397.jpg";
 const Registration = () => {
   const navigate = useNavigate();
   const { addApplicant, setCurrentApplicant, setTestQuestions } = useApp();
-  const { sendResumeWithEmail } = useTestData();
+  const { sendResumeWithEmail, submitProfileImage } = useTestData();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -57,6 +57,7 @@ const Registration = () => {
     }],
     experience: '',
     resume: null,
+    profileImage: null,
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -135,10 +136,36 @@ const Registration = () => {
     if (step === 1) {
       if (validateStep1()) {
         setStep(2);
+        // Scroll to top smoothly first, then focus on the Highest Qualification field
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+        
+        // After scrolling completes, focus on the Highest Qualification field
+        setTimeout(() => {
+          const highestQualificationInput = document.querySelector('#examinationPassed');
+          if (highestQualificationInput) {
+            highestQualificationInput.focus();
+          }
+        }, 500); // Wait for scroll to complete before focusing
       }
     } else if (step === 2) {
       if (validateStep2()) {
         setStep(3);
+        // Scroll to top smoothly for review step
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+        
+        // Focus on review section after scrolling
+        setTimeout(() => {
+          const reviewSection = document.querySelector('#review-step');
+          if (reviewSection) {
+            reviewSection.focus();
+          }
+        }, 500);
       }
     }
   };
@@ -146,6 +173,27 @@ const Registration = () => {
   const handleBack = () => {
     setStep(step - 1);
     setErrors({});
+    
+    // Scroll to top smoothly first, then focus on the appropriate element
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+
+    // Focus on the appropriate element after scrolling completes
+    setTimeout(() => {
+      if (step === 3) { // Coming from review step back to step 2
+        const highestQualificationInput = document.querySelector('#examinationPassed');
+        if (highestQualificationInput) {
+          highestQualificationInput.focus();
+        }
+      } else if (step === 2) { // Coming from step 2 back to step 1
+        const fullNameInput = document.querySelector('#fullName');
+        if (fullNameInput) {
+          fullNameInput.focus();
+        }
+      }
+    }, 500); // Wait for scroll to complete before focusing
   };
 
   const handleResumeChange = (resumeFile) => {
@@ -166,14 +214,12 @@ const Registration = () => {
   const handleSubmit = async () => {
     // Prevent multiple submissions
     if (isSubmitting) {
-      console.log('Registration already in progress, ignoring duplicate submission');
       return;
     }
     
     // Debounce protection - prevent submissions within 1 second of each other
     const now = Date.now();
     if (now - lastSubmitTimeRef.current < 1000) {
-      console.log('Submission too frequent, ignoring');
       return;
     }
     lastSubmitTimeRef.current = now;
@@ -187,14 +233,10 @@ const Registration = () => {
       // The API might return it in different formats
       let studentFormId = result.studentFormId || 
                          result.data?.studentFormId ||
-                         result.studentForm?.id || 
+                         result.studentFormId?.id || 
                          result.id || 
                          result._id || 
                          result.data?.id;
-      
-      // Log the studentFormId that will be used for test submission
-      console.log('Registration result:', result);
-      console.log('studentFormId extracted for test submission:', studentFormId);
       
       // No fallback to session storage as per requirements
       
@@ -202,7 +244,6 @@ const Registration = () => {
       if (!studentFormId) {
         // Use email as a fallback identifier if available
         studentFormId = formData.permanentEmail || formData.email || `temp_${Date.now()}`;
-        console.log('Using fallback studentFormId:', studentFormId);
       }
       
       // Step 2: Submit resume using email
@@ -221,7 +262,24 @@ const Registration = () => {
         }
       }
       
-      // Step 3: Store studentFormId and questions in context only (no sessionStorage)
+      // Step 3: Submit profile image using email
+      if (formData.profileImage) {
+        try {
+          await submitProfileImage(formData.permanentEmail, formData.profileImage);
+          
+          // Small delay to ensure profile image is processed on backend
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+        } catch (error) {
+          console.error('Profile image upload error:', error);
+          // Show user-friendly error message
+          alert('Warning: Profile image upload failed. You can upload your profile image later from your profile.');
+          
+          // Continue with form submission even if profile image fails
+        }
+      }
+      
+      // Step 4: Store studentFormId and questions in context only (no sessionStorage)
       
       // Store questions if received
       if (result.testData && Array.isArray(result.testData)) {
@@ -263,7 +321,6 @@ const Registration = () => {
               setIsEmailVerified(isVerified);
               if (isVerified) {
                 // Email is verified, user can proceed
-                console.log('Email verified, user can proceed');
               }
             }}
           />
@@ -297,7 +354,7 @@ const Registration = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-purple-900/20 to-blue-800/30" />
 
       {/* Center focus overlay for readability */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.4)_0%,rgba(0,0,0,0.2)_40%,rgba(0,0,0,0)_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.4)_0%,rgba(0,0,0,0.2)_40%,rgba(0,0,0,0)_70%]" />
 
       {/* ===== CONTENT ===== */}
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-between p-0 sm:p-6">
@@ -353,7 +410,6 @@ const Registration = () => {
                 onSubmit={(e) => {
                   // Prevent default form submission
                   e.preventDefault();
-                  console.log('Form submission prevented - using button handler instead');
                 }}
               >
                 {renderStep()}

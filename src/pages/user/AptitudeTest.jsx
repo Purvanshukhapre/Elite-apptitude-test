@@ -39,7 +39,6 @@ const AptitudeTest = () => {
         if (firstElement && firstElement.question !== undefined && firstElement.options !== undefined) {
           // This array contains question objects, not applicant objects
           // This indicates a bug where questions were mistakenly assigned to currentApplicant
-          console.error('BUG DETECTED: currentApplicant contains question objects instead of applicant objects');
           
           // If we still don't have a valid applicant, try to find in the array
           // by looking for objects that have applicant-like properties
@@ -97,10 +96,8 @@ const AptitudeTest = () => {
     if (currentApplicant) {
       if (currentApplicant.studentFormId) {
         studentFormId = currentApplicant.studentFormId;
-        console.log('Using studentFormId from registration API response:', studentFormId);
       } else if (currentApplicant.id) {
         studentFormId = currentApplicant.id;
-        console.log('Falling back to id from raw registration response:', studentFormId);
       }
     }
     
@@ -110,22 +107,15 @@ const AptitudeTest = () => {
       if (applicantWithId) {
         // Prioritize studentFormId over id
         studentFormId = applicantWithId.studentFormId || applicantWithId.id;
-        if (applicantWithId.studentFormId) {
-          console.log('Using studentFormId from array applicant:', studentFormId);
-        } else {
-          console.log('Falling back to id from array applicant:', studentFormId);
-        }
       }
     }
     
     if (!studentFormId) {
-      console.error('Missing required studentFormId:', currentApplicant);
       alert('Error: Unable to submit test. Missing required studentFormId. Please restart the test or contact support.');
       setIsSubmitting(false);
       return;
     }
     
-    console.log('Using studentFormId for submission:', studentFormId);
     
     const applicantToUse = {
       id: studentFormId,
@@ -236,16 +226,10 @@ const AptitudeTest = () => {
       questions: preparedQuestions
     };
     
-    // console.log('Test Results:', testData);
 
     try {
       // API 1 — SUBMIT QUESTIONS & ANSWERS
       // Submit test questions data with user answers using studentFormId
-      console.log('About to submit questions and answers with studentFormId:', applicantToUse.studentFormId);
-      console.log('Questions submission data:', {
-        ...testQuestionsData,
-        studentFormId: applicantToUse.studentFormId
-      });
       await submitQuestions({
         ...testQuestionsData,
         studentFormId: applicantToUse.studentFormId
@@ -253,11 +237,6 @@ const AptitudeTest = () => {
       
       // API 2 — SUBMIT RESULT (CORRECT ANSWER COUNT)
       // Submit test result using studentFormId
-      console.log('About to submit test results with studentFormId:', applicantToUse.studentFormId);
-      console.log('Results submission data:', {
-        ...testData,
-        studentFormId: applicantToUse.studentFormId
-      });
       const result = await submitTestResults({
         ...testData,
         studentFormId: applicantToUse.studentFormId
@@ -291,7 +270,6 @@ const AptitudeTest = () => {
             name: nameForNotification
           };
           await sendTestSubmissionEmail(emailData);
-          console.log('Email notification sent successfully to:', emailForNotification);
         }
       } catch (emailError) {
         console.error('Failed to send email notification:', emailError);
@@ -330,7 +308,6 @@ const AptitudeTest = () => {
             name: nameForNotification
           };
           await sendTestSubmissionEmail(emailData);
-          console.log('Email notification sent successfully (in error flow) to:', emailForNotification);
         }
       } catch (emailError) {
         console.error('Failed to send email notification:', emailError);
@@ -614,13 +591,11 @@ const AptitudeTest = () => {
           // Likely applicant objects, check for identity
           const validApplicant = currentApplicant.find(app => app.email && app.fullName);
           if (!validApplicant) {
-            console.error('No valid applicant with identity found in currentApplicant array');
             navigate('/');
             return;
           }
         } else if (firstElement && firstElement.question !== undefined) {
           // This is question data, not applicant data
-          console.error('currentApplicant contains question data instead of applicant data');
           navigate('/');
           return;
         }

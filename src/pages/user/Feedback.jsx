@@ -78,13 +78,7 @@ const Feedback = () => {
     // Get studentFormId from currentApplicant
     // Priority: studentFormId (from registration API response) > id (from raw registration response)
     const studentFormId = currentApplicant?.studentFormId || currentApplicant?.id || currentApplicant?._id || 'unknown';
-    
-    console.log('Feedback submission - Using studentFormId:', studentFormId);
-    console.log('Feedback submission - Available IDs in currentApplicant:', {
-      studentFormId: currentApplicant?.studentFormId,
-      id: currentApplicant?.id,
-      _id: currentApplicant?._id
-    });
+
     
     // Map feedback data to the exact backend schema required
     const feedbackData = {

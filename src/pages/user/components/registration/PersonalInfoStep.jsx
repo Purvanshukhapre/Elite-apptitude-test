@@ -200,6 +200,7 @@ const PersonalInfoStep = ({ formData, setFormData, errors, setErrors, onEmailVer
           <div className="relative rounded-lg transition-all duration-200">
             <input
               type="text"
+              id="fullName"
               name="fullName"
               value={formData.fullName || ''}
               onChange={handleChange}

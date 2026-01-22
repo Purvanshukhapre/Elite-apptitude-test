@@ -31,7 +31,12 @@ const AdminLogin = () => {
     try {
       const success = adminLogin(credentials.username, credentials.password);
       if (success) {
-        navigate('/admin/modern');
+        // Navigate to different dashboards based on role
+        if (credentials.username === 'admin') {
+          navigate('/admin/modern');
+        } else if (credentials.username === 'hr') {
+          navigate('/hr/modern'); // HR dashboard route
+        }
       } else {
         setError('Invalid username or password. Please try again.');
       }
@@ -77,10 +82,10 @@ const AdminLogin = () => {
             {/* Header */}
             <div className="text-center mb-8 animate-fade-in">
               <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3 drop-shadow-lg">
-                Admin Login
+                Admin / HR Login
               </h1>
               <p className="text-blue-100 text-base sm:text-lg opacity-90">
-                Access your admin dashboard
+                Access your dashboard
               </p>
             </div>
 
@@ -144,9 +149,6 @@ const AdminLogin = () => {
                 </button>
               </form>
 
-              <div className="mt-6 text-center text-gray-600 text-sm">
-                <p>Demo credentials: admin / admin123</p>
-              </div>
             </div>
           </div>
         </main>
