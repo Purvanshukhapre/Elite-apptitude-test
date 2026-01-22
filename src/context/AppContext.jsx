@@ -265,7 +265,7 @@ export const AppProvider = ({ children }) => {
 
   const adminLogin = useCallback((username, password) => {
     // Simple authentication - in production, use proper backend authentication
-    if (username === 'admin' && password === 'elite@associate') {
+    if (username === 'admin' && password === 'admin123') {
       setIsAdminAuthenticated(true);
       setUserRole('admin');
       return true;
