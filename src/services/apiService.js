@@ -73,8 +73,6 @@ export const apiCall = async (endpoint, options = {}) => {
   const defaultOptions = {
     headers: {
       'Content-Type': 'application/json',
-      // No authentication required since admin login is sufficient
-      // ...(requiresAuth && adminToken ? { 'Authorization': `Bearer ${adminToken}` } : {}),
       ...options.headers
     },
     ...options
@@ -99,30 +97,11 @@ export const apiCall = async (endpoint, options = {}) => {
   }
 
   try {
-    console.log(`Making API call to: ${url}`);
-    console.log('Request options:', {
-      method: options.method || 'GET',
-      headers: options.headers,
-      body: options.body
-    });
-    
     const response = await fetch(url, fetchOptions);
     
-    console.log(`API Response from ${url}:`, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: Object.fromEntries(response.headers.entries())
-    });
-    
-    // For specific endpoints that might return 403, handle gracefully
     if (!response.ok && response.status === 403) {
-      // Special handling for DELETE requests to student endpoints
-      if (options.method === 'DELETE' && (url.includes('/auth/student/') || url.includes('/student/'))) {
-        console.warn('DELETE operation blocked for security reasons');
-        throw new Error('Delete operation is not permitted for security reasons. Contact administrator for manual deletion.');
-      }
-      
-      console.warn('API returned 403 Forbidden - endpoint may be restricted or unavailable');
+      // Log for debugging purposes
+      console.error('API returned 403 Forbidden - endpoint may be restricted or unavailable');
       // Throw a generic error that works for all endpoints
       throw new Error('This service is temporarily unavailable. Please try again later.');
     }
@@ -148,7 +127,6 @@ export const apiCall = async (endpoint, options = {}) => {
       }
     }
     
-    console.log(`Response data from ${url}:`, data);
     return data;
   } catch (error) {
     // More specific error handling
@@ -254,8 +232,6 @@ export const submitTest = async (testData) => {
   };
   
   try {
-    console.log(`Attempting to submit test results for studentFormId: ${studentFormId}`);
-    
     // Submit the test data to the result submission endpoint with studentFormId in URL
     const submitResponse = await apiCall(API_ENDPOINTS.SUBMIT_TEST(studentFormId), {
       method: 'POST',
@@ -264,8 +240,6 @@ export const submitTest = async (testData) => {
       },
       body: JSON.stringify(resultData)
     });
-    
-    console.log('Test results submitted successfully:', submitResponse);
     
     // Return response with correct answer information
     return {
@@ -276,7 +250,8 @@ export const submitTest = async (testData) => {
       success: true
     };
   } catch (submitError) {
-    console.warn('Test submission failed, using local data:', submitError.message);
+    // Log error for debugging but continue with fallback
+    console.error('Test submission failed, using local data:', submitError.message);
     
     // Fallback response when API submission fails - still treat as success for user experience
     return {
@@ -350,12 +325,47 @@ export const deleteApplicantById = async (studentFormId) => {
     throw new Error('Student Form ID is required to delete applicant');
   }
   
-  // Use the correct endpoint: /student/{id} without /auth prefix
-  // No headers required according to API documentation
-  return apiCall(`/student/${studentFormId}`, {
-    method: 'DELETE'
-    // No headers needed for DELETE operation
+  // Direct API call to the student deletion endpoint
+  const url = `${API_BASE_URL}/student/${studentFormId}`;
+  
+  const options = {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  };
+  
+  const response = await fetch(url, {
+    ...options,
+    mode: 'cors',
+    credentials: 'omit'
   });
+  
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Applicant not found');
+    } else {
+      // Get error response as text if available
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP error! status: ${response.status}`);
+    }
+  }
+  
+  // Handle response based on content type
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return await response.json();
+  } else {
+    // For successful DELETE, response might be plain text or empty
+    const text = await response.text();
+    try {
+      // Try to parse as JSON if possible
+      return JSON.parse(text);
+    } catch {
+      // If not JSON, return success with the text content or default message
+      return text ? { success: true, message: text } : { success: true, message: 'Applicant deleted successfully', deletedId: studentFormId };
+    }
+  }
 };
 
 // Function to get test result by ID
@@ -382,20 +392,12 @@ export const submitResume = async (email, resumeFile) => {
   const url = buildUrl(API_ENDPOINTS.SUBMIT_RESUME(email));
   
   try {
-    console.log(`Attempting to upload resume for email: ${email}`);
-    console.log(`Upload URL: ${url}`);
-    
     const response = await fetch(url, {
       method: 'POST',
       // Don't set Content-Type header - let browser set it with boundary
       body: formData,
       mode: 'cors',
       credentials: 'omit' // No authentication required
-    });
-    
-    console.log(`Resume upload response:`, {
-      status: response.status,
-      statusText: response.statusText
     });
     
     if (!response.ok) {
@@ -419,7 +421,6 @@ export const submitResume = async (email, resumeFile) => {
       }
     }
     
-    console.log('Resume uploaded successfully:', data);
     return data;
   } catch (error) {
     console.error('Resume upload failed:', error.message);

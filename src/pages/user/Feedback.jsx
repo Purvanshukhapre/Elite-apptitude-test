@@ -98,12 +98,7 @@ const Feedback = () => {
     
     // Validate that we have at least the name and email
     if (!feedbackData.name || !feedbackData.email) {
-      console.warn('Missing name or email for feedback submission:', {
-        userFullName,
-        userEmail,
-        currentApplicant,
-        feedbackData
-      });
+      // Missing name or email for feedback submission
     }
     
     setSubmitting(true);

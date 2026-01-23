@@ -124,9 +124,11 @@ const Registration = () => {
     if (!formData.primarySkills || formData.primarySkills.length === 0) newErrors.primarySkills = 'At least one primary skill is required';
     if (!formData.secondarySkills || formData.secondarySkills.length === 0) newErrors.secondarySkills = 'At least one secondary skill is required';
     
-    // Make resume optional to avoid blocking registration
-    // Resume will be uploaded separately if provided
-    // if (!formData.resume) newErrors.resume = 'Resume is required';
+    // Make resume mandatory
+    if (!formData.resume) newErrors.resume = 'Resume is required';
+    
+    // Make profile image mandatory
+    if (!formData.profileImage) newErrors.profileImage = 'Profile image is required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

@@ -32,10 +32,7 @@ const NavigationButtons = ({ step, onBack, onNext, onSubmit, isSubmitting }) => 
           onClick={() => {
             // Additional protection against multiple clicks
             if (!isSubmitting) {
-              console.log('Submit button clicked - triggering onSubmit');
               onSubmit();
-            } else {
-              console.log('Submit button ignored - already submitting');
             }
           }}
           disabled={isSubmitting}

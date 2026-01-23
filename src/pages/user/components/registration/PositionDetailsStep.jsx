@@ -708,7 +708,7 @@ const PositionDetailsStep = ({ formData, setFormData, errors, setErrors }) => {
         
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Upload Profile Image
+            Upload Profile Image <span className="text-red-500">*</span>
           </label>
           <div className="flex items-center space-x-4">
             <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">

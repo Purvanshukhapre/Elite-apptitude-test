@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const ActionButtons = ({ applicant, navigate, userRole }) => {
-  const [isDeleting, setIsDeleting] = useState(false);
+const ActionButtons = ({ applicant, navigate, userRole, isDeleting, setIsDeleting, onShowNotification }) => {
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   
-  // Debug logging to check userRole value
+
 
   const handleDownloadPDF = () => {
     if (!applicant) return;
@@ -173,6 +173,232 @@ const ActionButtons = ({ applicant, navigate, userRole }) => {
       });
     }
     
+    // Enhanced questions and answers section
+    // According to the API, the questions are available in applicant.questionsData.questions
+    // which contains aiQuestion, Options, aiAnswer, userAnswer
+    let questionsToUse = null;
+    
+    // First check if the API response structure has questions in the expected location
+    if (applicant.questionsData?.questions && Array.isArray(applicant.questionsData.questions) && applicant.questionsData.questions.length > 0) {
+      questionsToUse = applicant.questionsData.questions;
+      // Using questions from applicant.questionsData.questions
+    } else if (applicant.questions && Array.isArray(applicant.questions) && applicant.questions.length > 0) {
+      questionsToUse = applicant.questions;
+      // Using questions from applicant.questions
+    } else if (applicant.testData?.questions && Array.isArray(applicant.testData.questions) && applicant.testData.questions.length > 0) {
+      questionsToUse = applicant.testData.questions;
+      // Using questions from applicant.testData.questions
+    } else {
+      // No questions found in expected locations
+    }
+    
+    // Store questions to use for PDF generation
+    
+    if (questionsToUse && questionsToUse.length > 0) {
+      let lastY = 20; // Start at top of page if no previous table exists
+      if (doc.lastAutoTable && doc.lastAutoTable.finalY) {
+        lastY = doc.lastAutoTable.finalY + 10;
+      }
+      doc.setFontSize(14);
+      doc.text('Test Questions and Answers', 20, lastY);
+      
+      const questionsData = questionsToUse.map((question, index) => {
+
+        
+        // According to the API, the fields are: aiQuestion, Options, aiAnswer, userAnswer
+        const questionText = question.aiQuestion || 
+                           question.question || 
+                           question.text || 
+                           question.title || 
+                           question.description || 
+                           question.q || 
+                           question.problem ||
+                           'Question text not available';
+        
+        // Options field name
+        const options = question.Options || // Note: capital O as per API
+                       question.options || 
+                       question.choices || 
+                       question.answers || 
+                       question.choice || 
+                       question.opts ||
+                       [];
+        
+        // User answer field name
+        const userAnswer = question.userAnswer || 
+                          question.selectedOption || 
+                          question.answer || 
+                          question.user_response ||
+                          question.response || 
+                          question.userResponse ||
+                          'Not answered';
+        
+        // Correct/expected answer field name
+        const correctAnswer = question.aiAnswer || // Note: aiAnswer as per API
+                             question.correctAnswer || 
+                             question.answerKey || 
+                             question.correct || 
+                             question.rightAnswer || 
+                             question.solution || 
+                             question.answer_key ||
+                             'N/A';
+        
+
+        
+        // Format options
+        let optionsText = 'N/A';
+        if (Array.isArray(options) && options.length > 0) {
+          optionsText = options.map((opt, optIndex) => 
+            `${String.fromCharCode(65 + optIndex)}. ${opt}`
+          ).join('\n');
+        } else if (typeof options === 'object' && options !== null) {
+          optionsText = Object.entries(options)
+            .map(([key, value]) => `${key}. ${value}`)
+            .join('\n');
+        } else if (typeof options === 'string') {
+          optionsText = options;
+        }
+        
+        // Determine correctness
+        let isCorrect = false;
+        if (userAnswer && correctAnswer && correctAnswer !== 'N/A') {
+          const normalizedUser = String(userAnswer).trim().toLowerCase();
+          const normalizedCorrect = String(correctAnswer).trim().toLowerCase();
+          
+          isCorrect = normalizedUser === normalizedCorrect || 
+                     normalizedUser.includes(normalizedCorrect) ||
+                     normalizedCorrect.includes(normalizedUser) ||
+                     normalizedUser.replace(/^[a-d]\.]\s*/i, '').includes(normalizedCorrect.replace(/^[a-d]\.]\s*/i, ''));
+        }
+        
+        return [
+          [`Q${index + 1}: ${questionText}`, ''],
+          ['Options', optionsText || 'No options available'],
+          ['User Answer', userAnswer],
+          ['Correct Answer', correctAnswer],
+          ['Status', isCorrect ? '✓ Correct' : '✗ Incorrect'],
+          ['', ''] // Separator
+        ];
+      }).flat();
+      
+      autoTable(doc, {
+        startY: lastY + 5,
+        head: [['Question', 'Details']],
+        body: questionsData,
+        theme: 'grid',
+        styles: { 
+          fontSize: 9,
+          cellPadding: 3,
+          valign: 'top'
+        },
+        headStyles: { 
+          fillColor: [34, 197, 94],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          cellPadding: 3
+        },
+        alternateRowStyles: {
+          fillColor: [240, 253, 244]
+        },
+        columnStyles: {
+          0: { cellWidth: 60 },
+          1: { cellWidth: 100 }
+        },
+        margin: { left: 15 }
+      });
+    } else if (applicant.testData?.questions && applicant.testData.questions.length > 0) {
+      // Fallback to testData questions
+      let lastY = 20;
+      if (doc.lastAutoTable && doc.lastAutoTable.finalY) {
+        lastY = doc.lastAutoTable.finalY + 10;
+      }
+      doc.setFontSize(14);
+      doc.text('Test Questions and Answers', 20, lastY);
+      
+      const questionsData = applicant.testData.questions.map((question, index) => {
+        // Handle different question data structures
+        const questionText = question.question || question.text || question.title || 'Question text not available';
+        const options = question.options || question.choices || [];
+        const userAnswer = question.userAnswer || question.selectedOption || question.answer || 'Not answered';
+        const correctAnswer = question.correctAnswer || question.answerKey || question.correct || 'N/A';
+        
+        // Format options properly
+        let optionsText = 'N/A';
+        if (Array.isArray(options) && options.length > 0) {
+          optionsText = options.map((opt, optIndex) => 
+            `${String.fromCharCode(65 + optIndex)}. ${opt}`
+          ).join('\n');
+        } else if (typeof options === 'object' && options !== null) {
+          optionsText = Object.entries(options)
+            .map(([key, value]) => `${key}. ${value}`)
+            .join('\n');
+        }
+        
+        // Determine if answer is correct
+        let isCorrect = false;
+        if (userAnswer && correctAnswer) {
+          const normalizedUserAnswer = String(userAnswer).trim().toLowerCase();
+          const normalizedCorrectAnswer = String(correctAnswer).trim().toLowerCase();
+          
+          isCorrect = normalizedUserAnswer === normalizedCorrectAnswer || 
+                     normalizedUserAnswer === normalizedCorrectAnswer.replace(/^([a-d])\.\s*/i, '$1') ||
+                     normalizedUserAnswer.replace(/^([a-d])\.\s*/i, '$1') === normalizedCorrectAnswer.replace(/^([a-d])\.\s*/i, '$1');
+        }
+        
+        return [
+          [`Q${index + 1}: ${questionText}`, ''],
+          ['Options', optionsText],
+          ['User Answer', userAnswer],
+          ['Correct Answer', correctAnswer],
+          ['Status', isCorrect ? '✓ Correct' : '✗ Incorrect'],
+          ['', ''] // Empty row as separator
+        ];
+      }).flat();
+      
+      autoTable(doc, {
+        startY: lastY + 5,
+        head: [['Question', 'Details']],
+        body: questionsData,
+        theme: 'grid',
+        styles: { 
+          fontSize: 9,
+          cellPadding: 3,
+          valign: 'top'
+        },
+        headStyles: { 
+          fillColor: [34, 197, 94],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          cellPadding: 3
+        },
+        alternateRowStyles: {
+          fillColor: [240, 253, 244]
+        },
+        columnStyles: {
+          0: { cellWidth: 60 },
+          1: { cellWidth: 100 }
+        },
+        margin: { left: 15 }
+      });
+    } else {
+      // Add a note if no questions found
+
+      let lastY = 20;
+      if (doc.lastAutoTable && doc.lastAutoTable.finalY) {
+        lastY = doc.lastAutoTable.finalY + 10;
+      }
+      doc.setFontSize(14);
+      doc.setTextColor(255, 0, 0);
+      doc.text('No Questions Data Available', 20, lastY);
+      doc.setTextColor(0, 0, 0); // Reset color
+      
+
+    }
+    
     // Add page numbers if needed
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
@@ -186,34 +412,65 @@ const ActionButtons = ({ applicant, navigate, userRole }) => {
     doc.save(`applicant-details-${applicant.fullName || applicant.name || 'applicant'}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('An error occurred while generating the PDF. Please try again.');
+      onShowNotification({
+        message: 'An error occurred while generating the PDF. Please try again.',
+        type: 'error',
+        duration: 5000
+      });
     }
   };
 
   const handleDeleteApplicant = async () => {
-    if (!window.confirm('Are you sure you want to delete this applicant and all their related data (feedback, resume, test results)? This action cannot be undone.')) {
-      return;
+    // Show confirmation modal
+    setShowConfirmModal(true);
+  };
+  
+  const handleConfirmDelete = async () => {
+    setShowConfirmModal(false);
+    try {
+      await performDelete();
+    } catch (error) {
+      console.error("Delete failed", error);
     }
+  };
 
+  const performDelete = async () => {
     setIsDeleting(true);
+    
     try {
       // Get the actual ID to use for deletion
       const actualId = applicant._id || applicant.id;
+      
       if (!actualId) {
-        alert('Unable to delete: No valid ID found for this applicant');
+        onShowNotification({
+          message: 'Unable to delete: No valid ID found for this applicant',
+          type: 'error',
+          duration: 5000
+        });
         setIsDeleting(false);
         return;
       }
       
-      // Call the delete API function
+      // Call the delete API function directly
       const { deleteApplicantById } = await import('../../../api');
       await deleteApplicantById(actualId);
       
-      alert('Applicant and all related data deleted successfully');
+      onShowNotification({
+        message: 'Applicant and all related data deleted successfully',
+        type: 'success',
+        duration: 3000
+      });
+      
+      // Navigate after successful deletion
       navigate('/admin/modern/applicants');
+      
     } catch (error) {
-      console.error('Error deleting applicant:', error);
-      alert(`Failed to delete applicant: ${error.message || 'Unknown error'}`);
+      console.error("Error in performDelete:", error);
+      onShowNotification({
+        message: `Failed to delete applicant: ${error.message || 'Unknown error'}`,
+        type: 'error',
+        duration: 5000
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -313,8 +570,32 @@ const ActionButtons = ({ applicant, navigate, userRole }) => {
       >
         Back to Applicants
       </button>
+      
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Confirm Delete</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this applicant? This action cannot be undone.</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default ActionButtons;
+export default memo(ActionButtons);

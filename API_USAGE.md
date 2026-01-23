@@ -54,9 +54,9 @@ All API functions may throw errors, so always use try/catch:
 ```javascript
 try {
   const feedback = await getAllFeedback();
-  console.log(feedback);
+  // Process feedback data
 } catch (error) {
-  console.error('Error fetching feedback:', error);
+  // Handle error appropriately
 }
 ```
 

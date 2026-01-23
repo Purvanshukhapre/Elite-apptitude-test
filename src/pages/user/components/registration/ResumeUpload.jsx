@@ -9,7 +9,10 @@ const ResumeUpload = ({ resume, setResume, errors, setErrors }) => {
   };
 
   const validateAndSetFile = (file) => {
-    if (!file) return;
+    if (!file) {
+      setErrors(prev => ({ ...prev, resume: 'Resume is required' }));
+      return;
+    }
 
     // Validate file type
     const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
@@ -54,7 +57,7 @@ const ResumeUpload = ({ resume, setResume, errors, setErrors }) => {
 
   const removeFile = () => {
     setResume(null);
-    setErrors(prev => ({ ...prev, resume: '' }));
+    setErrors(prev => ({ ...prev, resume: 'Resume is required' }));
   };
 
   const formatFileSize = (bytes) => {

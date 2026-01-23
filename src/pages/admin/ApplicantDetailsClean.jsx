@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/useApp';
 import { getApplicantById, getTestResultById, getApplicants } from '../../api';
+import Notification from '../../components/shared/Notification';
 import ApplicantHeader from './components/ApplicantHeader';
 import ApplicantStats from './components/ApplicantStats';
 import ApplicantDetailsSection from './components/ApplicantDetailsSection';
@@ -23,6 +24,8 @@ const ApplicantDetailsClean = () => {
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [resumeData, setResumeData] = useState(null);
   const [error, setError] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteNotification, setDeleteNotification] = useState(null);
 
   useEffect(() => {
     const fetchApplicantData = async () => {
@@ -81,8 +84,8 @@ const ApplicantDetailsClean = () => {
                 }
               }
             } catch (resultError) {
-              console.warn('Could not fetch test result from result endpoint:', resultError.message);
               // Continue with existing data if result endpoint fails
+              void resultError;
             }
           }
           
@@ -175,7 +178,8 @@ const ApplicantDetailsClean = () => {
                   testResult = await getTestResultById(resultId);
                 }
               } catch (resultError) {
-                console.warn('Could not fetch test result:', resultError.message);
+                // Silently ignore test result fetch errors - using error for potential debugging
+                void resultError;
               }
               
               const updatedApplicant = {
@@ -194,6 +198,7 @@ const ApplicantDetailsClean = () => {
               setApplicant(null);
             }
           } catch (fallbackError) {
+            // Log error for debugging purposes
             console.error('Fallback also failed:', fallbackError);
             setError('Unable to retrieve applicant details. The service is temporarily unavailable.');
             setApplicant(null);
@@ -264,7 +269,25 @@ const ApplicantDetailsClean = () => {
       <ResumeSection resumeData={resumeData} />
       <PerformanceSection applicant={applicant} />
       <TestQuestionsSection applicant={applicant} loading={questionsLoading} />
-      <ActionButtons applicant={applicant} navigate={navigate} userRole={userRole} />
+      <ActionButtons 
+        applicant={applicant} 
+        navigate={navigate} 
+        userRole={userRole}
+        isDeleting={isDeleting}
+        setIsDeleting={setIsDeleting}
+        // Pass notification handlers instead of the notification state itself
+        onShowNotification={(notificationData) => setDeleteNotification(notificationData)}
+      />
+      
+      {/* Render Notification at page level to prevent unmounting issues */}
+      {deleteNotification && (
+        <Notification
+          message={deleteNotification.message}
+          type={deleteNotification.type}
+          duration={deleteNotification.duration}
+          onClose={() => setDeleteNotification(null)}
+        />
+      )}
     </div>
   );
 };

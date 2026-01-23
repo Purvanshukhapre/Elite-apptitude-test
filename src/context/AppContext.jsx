@@ -6,8 +6,15 @@ export const AppProvider = ({ children }) => {
   const [applicants, setApplicants] = useState([]);
   const [currentApplicant, setCurrentApplicant] = useState(null);
   const [testQuestions, setTestQuestions] = useState([]);
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState(null); // 'admin' or 'hr'
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
+    // Check localStorage for persisted authentication state
+    const savedAuth = localStorage.getItem('adminAuth');
+    return savedAuth === 'true';
+  });
+  const [userRole, setUserRole] = useState(() => {
+    // Check localStorage for persisted user role
+    return localStorage.getItem('userRole') || null;
+  });
   const [loading] = useState(false);
   const refreshApplicantsRef = useRef(false);
 
@@ -265,13 +272,25 @@ export const AppProvider = ({ children }) => {
 
   const adminLogin = useCallback((username, password) => {
     // Simple authentication - in production, use proper backend authentication
-    if (username === 'admin' && password === 'admin123') {
+    if (username === 'admin' && password === 'elite@associate') {
       setIsAdminAuthenticated(true);
       setUserRole('admin');
+      // Create and store a simple admin token
+      const adminToken = 'admin_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('adminToken', adminToken);
+      // Persist authentication state
+      localStorage.setItem('adminAuth', 'true');
+      localStorage.setItem('userRole', 'admin');
       return true;
     } else if (username === 'elite' && password === 'eliteassociate123') {  // HR credentials
       setIsAdminAuthenticated(true);
       setUserRole('hr');
+      // Create and store a simple admin token for HR as well
+      const adminToken = 'hr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('adminToken', adminToken);
+      // Persist authentication state
+      localStorage.setItem('adminAuth', 'true');
+      localStorage.setItem('userRole', 'hr');
       return true;
     }
     return false;
@@ -279,7 +298,12 @@ export const AppProvider = ({ children }) => {
 
   const adminLogout = useCallback(() => {
     setIsAdminAuthenticated(false);
-  }, [setIsAdminAuthenticated]);
+    setUserRole(null);
+    // Clear persisted authentication state
+    localStorage.removeItem('adminAuth');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('adminToken');
+  }, [setIsAdminAuthenticated, setUserRole]);
 
   const value = {
     applicants,
